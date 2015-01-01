@@ -132,7 +132,7 @@ public:
 		this->line_height = step_h;
 		this->CreateNestedTree(_wdesc);
 		this->hscroll = this->GetScrollbar(TCW_SCROLLBAR_NEW_TMPL);
-		this->FinishInitNested(_wdesc, VEH_TRAIN);
+		this->FinishInitNested(VEH_TRAIN);
 		/* a sprite */
 		this->GetWidget<NWidgetCore>(TCW_SELL_TMPL)->widget_data = SPR_SELL_TRAIN;
 
