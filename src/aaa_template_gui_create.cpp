@@ -86,10 +86,13 @@ static const NWidgetPart _widgets[] = {
 };
 
 static const WindowDesc _template_create_window_desc(
-	WDP_AUTO, 456, 100,
-	WC_CREATE_TEMPLATE, WC_NONE,					// TODO change wc_replace_vehicle
-	WDF_UNCLICK_BUTTONS | WDF_CONSTRUCTION,
-	_widgets, lengthof(_widgets)
+	WDP_AUTO,						// window position
+	"template create window",		// const char* ini_key
+	456, 100,						// window size
+	WC_CREATE_TEMPLATE,				// window class
+	WC_NONE,						// parent window class TODO change wc_replace_vehicle
+	WDF_CONSTRUCTION,				// window flags
+	_widgets, lengthof(_widgets)	// widgets + num widgets
 );
 
 static void TrainDepotMoveVehicle(const Vehicle *wagon, VehicleID sel, const Vehicle *head)

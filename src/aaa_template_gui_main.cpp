@@ -165,7 +165,9 @@ static const NWidgetPart _widgets[] = {
 };
 
 static const WindowDesc _replace_rail_vehicle_desc(
-	WDP_AUTO, 456, 156,
+	WDP_AUTO,
+	"template replace window",
+	456, 156,
 	WC_TEMPLATEGUI_MAIN, WC_NONE,					// TODO change wc_replace_vehicle
 	WDF_UNCLICK_BUTTONS | WDF_CONSTRUCTION,
 	_widgets, lengthof(_widgets)

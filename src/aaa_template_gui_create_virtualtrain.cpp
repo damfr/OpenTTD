@@ -822,10 +822,13 @@ struct BuildVirtualTrainWindow : Window {
 };
 
 static const WindowDesc _build_vehicle_desc(
-	WDP_AUTO, 240, 268,
-	WC_BUILD_VIRTUAL_TRAIN, WC_NONE,
-	WDF_UNCLICK_BUTTONS | WDF_CONSTRUCTION,
-	_nested_build_vehicle_widgets, lengthof(_nested_build_vehicle_widgets)
+	WDP_AUTO,						// window position
+	"template create virtual train",// const char* ini_key
+	240, 268,						// window size
+	WC_BUILD_VIRTUAL_TRAIN,			// window class
+	WC_NONE,						// parent window class TODO change wc_replace_vehicle
+	WDF_CONSTRUCTION,				// window flags
+	_nested_build_vehicle_widgets, lengthof(_nested_build_vehicle_widgets)	// widgets + num widgets
 );
 
 void ShowBuildVirtualTrainWindow(Train **vt, bool *noticeParent)
