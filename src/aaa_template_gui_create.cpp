@@ -127,7 +127,7 @@ private:
 	TemplateVehicle *editTemplate;
 
 public:
-	TemplateCreateWindow(const WindowDesc* _wdesc, TemplateVehicle *to_edit, bool *notice, bool *windowOpen, int step_h) : Window()
+	TemplateCreateWindow(WindowDesc* _wdesc, TemplateVehicle *to_edit, bool *notice, bool *windowOpen, int step_h) : Window(_wdesc)
 	{
 		this->line_height = step_h;
 		this->CreateNestedTree(_wdesc);

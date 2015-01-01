@@ -197,7 +197,7 @@ private:
 	bool editInProgress;
 
 public:
-	TemplateReplaceWindow(const WindowDesc *wdesc, byte dig, int step_h) : Window()
+	TemplateReplaceWindow(WindowDesc *wdesc, byte dig, int step_h) : Window()
 	{
 		// listing/sorting
 		templates.SetSortFuncs(this->template_sorter_funcs);

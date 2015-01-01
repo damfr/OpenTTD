@@ -440,7 +440,7 @@ struct BuildVirtualTrainWindow : Window {
 	Train **virtual_train;
 	bool *noticeParent;
 
-	BuildVirtualTrainWindow(const WindowDesc *desc, Train **vt, bool *notice) : Window()
+	BuildVirtualTrainWindow(WindowDesc *desc, Train **vt, bool *notice) : Window()
 	{
 		this->vehicle_type = VEH_TRAIN; // TODO change type to VEH_TRAIN everywhere
 		this->window_number = 0;//tile == INVALID_TILE ? (int)type : tile;

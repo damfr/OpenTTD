@@ -142,7 +142,7 @@ private:
 	VirtTrainList *virtualTrains;
 
 public:
-	TemplateReplacementReplaceAllWindow(const WindowDesc *wdesc) : Window()
+	TemplateReplacementReplaceAllWindow(WindowDesc *wdesc) : Window()
 	{
 
 		this->CreateNestedTree(wdesc);
