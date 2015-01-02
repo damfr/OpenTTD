@@ -44,7 +44,7 @@
  * @param type the vehicle type to get the height of
  * @return the height for the entry
  */
-static uint GetEngineListHeight(VehicleType type)
+uint GetEngineListHeight(VehicleType type)
 {
 	return max<uint>(FONT_HEIGHT_NORMAL + WD_MATRIX_TOP + WD_MATRIX_BOTTOM, GetVehicleHeight(type));
 }
