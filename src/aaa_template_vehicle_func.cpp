@@ -546,10 +546,10 @@ void TransferCargoForTrain(Train *old_veh, Train *new_head, bool part_of_chain)
 			src = src->GetLastEnginePart();
 			continue;
 		}
-		if (src->cargo_type >= NUM_CARGO || src->cargo.Count() == 0) continue;
+		if (src->cargo_type >= NUM_CARGO || src->cargo.StoredCount() == 0) continue;
 
 		/* Find free space in the new chain */
-		for (Train *dest = new_head; dest != NULL && src->cargo.Count() > 0; dest = dest->Next()) {
+		for (Train *dest = new_head; dest != NULL && src->cargo.StoredCount() > 0; dest = dest->Next()) {
 			if (!part_of_chain  && dest != new_head && dest != new_head->other_multiheaded_part && !dest->IsArticulatedPart()) {
 				/* Skip vehicles, which do not belong to new_head */
 				dest = dest->GetLastEnginePart();
@@ -557,7 +557,7 @@ void TransferCargoForTrain(Train *old_veh, Train *new_head, bool part_of_chain)
 			}
 			if (dest->cargo_type != src->cargo_type) continue;
 
-			uint amount = min(src->cargo.Count(), dest->cargo_cap - dest->cargo.Count());
+			uint amount = min(src->cargo.StoredCount(), dest->cargo_cap - dest->cargo.StoredCount());
 			if (amount <= 0) continue;
 
 			src->cargo.MoveTo(&dest->cargo, amount, VehicleCargoList::MTA_UNLOAD, NULL);
