@@ -444,7 +444,7 @@ struct BuildVirtualTrainWindow : Window {
 	Train **virtual_train;
 	bool *noticeParent;
 
-	BuildVirtualTrainWindow(WindowDesc *desc, Train **vt, bool *notice) : Window()
+	BuildVirtualTrainWindow(WindowDesc *desc, Train **vt, bool *notice) : Window(desc)
 	{
 		this->vehicle_type = VEH_TRAIN; // TODO change type to VEH_TRAIN everywhere
 		this->window_number = 0;//tile == INVALID_TILE ? (int)type : tile;
@@ -472,7 +472,7 @@ struct BuildVirtualTrainWindow : Window {
 
 		this->details_height = ((this->vehicle_type == VEH_TRAIN) ? 10 : 9) * FONT_HEIGHT_NORMAL + WD_FRAMERECT_TOP + WD_FRAMERECT_BOTTOM;
 
-		this->FinishInitNested(desc, VEH_TRAIN);
+		this->FinishInitNested(VEH_TRAIN);
 
 		this->owner = _local_company;
 
@@ -728,7 +728,7 @@ struct BuildVirtualTrainWindow : Window {
 
 			case WID_BV_SORT_ASCENDING_DESCENDING: {
 				Dimension d = GetStringBoundingBox(this->GetWidget<NWidgetCore>(widget)->widget_data);
-				d.width += padding.width + WD_SORTBUTTON_ARROW_WIDTH * 2; // Doubled since the string is centred and it also looks better.
+				d.width += padding.width + WD_CLOSEBOX_WIDTH * 2; // Doubled since the string is centred and it also looks better.
 				d.height += padding.height;
 				*size = maxdim(*size, d);
 				break;
@@ -825,7 +825,7 @@ struct BuildVirtualTrainWindow : Window {
 	}
 };
 
-static const WindowDesc _build_vehicle_desc(
+static WindowDesc _build_vehicle_desc(
 	WDP_AUTO,						// window position
 	"template create virtual train",// const char* ini_key
 	240, 268,						// window size
