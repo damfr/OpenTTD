@@ -98,11 +98,15 @@ static CargoID _last_filter_criteria[] = {CF_ANY, CF_ANY, CF_ANY, CF_ANY};
  * @param *b second engine to compare
  * @return for descending order: returns < 0 if a < b and > 0 for a > b. Vice versa for ascending order and 0 for equal
  */
+// TODO: disabled because the ListPositionOfEngine is no longer defined in newgrf_engine.h
+// Need to find out how to sort by engineid (if necessary)
 static int CDECL EngineNumberSorter(const EngineID *a, const EngineID *b)
 {
-	int r = ListPositionOfEngine(*a) - ListPositionOfEngine(*b);
+	//int r = ListPositionOfEngine(*a) - ListPositionOfEngine(*b);
 
-	return _internal_sort_order ? -r : r;
+	//return _internal_sort_order ? -r : r;
+	// TODO: this can only be wrong
+	return 0;
 }
 
 /**
