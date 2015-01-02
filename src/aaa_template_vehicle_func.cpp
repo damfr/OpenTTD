@@ -560,12 +560,14 @@ void TransferCargoForTrain(Train *old_veh, Train *new_head, bool part_of_chain)
 			uint amount = min(src->cargo.StoredCount(), dest->cargo_cap - dest->cargo.StoredCount());
 			if (amount <= 0) continue;
 
-			src->cargo.MoveTo(&dest->cargo, amount, VehicleCargoList::MTA_UNLOAD, NULL);
+			// TODO:	process of moving cargo has been changed, disabling it fow now
+			// 			will need to use something like cargo.Append(_2_) for each cargo packet
+			// src->cargo.MoveTo(&dest->cargo, amount, VehicleCargoList::MTA_UNLOAD, NULL);
 		}
 	}
 
 	/* Update train weight etc., the old vehicle will be sold anyway */
-	if (part_of_chain ) new_head->ConsistChanged(true);
+	if (part_of_chain ) new_head->ConsistChanged(ConsistChangeFlags::CCF_LOADUNLOAD);
 }
 
 // TODO: fit signature to regular cmd-structure
