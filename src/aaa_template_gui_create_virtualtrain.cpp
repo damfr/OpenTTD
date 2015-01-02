@@ -39,16 +39,6 @@
 #include "aaa_template_gui_create_virtualtrain.h"
 #include "vehicle_gui.h"
 
-/**
- * Get the height of a single 'entry' in the engine lists.
- * @param type the vehicle type to get the height of
- * @return the height for the entry
- */
-uint GetEngineListHeight(VehicleType type)
-{
-	return max<uint>(FONT_HEIGHT_NORMAL + WD_MATRIX_TOP + WD_MATRIX_BOTTOM, GetVehicleHeight(type));
-}
-
 static const NWidgetPart _nested_build_vehicle_widgets[] = {
 	NWidget(NWID_HORIZONTAL),
 		NWidget(WWT_CLOSEBOX, COLOUR_GREY),

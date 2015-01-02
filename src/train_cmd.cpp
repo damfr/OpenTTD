@@ -4133,9 +4133,9 @@ Train* CmdBuildVirtualRailWagon(const Engine *e)
 	// from revision r22xxx
 	// VehicleMove(v, false);
 	// new
-	VehicleUpdateViewport(v, false);
+	//VehicleUpdateViewport(v, false);
 
-	v->First()->ConsistChanged(false);
+	v->First()->ConsistChanged(ConsistChangeFlags::CCF_ARRANGE);
 	//UpdateTrainGroupID(v->First());
 
 	CheckConsistencyOfArticulatedVehicle(v);
@@ -4203,7 +4203,7 @@ Train* CmdBuildVirtualRailVehicle(EngineID eid)
 	// from revision r22xxx
 //	VehicleMove(v, false);
 	//	new
-	VehicleUpdateViewport(v, false);
+	//VehicleUpdateViewport(v, false);
 
 	if (rvi->railveh_type == RAILVEH_MULTIHEAD) {
 		AddRearEngineToMultiheadedTrain(v);
@@ -4211,7 +4211,7 @@ Train* CmdBuildVirtualRailVehicle(EngineID eid)
 		AddArticulatedParts(v);
 	}
 
-	v->ConsistChanged(false);
+	v->ConsistChanged(ConsistChangeFlags::CCF_ARRANGE);
 	//UpdateTrainGroupID(v);
 
 	CheckConsistencyOfArticulatedVehicle(v);

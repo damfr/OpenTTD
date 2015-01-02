@@ -347,7 +347,7 @@ protected: // These functions should not be called outside acceleration code.
 };
 
 
-// TODO
+// MYGUI
 CommandCost CmdBuildRailVehicle(TileIndex, DoCommandFlag, const Engine *, uint16, Vehicle**);
 CommandCost CmdMoveRailVehicle(TileIndex, DoCommandFlag , uint32, uint32, const char *);
 CommandCost CmdMoveVirtualRailVehicle(TileIndex, DoCommandFlag, uint32, uint32, const char*);

@@ -1051,10 +1051,11 @@ SpriteID GetRotorOverrideSprite(EngineID engine, const Aircraft *v, bool info_vi
 	return group->GetResult() + (v->Next()->Next()->state % group->GetNumResults());
 }
 
-void NewVehicleResolverWrapper(ResolverObject *res, EngineID eid)
-{
-	NewVehicleResolver(res, eid, 0);
-}
+// TODO: MYGUI: not used, remove
+//void NewVehicleResolverWrapper(ResolverObject *res, EngineID eid)
+//{
+//	NewVehicleResolver(res, eid, 0);
+//}
 
 /**
  * Check if a wagon is currently using a wagon override

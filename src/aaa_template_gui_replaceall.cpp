@@ -103,19 +103,21 @@ static const NWidgetPart widgets[] = {
 	EndContainer(),
 };
 
-static const WindowDesc _template_replace_replaceall_desc(
+static WindowDesc _template_replace_replaceall_desc(
 	WDP_AUTO,
 	"template replace window",
 	400, 200,
 	WC_TEMPLATEGUI_RPLALL, WC_NONE,
-	WDF_UNCLICK_BUTTONS | WDF_CONSTRUCTION,
+	WDF_CONSTRUCTION,
 	widgets, lengthof(widgets)
 );
 
 static int CDECL EngineNumberSorter(const EngineID *a, const EngineID *b)
 {
-	int r = ListPositionOfEngine(*a) - ListPositionOfEngine(*b);
-	return r;
+	//int r = ListPositionOfEngine(*a) - ListPositionOfEngine(*b);
+	//return r;
+	// TODO: find out how to compute an engine's list position
+	return 0;
 }
 static int CDECL TrainEnginesThenWagonsSorter(const EngineID *a, const EngineID *b)
 {
@@ -142,7 +144,7 @@ private:
 	VirtTrainList *virtualTrains;
 
 public:
-	TemplateReplacementReplaceAllWindow(WindowDesc *wdesc) : Window()
+	TemplateReplacementReplaceAllWindow(WindowDesc *wdesc) : Window(wdesc)
 	{
 
 		this->CreateNestedTree(wdesc);
@@ -154,7 +156,7 @@ public:
 		this->vscroll_tr->SetStepSize(16);
 		this->vscroll_bo->SetStepSize(16);
 
-		this->FinishInitNested(wdesc, VEH_TRAIN);
+		this->FinishInitNested(VEH_TRAIN);
 
 		this->owner = _local_company;
 
