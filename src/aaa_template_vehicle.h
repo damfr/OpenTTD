@@ -81,7 +81,7 @@ public:
 
 	byte spritenum;
 	SpriteID cur_image;
-	int image_width;
+	uint32 image_width;
 	const SpriteGroup *sgroup;
 
 	TemplateVehicle(VehicleType type=VEH_INVALID,  EngineID e=INVALID_ENGINE, byte B=0, Owner=OWNER_BEGIN); // TODO:owner_begin not a good choice for the default

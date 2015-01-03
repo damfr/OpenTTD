@@ -13,11 +13,11 @@ const SaveLoad* GTD() {
 		SLE_VAR(TemplateVehicle, keep_remaining_vehicles, SLE_UINT8),
 		SLE_VAR(TemplateVehicle, refit_as_template, SLE_UINT8),
 
-		SLE_VAR(TemplateVehicle, owner, SLE_UINT8),
+		SLE_VAR(TemplateVehicle, owner, SLE_UINT32),
 		SLE_VAR(TemplateVehicle, owner_b, SLE_UINT8),
 
 		SLE_VAR(TemplateVehicle, engine_type, SLE_UINT16),
-		SLE_VAR(TemplateVehicle, cargo_type, SLE_UINT16),
+		SLE_VAR(TemplateVehicle, cargo_type, SLE_UINT8),
 		SLE_VAR(TemplateVehicle, cargo_cap, SLE_UINT16),
 		SLE_VAR(TemplateVehicle, cargo_subtype, SLE_UINT8),
 
@@ -36,7 +36,6 @@ const SaveLoad* GTD() {
 		SLE_VAR(TemplateVehicle, spritenum, SLE_UINT8),
 		SLE_VAR(TemplateVehicle, cur_image, SLE_UINT32),
 		SLE_VAR(TemplateVehicle, image_width, SLE_UINT32),
-		SLE_VAR(TemplateVehicle, sgroup, SLE_UINT32),
 
 		SLE_END()
 	};
