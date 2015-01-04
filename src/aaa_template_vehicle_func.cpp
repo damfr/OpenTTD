@@ -15,6 +15,7 @@
 #include "table/sprites.h"
 #include "table/strings.h"
 
+#include "cargoaction.h"
 #include "train.h"
 #include "company_func.h"
 #include "newgrf.h"
@@ -536,38 +537,53 @@ CommandCost TestBuyAllTemplateVehiclesInChain(TemplateVehicle *tv, TileIndex til
 }
 
 
+/** Transfer as much cargo from a given (single train) vehicle onto a chain of vehicles.
+ *  I.e., iterate over the chain from head to tail and use all available cargo capacity (w.r.t. cargo type of course)
+ *  to store the cargo from the given single vehicle.
+ *  @param old_veh:		ptr to the single vehicle, which's cargo shall be moved
+ *  @param new_head:	ptr to the head of the chain, which shall obtain old_veh's cargo
+ *  @param part_of_chain:	TODO
+ *  @return:			amount of moved cargo	TODO
+ */
 void TransferCargoForTrain(Train *old_veh, Train *new_head, bool part_of_chain)
 {
 	assert(!part_of_chain || new_head->IsPrimaryVehicle());
-	/* Loop through source parts */
-	for (Train *src = old_veh; src != NULL; src = src->Next()) {
-		if (!part_of_chain &&  src != old_veh && src != old_veh->other_multiheaded_part && !src->IsArticulatedPart()) {
-			/* Skip vehicles, which do not belong to old_veh */
-			src = src->GetLastEnginePart();
-			continue;
-		}
-		if (src->cargo_type >= NUM_CARGO || src->cargo.StoredCount() == 0) continue;
 
-		/* Find free space in the new chain */
-		for (Train *dest = new_head; dest != NULL && src->cargo.StoredCount() > 0; dest = dest->Next()) {
-			if (!part_of_chain  && dest != new_head && dest != new_head->other_multiheaded_part && !dest->IsArticulatedPart()) {
-				/* Skip vehicles, which do not belong to new_head */
-				dest = dest->GetLastEnginePart();
-				continue;
+	CargoID _cargo_type = old_veh->cargo_type;
+	byte _cargo_subtype = old_veh->cargo_subtype;
+
+	// how much cargo has to be moved (if possible)
+	uint remainingAmount = old_veh->cargo.TotalCount();
+	// each vehicle in the new chain shall be given as much of the old cargo as possible, until none is left
+	for (Train *tmp=new_head; tmp!=NULL && remainingAmount>0; tmp=tmp->GetNextUnit())
+	{
+		// TODO: rm
+		//printf("veh: %d type %d\n  cty: %d\n ccap: %d\n  ccou: %d\n", tmp->index, tmp->engine_type, tmp->cargo_type, tmp->cargo_cap, tmp->cargo.TotalCount());
+
+		if (tmp->cargo_type == _cargo_type && tmp->cargo_subtype == _cargo_subtype)
+		{
+			// calculate the free space for new cargo on the current vehicle
+			uint curCap = tmp->cargo_cap - tmp->cargo.TotalCount();
+			uint moveAmount = std::min(remainingAmount, curCap);
+			// move (parts of) the old vehicle's cargo onto the current vehicle of the new chain
+			if (moveAmount > 0)
+			{
+				old_veh->cargo.Shift(moveAmount, &tmp->cargo);
+				remainingAmount -= moveAmount;
+				// TODO: rm
+				//printf("**** moving %d packets onto %d - remaining amount: %d\n", moveAmount, tmp->index, remainingAmount);
+
 			}
-			if (dest->cargo_type != src->cargo_type) continue;
-
-			uint amount = min(src->cargo.StoredCount(), dest->cargo_cap - dest->cargo.StoredCount());
-			if (amount <= 0) continue;
-
-			// TODO:	process of moving cargo has been changed, disabling it fow now
-			// 			will need to use something like cargo.Append(_2_) for each cargo packet
-			// src->cargo.MoveTo(&dest->cargo, amount, VehicleCargoList::MTA_UNLOAD, NULL);
 		}
 	}
 
+	// TODO: needs to be implemented, too
+	// // from autoreplace_cmd.cpp : 121
+	/* Any left-overs will be thrown away, but not their feeder share. */
+	//if (src->cargo_cap < src->cargo.TotalCount()) src->cargo.Truncate(src->cargo.TotalCount() - src->cargo_cap);
+
 	/* Update train weight etc., the old vehicle will be sold anyway */
-	if (part_of_chain ) new_head->ConsistChanged(ConsistChangeFlags::CCF_LOADUNLOAD);
+	if (part_of_chain) new_head->ConsistChanged(ConsistChangeFlags::CCF_LOADUNLOAD);
 }
 
 // TODO: fit signature to regular cmd-structure
