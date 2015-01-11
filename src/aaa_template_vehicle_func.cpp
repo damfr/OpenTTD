@@ -542,12 +542,11 @@ CommandCost TestBuyAllTemplateVehiclesInChain(TemplateVehicle *tv, TileIndex til
  *  to store the cargo from the given single vehicle.
  *  @param old_veh:		ptr to the single vehicle, which's cargo shall be moved
  *  @param new_head:	ptr to the head of the chain, which shall obtain old_veh's cargo
- *  @param part_of_chain:	TODO
  *  @return:			amount of moved cargo	TODO
  */
-void TransferCargoForTrain(Train *old_veh, Train *new_head, bool part_of_chain)
+void TransferCargoForTrain(Train *old_veh, Train *new_head)
 {
-	assert(!part_of_chain || new_head->IsPrimaryVehicle());
+	assert(new_head->IsPrimaryVehicle());
 
 	CargoID _cargo_type = old_veh->cargo_type;
 	byte _cargo_subtype = old_veh->cargo_subtype;
@@ -583,7 +582,7 @@ void TransferCargoForTrain(Train *old_veh, Train *new_head, bool part_of_chain)
 	//if (src->cargo_cap < src->cargo.TotalCount()) src->cargo.Truncate(src->cargo.TotalCount() - src->cargo_cap);
 
 	/* Update train weight etc., the old vehicle will be sold anyway */
-	if (part_of_chain) new_head->ConsistChanged(ConsistChangeFlags::CCF_LOADUNLOAD);
+	new_head->ConsistChanged(ConsistChangeFlags::CCF_LOADUNLOAD);
 }
 
 // TODO: fit signature to regular cmd-structure
@@ -748,7 +747,7 @@ CommandCost CmdTemplateReplaceVehicle(Train *incoming, bool stayInDepot, DoComma
 
 	if ( new_chain && remainder_chain )
 		for ( Train *ct=remainder_chain; ct; ct=ct->GetNextUnit() )
-			TransferCargoForTrain(ct, new_chain, true);
+			TransferCargoForTrain(ct, new_chain);
 
 	// point incoming to the newly created train so that starting/stopping from the calling function can be done
 	incoming = new_chain;

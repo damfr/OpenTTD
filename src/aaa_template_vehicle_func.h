@@ -63,6 +63,6 @@ bool TemplateVehicleContainsEngineOfRailtype(const TemplateVehicle*, RailType);
 Train* CloneVirtualTrainFromTrain(const Train *);
 TemplateVehicle* CloneTemplateVehicleFromTrain(const Train *);
 
-void TransferCargoForTrain(Train*, Train*, bool);
+void TransferCargoForTrain(Train*, Train*);
 
 #endif
