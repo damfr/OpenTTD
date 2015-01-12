@@ -92,11 +92,9 @@ static CargoID _last_filter_criteria[] = {CF_ANY, CF_ANY, CF_ANY, CF_ANY};
 // Need to find out how to sort by engineid (if necessary)
 static int CDECL EngineNumberSorter(const EngineID *a, const EngineID *b)
 {
-	//int r = ListPositionOfEngine(*a) - ListPositionOfEngine(*b);
+	int r = Engine::Get(*a)->list_position - Engine::Get(*b)->list_position;
 
-	//return _internal_sort_order ? -r : r;
-	// TODO: this can only be wrong
-	return 0;
+	return _internal_sort_order ? -r : r;
 }
 
 /**

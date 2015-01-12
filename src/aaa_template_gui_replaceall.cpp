@@ -114,10 +114,9 @@ static WindowDesc _template_replace_replaceall_desc(
 
 static int CDECL EngineNumberSorter(const EngineID *a, const EngineID *b)
 {
-	//int r = ListPositionOfEngine(*a) - ListPositionOfEngine(*b);
-	//return r;
-	// TODO: find out how to compute an engine's list position
-	return 0;
+	int r = Engine::Get(*a)->list_position - Engine::Get(*b)->list_position;
+
+	return r;
 }
 static int CDECL TrainEnginesThenWagonsSorter(const EngineID *a, const EngineID *b)
 {
