@@ -1033,13 +1033,9 @@ void CallVehicleTicks()
 		bool stayInDepot = it->second;
 
 		it->first->vehstatus |= VS_STOPPED;
-		REPLACEMENT_IN_PROGRESS = true;
-
 		CmdTemplateReplaceVehicle(t, stayInDepot, DC_EXEC);
 		/* Redraw main gui for changed statistics */
 		SetWindowClassesDirty(WC_TEMPLATEGUI_MAIN);
-
-		REPLACEMENT_IN_PROGRESS = false;
 	}
 	tmpl_cur_company.Restore();
 }

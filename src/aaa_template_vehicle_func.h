@@ -7,8 +7,6 @@
 
 #include "aaa_template_vehicle.h"
 
-static bool REPLACEMENT_IN_PROGRESS = false;
-
 //void DrawTemplateVehicle(TemplateVehicle*, int, const Rect&);
 void DrawTemplateVehicle(const TemplateVehicle*, int, int, int, VehicleID, int, VehicleID);
 
