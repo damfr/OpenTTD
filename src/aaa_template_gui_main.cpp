@@ -621,7 +621,7 @@ public:
 			v = (this->templates)[i];
 
 			/* Fill the background of the current cell in a darker tone for the currently selected template */
-			if ( this->selected_template_index == i ) {
+			if ( this->selected_template_index == (int32)i ) {
 				GfxFillRect(left, y, right, y+this->line_height, _colour_gradient[COLOUR_GREY][3]);
 			}
 
