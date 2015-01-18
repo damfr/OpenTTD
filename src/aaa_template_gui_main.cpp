@@ -398,7 +398,6 @@ public:
 				break;
 			case TRW_WIDGET_TMPL_BUTTONS_RPLALL: {
 				ShowTemplateReplaceAllGui();
-				//testfunc();
 				break;
 			}
 			case TRW_WIDGET_TRAIN_RAILTYPE_DROPDOWN: // Railtype selection dropdown menu
@@ -498,32 +497,7 @@ public:
 		this->groups.ForceRebuild();
 		this->templates.ForceRebuild();
 	}
-	void testfunc() {
-		// replace 764 by 775
-		TemplateVehicle *tmp = (TemplateVehicle*)this->templates[1];
-		Train *t = VirtualTrainFromTemplateVehicle(tmp);
 
-		for ( Train *tt = t; tt; ) {
-			if ( tt->engine_type == 764 ) {
-				Train *n = CmdBuildVirtualRailVehicle(775);
-				// move new after old
-				CommandCost cost = CmdMoveRailVehicle(0, DC_EXEC, n->index | (1<<21), tt->index, 0);
-				// move old away
-				CommandCost cost2 = CmdMoveRailVehicle(0, DC_EXEC, tt->index | (1<<21), INVALID_VEHICLE, 0);
-				tt = n;
-			}
-			else
-				tt = tt->GetNextUnit();
-		}
-
-		delete tmp;
-		TemplateVehicle *ntv = TemplateVehicleFromVirtualTrain(t);
-		BuildTemplateGuiList(&this->templates, this->vscroll[1], this->owner, this->sel_railtype);
-		this->SetDirty();
-
-		printf("finished\n");
-
-	}
 	/** For a given group (id) find the template that is issued for template replacement for this group and return this template's index
 	 *  from the gui list */
 	short FindTemplateIndexForGroup(short gid) const
