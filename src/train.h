@@ -347,14 +347,13 @@ protected: // These functions should not be called outside acceleration code.
 };
 
 
-// MYGUI
-CommandCost CmdBuildRailVehicle(TileIndex, DoCommandFlag, const Engine *, uint16, Vehicle**);
+// TODO: why is this defined here ?
+// 		 should they be forward-declared where they are needed
 CommandCost CmdMoveRailVehicle(TileIndex, DoCommandFlag , uint32, uint32, const char *);
 CommandCost CmdMoveVirtualRailVehicle(TileIndex, DoCommandFlag, uint32, uint32, const char*);
 
 Train* CmdBuildVirtualRailWagon(const Engine*);
 Train* CmdBuildVirtualRailVehicle(EngineID);
-CommandCost CmdSellRailWagon(DoCommandFlag, Vehicle*, uint16, uint32);
 
 #define FOR_ALL_TRAINS(var) FOR_ALL_VEHICLES_OF_TYPE(Train, var)
 

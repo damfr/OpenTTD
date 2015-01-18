@@ -173,7 +173,7 @@ public:
 
 	~TemplateReplacementReplaceAllWindow()
 	{
-		for ( int i=0; i<this->virtualTrains->Length(); i++ )
+		for ( uint i=0; i<this->virtualTrains->Length(); ++i )
 			delete (*this->virtualTrains)[i]->vt;
 		SetWindowClassesDirty(WC_TEMPLATEGUI_MAIN);
 	}
@@ -263,7 +263,7 @@ public:
 				// first delete all current templates
 				this->DeleteAllTemplateTrains();
 				// then build a new list from the current virtual trains
-				for ( int i=0; i<this->virtualTrains->Length(); i++ ) {
+				for ( uint i=0; i<this->virtualTrains->Length(); i++ ) {
 					// the relevant info struct
 					VirtTrainInfo *vti = (*this->virtualTrains)[i];
 					// setup template from contained train
@@ -369,7 +369,7 @@ public:
 	{
 // 		printf("called for eid: %d\n", eid);
 
-		for ( int i=0; i<this->virtualTrains->Length(); i++ ) {
+		for ( uint i=0; i<this->virtualTrains->Length(); i++ ) {
 			const Train *tmp = (*this->virtualTrains)[i]->vt;
 // 			printf("checking train:\n"); pvt(tmp);
 			for ( ; tmp; tmp=tmp->Next() )
@@ -384,7 +384,7 @@ public:
 	// after 'replace all' we need to replace the currently used templates as well
 	void RebuildIncludedTemplateList() {
 		// first remove all engine ids
-		for ( int i=0; i<this->engines_left->Length(); i++ ) {
+		for ( uint i=0; i<this->engines_left->Length(); i++ ) {
 			EngineID entry = (*this->engines_left)[i];
 			if ( !VirtualTrainHasEngineID(entry) )
 				this->engines_left->Erase(&((*this->engines_left)[i]));
@@ -406,7 +406,7 @@ public:
 		if ( this->virtualTrains->Length() == 0 )
 			this->GenerateVirtualTrains();
 
-		for ( int i=0; i<this->virtualTrains->Length(); i++ ) {
+		for ( uint i=0; i<this->virtualTrains->Length(); i++ ) {
 			Train *tmp = (*this->virtualTrains)[i]->vt;
 			while ( tmp ) {
 				if ( tmp->engine_type == eid_orig ) {

@@ -433,7 +433,7 @@ public:
 	{
 		GetDepotVehiclePtData gdvp = { NULL, NULL };
 		const Vehicle *v = NULL;
-		DepotGUIAction mode = this->GetVehicleFromDepotWndPt(x, y, &v, &gdvp);
+		this->GetVehicleFromDepotWndPt(x, y, &v, &gdvp);
 
 		v = gdvp.wagon;
 

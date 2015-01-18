@@ -64,7 +64,7 @@ void ptv(TemplateVehicle* tv) {
 void pvt (const Train *printme) {
 	for ( const Train *tmp = printme; tmp; tmp=tmp->Next() ) {
 		if ( tmp->index <= 0 ) {
-			printf("train has weird index: %d %d %x\n", tmp->index, tmp->engine_type, tmp);
+			printf("train has weird index: %d %d %x\n", tmp->index, tmp->engine_type, (uint)tmp);
 			return;
 		}
 		printf("eid:%3d  index:%2d  subtype:%2d  vehstat: %d  cargo_t: %d   cargo_sub: %d  ref:%x\n", tmp->engine_type, tmp->index, tmp->subtype, tmp->vehstatus, tmp->cargo_type, tmp->cargo_subtype, (uint32)tmp);
@@ -265,15 +265,18 @@ TemplateVehicle *DeleteTemplateVehicle(TemplateVehicle *todel)
 	return cur;
 }
 
+// forward declaration, defined in train_cmd.cpp
+CommandCost CmdSellRailWagon(DoCommandFlag, Vehicle*, uint16, uint32);
+
 Train* DeleteVirtualTrain(Train *chain, Train *to_del) {
 	if ( chain != to_del ) {
-		CommandCost sellc = CmdSellRailWagon(DC_EXEC, to_del, 0, 0);
+		CmdSellRailWagon(DC_EXEC, to_del, 0, 0);
 		return chain;
 	}
 	else {
 		chain = chain->GetNextUnit();
 		//CommandCost cost=CmdMoveRailVehicle(0, DC_EXEC, (1<<20) | (1<<21) | to_del->index, INVALID_VEHICLE, 0);
-		CommandCost sellc = CmdSellRailWagon(DC_EXEC, to_del, 0, 0);
+		CmdSellRailWagon(DC_EXEC, to_del, 0, 0);
 		return chain;
 	}
 }
