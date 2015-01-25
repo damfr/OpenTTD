@@ -495,7 +495,6 @@ CommandCost CmdRefitVehicle(TileIndex tile, DoCommandFlag flags, uint32 p1, uint
 			InvalidateWindowClassesData(GetWindowClassForVehicleType(v->type), 0);
 		}
 		/* virtual vehicles get their cargo changed by the TemplateCreateWindow, so set this dirty instead of a depot window */
-		//if ( HasBit(v->subtype, GVSF_VIRTUAL) ) SetWindowDirty(WC_CREATE_TEMPLATE, -1); // MYGUI
 		if ( HasBit(v->subtype, GVSF_VIRTUAL) ) SetWindowClassesDirty(WC_CREATE_TEMPLATE);
 		else SetWindowDirty(WC_VEHICLE_DEPOT, front->tile);
 	} else {

@@ -107,10 +107,6 @@ void UnloadWagonOverrides(Engine *e);
 void AlterVehicleListOrder(EngineID engine, uint target);
 void CommitVehicleListOrderChanges();
 
-// TODO: MYGUI: not used, remove
-// struct ResolverObject;
-// void NewVehicleResolverWrapper(ResolverObject*, EngineID);
-
 EngineID GetNewEngineID(const GRFFile *file, VehicleType type, uint16 internal_id);
 
 #endif /* NEWGRF_ENGINE_H */

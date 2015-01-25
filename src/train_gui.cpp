@@ -21,7 +21,7 @@
 
 #include "safeguards.h"
 
-// MYGUI_NOEND
+// TODO rm, check if there are any printfs left here
 #include <stdio.h>
 
 /**
@@ -61,7 +61,7 @@ void CcBuildWagon(const CommandCost &result, TileIndex tile, uint32 p1, uint32 p
  * @param selection Selected vehicle that is dragged.
  * @return The width of the highlight mark.
  */
-// MYGUI_NOEND previously static
+// TODO test: previously static, make static again
 int HighlightDragPosition(int px, int max_width, VehicleID selection)
 {
 	bool rtl = _current_text_dir == TD_RTL;

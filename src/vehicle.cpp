@@ -57,7 +57,6 @@
 
 #include "safeguards.h"
 
-// MYGUI
 #include "aaa_template_vehicle_func.h"
 
 #define GEN_HASH(x, y) ((GB((y), 6 + ZOOM_LVL_SHIFT, 6) << 6) + GB((x), 7 + ZOOM_LVL_SHIFT, 6))
@@ -838,7 +837,7 @@ Vehicle::~Vehicle()
  */
 void VehicleEnteredDepotThisTick(Vehicle *v)
 {
-	/* Template Replacement Setup stuff */ // MYGUI
+	/* Template Replacement Setup stuff */
 	bool stayInDepot = v->current_order.GetDepotActionType();
 	TemplateReplacement *tr = GetTemplateReplacementByGroupID(v->group_id);
 	if ( tr ) {

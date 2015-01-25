@@ -400,7 +400,7 @@ struct RefitWindow : public Window {
 	VehicleID selected_vehicle;  ///< First vehicle in the current selection.
 	uint8 num_vehicles;          ///< Number of selected vehicles.
 	bool auto_refit;             ///< Select cargo for auto-refitting.
-	bool is_virtual_train;       ///< MYGUI
+	bool is_virtual_train;       ///< TemplateReplacement, whether the selected vehicle is virtual
 
 	/**
 	 * Collects all (cargo, subcargo) refit options of a vehicle chain.

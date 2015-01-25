@@ -41,7 +41,7 @@
 
 #include "safeguards.h"
 
-#include "engine_func.h" //MYGUI
+#include "engine_func.h"
 
 static Track ChooseTrainTrack(Train *v, TileIndex tile, DiagDirection enterdir, TrackBits tracks, bool force_res, bool *got_reservation, bool mark_stuck);
 static bool TrainCheckIfLineEnds(Train *v, bool reverse = true);
@@ -1156,7 +1156,7 @@ static void NormaliseTrainHead(Train *head)
  * @param p1 various bitstuffed elements
  * - p1 (bit  0 - 19) source vehicle index
  * - p1 (bit      20) move all vehicles following the source vehicle
- * - p1 (bit	  21) this is a virtual vehicle (for creating TemplateVehicles) MYGUI
+ * - p1 (bit	  21) this is a virtual vehicle (for creating TemplateVehicles)
  * @param p2 what wagon to put the source wagon AFTER, XXX - INVALID_VEHICLE to make a new line
  * @param text unused
  * @return the cost of this operation or an error
@@ -1221,12 +1221,12 @@ CommandCost CmdMoveRailVehicle(TileIndex tile, DoCommandFlag flags, uint32 p1, u
 	if (!move_chain && dst != NULL && dst->IsRearDualheaded() && src == dst->other_multiheaded_part) return CommandCost();
 
 	/* Check if all vehicles in the source train are stopped inside a depot. */
-	/* Do this check only if the vehicle to be moved is non-virtual */ //MYGUI
+	/* Do this check only if the vehicle to be moved is non-virtual */
 	if ( !HasBit(p1, 21) )
 		if (!src_head->IsStoppedInDepot()) return_cmd_error(STR_ERROR_TRAINS_CAN_ONLY_BE_ALTERED_INSIDE_A_DEPOT);
 
 	/* Check if all vehicles in the destination train are stopped inside a depot. */
-	/* Do this check only if the destination vehicle is non-virtual */ //MYGUI
+	/* Do this check only if the destination vehicle is non-virtual */
 	if ( !HasBit(p1, 21) )
 		if (dst_head != NULL && !dst_head->IsStoppedInDepot()) return_cmd_error(STR_ERROR_TRAINS_CAN_ONLY_BE_ALTERED_INSIDE_A_DEPOT);
 
@@ -1337,7 +1337,7 @@ CommandCost CmdMoveRailVehicle(TileIndex tile, DoCommandFlag flags, uint32 p1, u
 		if (dst_head != NULL) dst_head->First()->MarkDirty();
 
 		/* We are undoubtedly changing something in the depot and train list. */
-		/* But only if the moved vehicle is not virtual */ // MYGUI
+		/* But only if the moved vehicle is not virtual */
 		if ( !HasBit(src->subtype, GVSF_VIRTUAL) ) {
 			InvalidateWindowData(WC_VEHICLE_DEPOT, src->tile);
 			InvalidateWindowClassesData(WC_TRAINS_LIST, 0);
@@ -1422,7 +1422,7 @@ CommandCost CmdSellRailWagon(DoCommandFlag flags, Vehicle *t, uint16 data, uint3
 		NormaliseTrainHead(new_head);
 
 		/* We are undoubtedly changing something in the depot and train list. */
-		/* Unless its a virtual train */ //MYGUI
+		/* Unless its a virtual train */
 		if ( !HasBit(v->subtype, GVSF_VIRTUAL) ) {
 			InvalidateWindowData(WC_VEHICLE_DEPOT, v->tile);
 			InvalidateWindowClassesData(WC_TRAINS_LIST, 0);
@@ -3744,7 +3744,8 @@ static bool TrainCheckIfLineEnds(Train *v, bool reverse)
 	return true;
 }
 
-// MYGUI
+/* Calculate the summed up value of all parts of a train */
+// TODO  move into the appropriate train impl file (?)
 Money Train::CalculateCurrentOverallValue() const
 {
 	Money ovr_value = 0;
@@ -3754,7 +3755,6 @@ Money Train::CalculateCurrentOverallValue() const
 	} while ( (v=v->GetNextVehicle()) != NULL );
 	return ovr_value;
 }
-// ENDMYGUI
 
 static bool TrainLocoHandler(Train *v, bool mode)
 {
@@ -4050,28 +4050,10 @@ Trackdir Train::GetVehicleTrackdir() const
 	return TrackDirectionToTrackdir(FindFirstTrack(this->track), this->direction);
 }
 
-// MYGUI inserted as global functions (previously only member funcitons)
-/*SpriteID GetImage(Train *t)
-{
-	Direction direction = DIR_W;
-	uint8 spritenum = t->spritenum;
-	SpriteID sprite;
 
-	if (HasBit(t->flags, VRF_REVERSE_DIRECTION)) direction = ReverseDir(direction);
-
-	if (is_custom_sprite(spritenum)) {
-		sprite = GetCustomVehicleSprite(t, (Direction)(direction + 4 * IS_CUSTOM_SECONDHEAD_SPRITE(spritenum)));
-		if (sprite != 0) return sprite;
-
-		spritenum = Engine::Get(t->engine_type)->original_image_index;
-	}
-
-	sprite = GetDefaultTrainSprite(spritenum, direction);
-
-	if (t->cargo.Count() >= t->cargo_cap / 2U) sprite += _wagon_full_adder[spritenum];
-
-	return sprite;
-}*/
+/* Get the pixel-width of the image that is used for the train vehicle
+ * @return:	the image width number in pixel
+ */
 int GetDisplayImageWidth(Train *t, Point *offset)
 {
 	int reference_width = TRAININFO_DEFAULT_VEHICLE_WIDTH;

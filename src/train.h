@@ -123,9 +123,7 @@ struct Train FINAL : public GroundVehicle<Train, VEH_TRAIN> {
 	bool Tick();
 	void OnNewDay();
 	uint Crash(bool flooded = false);
-	// MYGUI
 	Money CalculateCurrentOverallValue() const;
-	// ENDMYGUI
 	Trackdir GetVehicleTrackdir() const;
 	TileIndex GetOrderStationLocation(StationID station);
 	bool FindClosestDepot(TileIndex *location, DestinationID *destination, bool *reverse);
@@ -166,7 +164,9 @@ struct Train FINAL : public GroundVehicle<Train, VEH_TRAIN> {
 		return v;
 	}
 
-	// MYGUI
+	/* Get the last vehicle of a chain
+	 * @return pointer the last vehicle in a chain
+	 */
 	inline Train *GetLastUnit() {
 		Train *tmp = this;
 		while ( tmp->GetNextUnit() ) tmp = tmp->GetNextUnit();

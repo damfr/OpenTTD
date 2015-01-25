@@ -35,7 +35,6 @@
 
 #include "table/strings.h"
 
-// MYGUI
 #include "aaa_template_gui_create_virtualtrain.h"
 #include "vehicle_gui.h"
 
@@ -428,8 +427,7 @@ struct BuildVirtualTrainWindow : Window {
 	byte cargo_filter_criteria;                 ///< Selected cargo filter
 	int details_height;                         ///< Minimal needed height of the details panels (found so far).
 	Scrollbar *vscroll;
-	// MYGUI
-	Train **virtual_train;
+	Train **virtual_train;						///< the virtual train that is currently being created
 	bool *noticeParent;
 
 	BuildVirtualTrainWindow(WindowDesc *desc, Train **vt, bool *notice) : Window(desc)
