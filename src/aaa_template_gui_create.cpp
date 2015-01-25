@@ -11,7 +11,6 @@
 #include "core/geometry_func.hpp"
 #include "table/sprites.h"
 #include "table/strings.h"
-// since setobjtoplacewnd() TODO: del unnecessary
 #include "viewport_func.h"
 #include "window_func.h"
 #include "gui.h"
@@ -28,7 +27,6 @@
 #include "window_gui.h"
 #include "vehiclelist.h"
 #include "order_backup.h"
-//
 #include "group.h"
 #include "company_base.h"
 
@@ -37,10 +35,6 @@
 #include "aaa_template_vehicle_func.h"
 
 #include "train.h"
-
-// TODO: rm
-
-//Company *_cme = Company::Get(0))
 
 class TemplateReplaceWindow;
 

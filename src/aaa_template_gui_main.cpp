@@ -275,9 +275,8 @@ public:
 	virtual void SetStringParameters(int widget) const
 	{
 		switch (widget) {
-			// TODO: rm
 			case TRW_CAPTION:
-				SetDParam(0, STR_REPLACE_VEHICLE_TRAIN + this->window_number);
+				SetDParam(0, STR_TMPL_RPL_TITLE);
 				break;
 		}
 	}
