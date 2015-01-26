@@ -284,9 +284,6 @@ public:
 
 	virtual void DrawWidget(const Rect &r, int widget) const
 	{
-		// TODO: why -1 ??
-		deleteIllegalTemplateReplacements(-1);
-
 		switch (widget) {
 			case TRW_WIDGET_TOP_MATRIX: {
 				DrawAllGroupsFunction(this->line_height, r);
