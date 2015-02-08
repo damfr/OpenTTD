@@ -71,10 +71,8 @@ void pvt (const Train *printme) {
 	}
 }
 
-// TODO: move this into main_gui.cpp
 void BuildTemplateGuiList(GUITemplateList *list, Scrollbar *vscroll, Owner oid, RailType railtype)
 {
-	//if (!list->NeedRebuild()) return; // TODO: reactivate ?
 	list->Clear();
 	const TemplateVehicle *tv;
 
@@ -145,7 +143,7 @@ inline void SetupTemplateVehicleFromVirtual(TemplateVehicle *tmp, TemplateVehicl
 	tmp->image_width = virt->GetDisplayImageWidth(p);
 }
 
-// create a new virtual train as clone of a real train TODO
+// create a new virtual train as clone of a real train
 Train* CloneVirtualTrainFromTrain(const Train *clicked)
 {
 	if ( !clicked ) return 0;
@@ -179,7 +177,6 @@ TemplateVehicle* CloneTemplateVehicleFromTrain(const Train *t)
 
 	int len = CountVehiclesInChain(clicked);
 	if ( !TemplateVehicle::CanAllocateItem(len) )
-		// TODO: error message box ?
 		return 0;
 
 	TemplateVehicle *tmp, *prev=0;
@@ -202,7 +199,6 @@ TemplateVehicle* TemplateVehicleFromVirtualTrain(Train *virt)
 
 	int len = CountVehiclesInChain(virt);
 	if ( !TemplateVehicle::CanAllocateItem(len) )
-		// TODO: error message box ?
 		return 0;
 
 	TemplateVehicle *tmp, *prev=0;
@@ -339,7 +335,6 @@ Train* ChainContainsEngine(EngineID eid, Train *chain) {
 }
 
 // has O(n^2)
-// TODO: switch to trains
 Train* DepotContainsEngine(TileIndex tile, EngineID eid, Train *not_in=0) {
 	Train *t;
 	FOR_ALL_TRAINS(t) {
@@ -357,7 +352,6 @@ Train* DepotContainsEngine(TileIndex tile, EngineID eid, Train *not_in=0) {
 }
 
 void CopyStatus(Train *from, Train *to) {
-	// TODO: remove ? used ?
 	//to->group_id = from->group_id;
 	DoCommand(to->tile, from->group_id, to->index, DC_EXEC, CMD_ADD_VEHICLE_GROUP);
 	to->cargo_type = from->cargo_type;
@@ -559,9 +553,6 @@ void TransferCargoForTrain(Train *old_veh, Train *new_head)
 	// each vehicle in the new chain shall be given as much of the old cargo as possible, until none is left
 	for (Train *tmp=new_head; tmp!=NULL && remainingAmount>0; tmp=tmp->GetNextUnit())
 	{
-		// TODO: rm
-		//printf("veh: %d type %d\n  cty: %d\n ccap: %d\n  ccou: %d\n", tmp->index, tmp->engine_type, tmp->cargo_type, tmp->cargo_cap, tmp->cargo.TotalCount());
-
 		if (tmp->cargo_type == _cargo_type && tmp->cargo_subtype == _cargo_subtype)
 		{
 			// calculate the free space for new cargo on the current vehicle
@@ -572,9 +563,6 @@ void TransferCargoForTrain(Train *old_veh, Train *new_head)
 			{
 				old_veh->cargo.Shift(moveAmount, &tmp->cargo);
 				remainingAmount -= moveAmount;
-				// TODO: rm
-				//printf("**** moving %d packets onto %d - remaining amount: %d\n", moveAmount, tmp->index, remainingAmount);
-
 			}
 		}
 	}

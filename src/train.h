@@ -347,8 +347,6 @@ protected: // These functions should not be called outside acceleration code.
 };
 
 
-// TODO: why is this defined here ?
-// 		 should they be forward-declared where they are needed
 CommandCost CmdMoveRailVehicle(TileIndex, DoCommandFlag , uint32, uint32, const char *);
 CommandCost CmdMoveVirtualRailVehicle(TileIndex, DoCommandFlag, uint32, uint32, const char*);
 

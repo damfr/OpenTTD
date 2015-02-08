@@ -314,16 +314,13 @@ public:
 			templateNotice = false;
 			this->SetDirty();
 		}
-		// TODO: rm if ?
-		if (this->window_number == VEH_TRAIN) {
-			/* sets the colour of that art thing */
-			// TODO: use stored company for colors
-			this->GetWidget<NWidgetCore>(TRW_WIDGET_TRAIN_FLUFF_LEFT)->colour  = _company_colours[_local_company];
-			this->GetWidget<NWidgetCore>(TRW_WIDGET_TRAIN_FLUFF_RIGHT)->colour = _company_colours[_local_company];
+		/* sets the colour of that art thing */
+		this->GetWidget<NWidgetCore>(TRW_WIDGET_TRAIN_FLUFF_LEFT)->colour  = _company_colours[_local_company];
+		this->GetWidget<NWidgetCore>(TRW_WIDGET_TRAIN_FLUFF_RIGHT)->colour = _company_colours[_local_company];
 
-			/* Show the selected railtype in the pulldown menu */
-			this->GetWidget<NWidgetCore>(TRW_WIDGET_TRAIN_RAILTYPE_DROPDOWN)->widget_data = GetRailTypeInfo(sel_railtype)->strings.replace_text;
-		}
+		/* Show the selected railtype in the pulldown menu */
+		this->GetWidget<NWidgetCore>(TRW_WIDGET_TRAIN_RAILTYPE_DROPDOWN)->widget_data = GetRailTypeInfo(sel_railtype)->strings.replace_text;
+
 		this->DrawWidgets();
 	}
 
