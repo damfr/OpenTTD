@@ -168,7 +168,8 @@ static WindowDesc _replace_rail_vehicle_desc(
 	WDP_AUTO,
 	"template replace window",
 	456, 156,
-	WC_TEMPLATEGUI_MAIN, WC_NONE,					// TODO change wc_replace_vehicle
+	WC_TEMPLATEGUI_MAIN,
+	WC_NONE,					// parent window class
 	WDF_CONSTRUCTION,
 	_widgets, lengthof(_widgets)
 );
@@ -275,9 +276,8 @@ public:
 	virtual void SetStringParameters(int widget) const
 	{
 		switch (widget) {
-			// TODO: rm
 			case TRW_CAPTION:
-				SetDParam(0, STR_REPLACE_VEHICLE_TRAIN + this->window_number);
+				SetDParam(0, STR_TMPL_RPL_TITLE);
 				break;
 		}
 	}
@@ -302,7 +302,6 @@ public:
 
 	virtual void OnPaint()
 	{
-		// TODO: only temporary because of allreplacement
 		BuildTemplateGuiList(&this->templates, this->vscroll[1], this->owner, this->sel_railtype);
 
 		this->BuildGroupList(_local_company);
@@ -313,16 +312,13 @@ public:
 			templateNotice = false;
 			this->SetDirty();
 		}
-		// TODO: rm if ?
-		if (this->window_number == VEH_TRAIN) {
-			/* sets the colour of that art thing */
-			// TODO: use stored company for colors
-			this->GetWidget<NWidgetCore>(TRW_WIDGET_TRAIN_FLUFF_LEFT)->colour  = _company_colours[_local_company];
-			this->GetWidget<NWidgetCore>(TRW_WIDGET_TRAIN_FLUFF_RIGHT)->colour = _company_colours[_local_company];
+		/* sets the colour of that art thing */
+		this->GetWidget<NWidgetCore>(TRW_WIDGET_TRAIN_FLUFF_LEFT)->colour  = _company_colours[_local_company];
+		this->GetWidget<NWidgetCore>(TRW_WIDGET_TRAIN_FLUFF_RIGHT)->colour = _company_colours[_local_company];
 
-			/* Show the selected railtype in the pulldown menu */
-			this->GetWidget<NWidgetCore>(TRW_WIDGET_TRAIN_RAILTYPE_DROPDOWN)->widget_data = GetRailTypeInfo(sel_railtype)->strings.replace_text;
-		}
+		/* Show the selected railtype in the pulldown menu */
+		this->GetWidget<NWidgetCore>(TRW_WIDGET_TRAIN_RAILTYPE_DROPDOWN)->widget_data = GetRailTypeInfo(sel_railtype)->strings.replace_text;
+
 		this->DrawWidgets();
 	}
 
@@ -420,7 +416,6 @@ public:
 				}
 				break;
 			}
-			// TODO: start button dependent on selected template ?
 			case TRW_WIDGET_START: {
 				if ( this->selected_template_index >= 0 && this->selected_group_index >= 0) {
 					uint32 tv_index = ((this->templates)[selected_template_index])->index;

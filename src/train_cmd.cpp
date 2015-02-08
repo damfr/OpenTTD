@@ -3745,7 +3745,6 @@ static bool TrainCheckIfLineEnds(Train *v, bool reverse)
 }
 
 /* Calculate the summed up value of all parts of a train */
-// TODO  move into the appropriate train impl file (?)
 Money Train::CalculateCurrentOverallValue() const
 {
 	Money ovr_value = 0;

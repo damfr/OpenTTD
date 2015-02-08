@@ -11,7 +11,6 @@
 #include "core/geometry_func.hpp"
 #include "table/sprites.h"
 #include "table/strings.h"
-// since setobjtoplacewnd() TODO: del unnecessary
 #include "viewport_func.h"
 #include "window_func.h"
 #include "gui.h"
@@ -28,7 +27,6 @@
 #include "window_gui.h"
 #include "vehiclelist.h"
 #include "order_backup.h"
-//
 #include "group.h"
 #include "company_base.h"
 
@@ -37,10 +35,6 @@
 #include "aaa_template_vehicle_func.h"
 
 #include "train.h"
-
-// TODO: rm
-
-//Company *_cme = Company::Get(0))
 
 class TemplateReplaceWindow;
 
@@ -90,7 +84,7 @@ static WindowDesc _template_create_window_desc(
 	"template create window",		// const char* ini_key
 	456, 100,						// window size
 	WC_CREATE_TEMPLATE,				// window class
-	WC_NONE,						// parent window class TODO change wc_replace_vehicle
+	WC_TEMPLATEGUI_MAIN,			// parent window class
 	WDF_CONSTRUCTION,				// window flags
 	_widgets, lengthof(_widgets)	// widgets + num widgets
 );

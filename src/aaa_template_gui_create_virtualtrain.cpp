@@ -87,8 +87,6 @@ static CargoID _last_filter_criteria[] = {CF_ANY, CF_ANY, CF_ANY, CF_ANY};
  * @param *b second engine to compare
  * @return for descending order: returns < 0 if a < b and > 0 for a > b. Vice versa for ascending order and 0 for equal
  */
-// TODO: disabled because the ListPositionOfEngine is no longer defined in newgrf_engine.h
-// Need to find out how to sort by engineid (if necessary)
 static int CDECL EngineNumberSorter(const EngineID *a, const EngineID *b)
 {
 	int r = Engine::Get(*a)->list_position - Engine::Get(*b)->list_position;
@@ -313,8 +311,7 @@ static int CDECL TrainEnginesThenWagonsSorter(const EngineID *a, const EngineID 
 	return _internal_sort_order ? -r : r;
 }
 
-// TODO: make this single-dim
-
+/** Sort functions for the vehicle sort criteria, for each vehicle type. */
 static EngList_SortTypeFunction * const _sorter[][11] = {{
 	/* Trains */
 	&EngineNumberSorter,
@@ -432,7 +429,7 @@ struct BuildVirtualTrainWindow : Window {
 
 	BuildVirtualTrainWindow(WindowDesc *desc, Train **vt, bool *notice) : Window(desc)
 	{
-		this->vehicle_type = VEH_TRAIN; // TODO change type to VEH_TRAIN everywhere
+		this->vehicle_type = VEH_TRAIN;
 		this->window_number = 0;//tile == INVALID_TILE ? (int)type : tile;
 
 		this->sel_engine      = INVALID_ENGINE;
@@ -589,7 +586,6 @@ struct BuildVirtualTrainWindow : Window {
 		EngList_SortPartial(&this->eng_list, _sorter[0][this->sort_criteria], num_engines, num_wagons);
 	}
 
-	// TODO: cleanup this func
 	/* Generate the list of vehicles */
 	void GenerateBuildList()
 	{
@@ -816,7 +812,7 @@ static WindowDesc _build_vehicle_desc(
 	"template create virtual train",// const char* ini_key
 	240, 268,						// window size
 	WC_BUILD_VIRTUAL_TRAIN,			// window class
-	WC_NONE,						// parent window class TODO change wc_replace_vehicle
+	WC_CREATE_TEMPLATE,				// parent window class
 	WDF_CONSTRUCTION,				// window flags
 	_nested_build_vehicle_widgets, lengthof(_nested_build_vehicle_widgets)	// widgets + num widgets
 );

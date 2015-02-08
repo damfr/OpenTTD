@@ -1,6 +1,8 @@
 #ifndef TEMPLATE_VEH_H
 #define TEMPLATE_VEH_H
 
+#include "company_func.h"
+
 #include "vehicle_type.h"
 #include "vehicle_base.h"
 #include "vehicle_func.h"
@@ -40,7 +42,6 @@ extern TemplatePool _template_pool;
 /// listing/sorting templates
 typedef GUIList<const TemplateVehicle*> GUITemplateList;
 
-/* TODO: rearrange attribs -.- care fore saveload as well */
 struct TemplateVehicle : TemplatePool::PoolItem<&_template_pool>, BaseVehicle {
 private:
 	TemplateVehicle *next;                      ///< pointer to the next vehicle in the chain
@@ -84,7 +85,7 @@ public:
 	uint32 image_width;
 	const SpriteGroup *sgroup;
 
-	TemplateVehicle(VehicleType type=VEH_INVALID,  EngineID e=INVALID_ENGINE, byte B=0, Owner=OWNER_BEGIN); // TODO:owner_begin not a good choice for the default
+	TemplateVehicle(VehicleType type=VEH_INVALID,  EngineID e=INVALID_ENGINE, byte B=0, Owner=_local_company);
 	TemplateVehicle(EngineID, RailVehicleInfo*);
 	TemplateVehicle(EngineID eid) {
 		next=0;
@@ -105,7 +106,6 @@ public:
 	void SetPrev(TemplateVehicle*);
 	void SetFirst(TemplateVehicle*);
 
-	// TODO
 	TemplateVehicle* GetNextUnit() const;
 	TemplateVehicle* GetPrevUnit();
 

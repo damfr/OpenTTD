@@ -788,7 +788,6 @@ public:
 				switch (index) {
 					case ADI_TEMPLATE_REPLACE: // TemplateReplace Window
 						if ( vli.vtype == VEH_TRAIN )
-							// TODO before we used vli.company in the main gui, maybe retrieve it here and pass it as param to the gui ?
 							ShowTemplateReplaceWindow(this->unitnumber_digits, this->resize.step_height);
 						break;
 					case ADI_REPLACE: // Replace window
