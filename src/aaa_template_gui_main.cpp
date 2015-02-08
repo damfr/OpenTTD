@@ -421,7 +421,6 @@ public:
 				}
 				break;
 			}
-			// TODO: start button dependent on selected template ?
 			case TRW_WIDGET_START: {
 				if ( this->selected_template_index >= 0 && this->selected_group_index >= 0) {
 					uint32 tv_index = ((this->templates)[selected_template_index])->index;
