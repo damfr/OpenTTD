@@ -304,7 +304,6 @@ public:
 
 	virtual void OnPaint()
 	{
-		// TODO: only temporary because of allreplacement
 		BuildTemplateGuiList(&this->templates, this->vscroll[1], this->owner, this->sel_railtype);
 
 		this->BuildGroupList(_local_company);
