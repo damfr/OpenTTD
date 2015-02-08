@@ -266,7 +266,7 @@ public:
 					for ( const Train *tmp=this->virtual_train; tmp; tmp=tmp->Next() )
 						cargo_caps[tmp->cargo_type] += tmp->cargo_cap;
 					int y = r.top+24;
-					for (CargoID i = 0; i < NUM_CARGO; i++) {
+					for (CargoID i = 0; i < NUM_CARGO; ++i) {
 						if ( cargo_caps[i] > 0 ) {
 							SetDParam(0, i);
 							SetDParam(1, cargo_caps[i]);

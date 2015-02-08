@@ -503,7 +503,7 @@ public:
 		if ( !tr )
 			return -1;
 
-		for ( uint32 i=0; i<this->templates.Length(); i++ )
+		for ( uint32 i=0; i<this->templates.Length(); ++i )
 			if ( templates[i]->index == tr->sel_template )
 				return i;
 		return -1;
@@ -559,7 +559,7 @@ public:
 		int max = min(this->vscroll[0]->GetPosition() + this->vscroll[0]->GetCapacity(), this->groups.Length());
 
 		/* Then treat all groups defined by/for the current company */
-		for ( int i=this->vscroll[0]->GetPosition(); i<max; i++ ) {
+		for ( int i=this->vscroll[0]->GetPosition(); i<max; ++i ) {
 			const Group *g = (this->groups)[i];
 			short g_id = g->index;
 
@@ -688,7 +688,7 @@ public:
 		for ( ; tmp; tmp=tmp->Next() )
 			cargo_caps[tmp->cargo_type] += tmp->cargo_cap;
 		int y = top;
-		for (CargoID i = 0; i < NUM_CARGO; i++) {
+		for (CargoID i = 0; i < NUM_CARGO; ++i) {
 			if ( cargo_caps[i] > 0 ) {
 				count_rows++;
 				SetDParam(0, i);

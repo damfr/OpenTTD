@@ -504,7 +504,7 @@ struct BuildVirtualTrainWindow : Window {
 		this->cargo_filter_criteria = 0;
 
 		/* Find the last cargo filter criteria. */
-		for (uint i = 0; i < filter_items; i++) {
+		for (uint i = 0; i < filter_items; ++i) {
 			if (this->cargo_filter[i] == _last_filter_criteria[this->vehicle_type]) {
 				this->cargo_filter_criteria = i;
 				break;

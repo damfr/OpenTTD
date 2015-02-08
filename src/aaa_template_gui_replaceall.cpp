@@ -263,7 +263,7 @@ public:
 				// first delete all current templates
 				this->DeleteAllTemplateTrains();
 				// then build a new list from the current virtual trains
-				for ( uint i=0; i<this->virtualTrains->Length(); i++ ) {
+				for ( uint i=0; i<this->virtualTrains->Length(); ++i ) {
 					// the relevant info struct
 					VirtTrainInfo *vti = (*this->virtualTrains)[i];
 					// setup template from contained train
@@ -369,7 +369,7 @@ public:
 	{
 // 		printf("called for eid: %d\n", eid);
 
-		for ( uint i=0; i<this->virtualTrains->Length(); i++ ) {
+		for ( uint i=0; i<this->virtualTrains->Length(); ++i ) {
 			const Train *tmp = (*this->virtualTrains)[i]->vt;
 // 			printf("checking train:\n"); pvt(tmp);
 			for ( ; tmp; tmp=tmp->Next() )
@@ -384,7 +384,7 @@ public:
 	// after 'replace all' we need to replace the currently used templates as well
 	void RebuildIncludedTemplateList() {
 		// first remove all engine ids
-		for ( uint i=0; i<this->engines_left->Length(); i++ ) {
+		for ( uint i=0; i<this->engines_left->Length(); ++i ) {
 			EngineID entry = (*this->engines_left)[i];
 			if ( !VirtualTrainHasEngineID(entry) )
 				this->engines_left->Erase(&((*this->engines_left)[i]));
@@ -406,7 +406,7 @@ public:
 		if ( this->virtualTrains->Length() == 0 )
 			this->GenerateVirtualTrains();
 
-		for ( uint i=0; i<this->virtualTrains->Length(); i++ ) {
+		for ( uint i=0; i<this->virtualTrains->Length(); ++i ) {
 			Train *tmp = (*this->virtualTrains)[i]->vt;
 			while ( tmp ) {
 				if ( tmp->engine_type == eid_orig ) {
@@ -482,7 +482,7 @@ public:
 
 		int maximum = min((int)sb->GetCapacity(), (int)el->Length()) + sb->GetPosition();
 
-		for ( int i=sb->GetPosition(); i<maximum; i++ ) {
+		for ( int i=sb->GetPosition(); i<maximum; ++i ) {
 
 			eid = (*el)[i];
 
@@ -507,7 +507,7 @@ public:
 
 		uint16 max = min(virtualTrains->Length(), this->vscroll_bo->GetCapacity());
 
-		for ( uint16 i=vscroll_bo->GetPosition(); i<max+vscroll_bo->GetPosition(); i++ ) {
+		for ( uint16 i=vscroll_bo->GetPosition(); i<max+vscroll_bo->GetPosition(); ++i ) {
 			/* Draw a virtual train*/
 			DrawTrainImage( (*this->virtualTrains)[i]->vt, r.left+32, r.right, y, INVALID_VEHICLE, EIT_PURCHASE, 0, -1 );
 
