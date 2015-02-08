@@ -35,7 +35,7 @@ Vehicle *vhead, *vtmp;
 static const uint MAX_ARTICULATED_PARTS = 100;
 
 
-// TODO
+// debugging printing functions for convenience, usually called from gdb
 void pat() {
 	TemplateVehicle *tv;
 	FOR_ALL_TEMPLATES(tv) {

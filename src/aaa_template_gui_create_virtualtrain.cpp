@@ -812,7 +812,7 @@ static WindowDesc _build_vehicle_desc(
 	"template create virtual train",// const char* ini_key
 	240, 268,						// window size
 	WC_BUILD_VIRTUAL_TRAIN,			// window class
-	WC_NONE,						// parent window class TODO change wc_replace_vehicle
+	WC_CREATE_TEMPLATE,				// parent window class
 	WDF_CONSTRUCTION,				// window flags
 	_nested_build_vehicle_widgets, lengthof(_nested_build_vehicle_widgets)	// widgets + num widgets
 );

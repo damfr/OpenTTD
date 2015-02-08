@@ -168,7 +168,8 @@ static WindowDesc _replace_rail_vehicle_desc(
 	WDP_AUTO,
 	"template replace window",
 	456, 156,
-	WC_TEMPLATEGUI_MAIN, WC_NONE,					// TODO change wc_replace_vehicle
+	WC_TEMPLATEGUI_MAIN,
+	WC_NONE,					// parent window class
 	WDF_CONSTRUCTION,
 	_widgets, lengthof(_widgets)
 );
@@ -283,7 +284,6 @@ public:
 
 	virtual void DrawWidget(const Rect &r, int widget) const
 	{
-		// TODO: why -1 ??
 		deleteIllegalTemplateReplacements(-1);
 
 		switch (widget) {

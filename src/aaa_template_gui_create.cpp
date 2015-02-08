@@ -84,7 +84,7 @@ static WindowDesc _template_create_window_desc(
 	"template create window",		// const char* ini_key
 	456, 100,						// window size
 	WC_CREATE_TEMPLATE,				// window class
-	WC_NONE,						// parent window class TODO change wc_replace_vehicle
+	WC_TEMPLATEGUI_MAIN,			// parent window class
 	WDF_CONSTRUCTION,				// window flags
 	_widgets, lengthof(_widgets)	// widgets + num widgets
 );
