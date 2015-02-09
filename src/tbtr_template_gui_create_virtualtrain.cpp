@@ -36,7 +36,7 @@
 #include "table/strings.h"
 
 // MYGUI
-#include "aaa_template_gui_create_virtualtrain.h"
+#include "tbtr_template_gui_create_virtualtrain.h"
 #include "vehicle_gui.h"
 
 static const NWidgetPart _nested_build_vehicle_widgets[] = {
