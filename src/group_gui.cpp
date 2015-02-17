@@ -34,7 +34,7 @@
 
 static const int LEVEL_WIDTH = 10; ///< Indenting width of a sub-group in pixels
 
-#include "aaa_template_gui_main.h"
+#include "tbtr_template_gui_main.h"
 
 typedef GUIList<const Group*> GUIGroupList;
 

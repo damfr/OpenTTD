@@ -44,7 +44,7 @@
 #include "../fios.h"
 #include "../error.h"
 
-#include "../aaa_template_vehicle.h"
+#include "../tbtr_template_vehicle.h"
 
 #include "table/strings.h"
 
