@@ -60,8 +60,6 @@ TemplateVehicle::TemplateVehicle(VehicleType ty, EngineID eid, byte subtypeflag,
 }
 
 TemplateVehicle::~TemplateVehicle() {
-	//free(this->name);
-
 	TemplateVehicle *v = this->Next();
 	this->SetNext(NULL);
 
@@ -76,20 +74,16 @@ void TemplateVehicle::SetFirst(TemplateVehicle *v) { this->first = v; }
 TemplateVehicle* TemplateVehicle::GetNextUnit() const
 {
 		TemplateVehicle *tv = this->Next();
-		//if ( tv != NULL ) {
-			while ( tv && HasBit(tv->subtype, GVSF_ARTICULATED_PART) ) tv = tv->Next();
-			if ( tv && HasBit(tv->subtype, GVSF_MULTIHEADED) && !HasBit(tv->subtype, GVSF_ENGINE) ) tv = tv->Next();
-		//}
+		while ( tv && HasBit(tv->subtype, GVSF_ARTICULATED_PART) ) tv = tv->Next();
+		if ( tv && HasBit(tv->subtype, GVSF_MULTIHEADED) && !HasBit(tv->subtype, GVSF_ENGINE) ) tv = tv->Next();
 		return tv;
 }
 
 TemplateVehicle* TemplateVehicle::GetPrevUnit()
 {
 	TemplateVehicle *tv = this->Prev();
-	//if ( tv != NULL ) {
-		while ( tv && HasBit(tv->subtype, GVSF_ARTICULATED_PART|GVSF_ENGINE) ) tv = tv->Prev();
-		if ( tv && HasBit(tv->subtype, GVSF_MULTIHEADED|GVSF_ENGINE) ) tv = tv->Prev();
-	//}
+	while ( tv && HasBit(tv->subtype, GVSF_ARTICULATED_PART|GVSF_ENGINE) ) tv = tv->Prev();
+	if ( tv && HasBit(tv->subtype, GVSF_MULTIHEADED|GVSF_ENGINE) ) tv = tv->Prev();
 	return tv;
 }
 

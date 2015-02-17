@@ -179,11 +179,10 @@ private:
 
 	GUIGroupList groups;  		 ///< List of groups
 	byte unitnumber_digits;
-	//Own
+
 	short line_height;
 	short matrixContentLeftMargin;
 
-	// from AutoreplaceGUI
 	int details_height;           ///< Minimal needed height of the details panels (found so far).
 	RailType sel_railtype;        ///< Type of rail tracks selected.
 	Scrollbar *vscroll[2];
@@ -206,7 +205,6 @@ public:
 		// From BaseVehicleListWindow
 		this->unitnumber_digits = dig;
 
-		// from AutoreplaceGUI
 		this->sel_railtype = RAILTYPE_BEGIN;
 		this->details_height   = 10 * FONT_HEIGHT_NORMAL + WD_FRAMERECT_TOP + WD_FRAMERECT_BOTTOM;
 
@@ -221,7 +219,6 @@ public:
 
 		this->owner = _local_company;
 
-// 		this->groups = new GUIGroupList();
 		this->groups.ForceRebuild();
 		this->groups.NeedResort();
  		this->BuildGroupList(_local_company);
@@ -238,8 +235,6 @@ public:
 		this->templates.ForceRebuild();
 
 		BuildTemplateGuiList(&this->templates, this->vscroll[1], this->owner, this->sel_railtype);
-
-		//CmdBuildVirtualRailVehicle(20);
 	}
 
 	~TemplateReplaceWindow() {
@@ -329,8 +324,6 @@ public:
 		switch (widget) {
 			case TRW_WIDGET_TMPL_BUTTONS_CONFIGTMPL_REUSE: {
 				if ( this->selected_template_index >= 0 ) {
-					//TemplateVehicle *sel = (TemplateVehicle*)(this->templates)[selected_template_index];
-					//const TemplateVehicle* ctv = ;
 					TemplateVehicle *sel = TemplateVehicle::Get(((this->templates)[selected_template_index])->index);
 					sel->ToggleReuseDepotVehicles();
 				}
@@ -338,7 +331,6 @@ public:
 			}
 			case TRW_WIDGET_TMPL_BUTTONS_CONFIGTMPL_KEEP: {
 				if ( this->selected_template_index >= 0 ) {
-					//TemplateVehicle *sel = (TemplateVehicle*)(this->templates)[selected_template_index];
 					TemplateVehicle *sel = TemplateVehicle::Get(((this->templates)[selected_template_index])->index);
 					sel->ToggleKeepRemainingVehicles();
 				}
@@ -346,7 +338,6 @@ public:
 			}
 			case TRW_WIDGET_TMPL_BUTTONS_CONFIGTMPL_REFIT: {
 				if ( this->selected_template_index >= 0 ) {
-					//TemplateVehicle *sel = (TemplateVehicle*)(this->templates)[selected_template_index];
 					TemplateVehicle *sel = TemplateVehicle::Get(((this->templates)[selected_template_index])->index);
 					sel->ToggleRefitAsTemplate();
 				}

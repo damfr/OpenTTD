@@ -193,37 +193,3 @@ short deleteIllegalTemplateReplacements(GroupID);
 
 #endif /* TEMPLATE_VEH_H */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

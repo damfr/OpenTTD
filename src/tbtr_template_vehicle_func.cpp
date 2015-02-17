@@ -55,19 +55,19 @@ void pav() {
 void ptv(TemplateVehicle* tv) {
 	if (!tv) return;
 	while (tv->Next() ) {
-		//printf("eid:%3d  st:%2d  tv:%x  next:%x  cargo: %d  cargo_sub: %d\n", tv->engine_type, tv->subtype, (uint32)tv, (uint32)tv->Next(), tv->cargo_type, tv->cargo_subtype);
+		printf("eid:%3d  st:%2d  tv:%x  next:%x  cargo: %d  cargo_sub: %d\n", tv->engine_type, tv->subtype, (uint32)tv, (uint32)tv->Next(), tv->cargo_type, tv->cargo_subtype);
 		tv = tv->Next();
 	}
-	//printf("eid:%3d  st:%2d  tv:%x  next:%x  cargo: %d  cargo_sub: %d\n", tv->engine_type, tv->subtype, (uint32)tv, (uint32)tv->Next(),  tv->cargo_type, tv->cargo_subtype);
+	printf("eid:%3d  st:%2d  tv:%x  next:%x  cargo: %d  cargo_sub: %d\n", tv->engine_type, tv->subtype, (uint32)tv, (uint32)tv->Next(),  tv->cargo_type, tv->cargo_subtype);
 }
 
 void pvt (const Train *printme) {
 	for ( const Train *tmp = printme; tmp; tmp=tmp->Next() ) {
 		if ( tmp->index <= 0 ) {
-			//printf("train has weird index: %d %d %x\n", tmp->index, tmp->engine_type, (uint)tmp);
+			printf("train has weird index: %d %d %x\n", tmp->index, tmp->engine_type, (uint)tmp);
 			return;
 		}
-		//printf("eid:%3d  index:%2d  subtype:%2d  vehstat: %d  cargo_t: %d   cargo_sub: %d  ref:%x\n", tmp->engine_type, tmp->index, tmp->subtype, tmp->vehstatus, tmp->cargo_type, tmp->cargo_subtype, (uint32)tmp);
+		printf("eid:%3d  index:%2d  subtype:%2d  vehstat: %d  cargo_t: %d   cargo_sub: %d  ref:%x\n", tmp->engine_type, tmp->index, tmp->subtype, tmp->vehstatus, tmp->cargo_type, tmp->cargo_subtype, (uint32)tmp);
 	}
 }
 
@@ -109,7 +109,6 @@ void DrawTemplate(const TemplateVehicle *tv, int left, int right, int y)
 		offset += t->image_width;
 		t = t->Next();
 	}
-	//_cur_dpi = old_dpi;
 }
 
 // copy important stuff from the virtual vehicle to the template
@@ -271,7 +270,6 @@ Train* DeleteVirtualTrain(Train *chain, Train *to_del) {
 	}
 	else {
 		chain = chain->GetNextUnit();
-		//CommandCost cost=CmdMoveRailVehicle(0, DC_EXEC, (1<<20) | (1<<21) | to_del->index, INVALID_VEHICLE, 0);
 		CmdSellRailWagon(DC_EXEC, to_del, 0, 0);
 		return chain;
 	}
@@ -352,14 +350,9 @@ Train* DepotContainsEngine(TileIndex tile, EngineID eid, Train *not_in=0) {
 }
 
 void CopyStatus(Train *from, Train *to) {
-	//to->group_id = from->group_id;
 	DoCommand(to->tile, from->group_id, to->index, DC_EXEC, CMD_ADD_VEHICLE_GROUP);
 	to->cargo_type = from->cargo_type;
 	to->cargo_subtype = from->cargo_subtype;
-
-	//to->orders = from->orders;
-	//to->current_order = from->current_order;
-	//to->cur_implicit_order_index = from->cur_implicit_order_index;
 
 	// swap names
 	char *tmp = to->name;
@@ -373,9 +366,6 @@ void CopyStatus(Train *from, Train *to) {
 }
 void NeutralizeStatus(Train *t) {
 	DoCommand(t->tile, DEFAULT_GROUP, t->index, DC_EXEC, CMD_ADD_VEHICLE_GROUP);
-
-	//t->orders.list = 0;
-	//t->cur_implicit_order_index = 0;
 
 	t->name = 0;
 }
@@ -511,7 +501,6 @@ static void RefitTrainFromTemplate(Train *t, TemplateVehicle *tv)
 		uint32 cb = GetCmdRefitVeh(t);
 
 		DoCommandP(t->tile, t->index, tv->cargo_type | tv->cargo_subtype << 8 | 1 << 16 , cb);
-		//CommandCost c = CmdRefitVehicle ( t->tile, DC_EXEC, t->index, tv->cargo_type | tv->cargo_subtype << 8 | 1 << 16, "" );
 
 		// next
 		t = t->GetNextUnit();

@@ -329,7 +329,6 @@ public:
 		this->vscroll_bo->SetCount(this->virtualTrains->Length());
 	}
 
-	// move to func ?
 	void DeleteAllTemplateTrains()
 	{
 		TemplateVehicle *tv, *tmp;
@@ -367,17 +366,13 @@ public:
 
 	bool VirtualTrainHasEngineID(EngineID eid)
 	{
-// 		printf("called for eid: %d\n", eid);
 
 		for ( uint i=0; i<this->virtualTrains->Length(); ++i ) {
 			const Train *tmp = (*this->virtualTrains)[i]->vt;
-// 			printf("checking train:\n"); pvt(tmp);
 			for ( ; tmp; tmp=tmp->Next() )
 				if ( tmp->engine_type == eid )
 					return true;
-// 			printf("_________\n");
 		}
-// 		printf("return false\n______\n");
 		return false;
 	}
 
