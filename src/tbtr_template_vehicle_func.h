@@ -5,7 +5,7 @@
 #include "stdafx.h"
 #include "window_gui.h"
 
-#include "aaa_template_vehicle.h"
+#include "tbtr_template_vehicle.h"
 
 //void DrawTemplateVehicle(TemplateVehicle*, int, const Rect&);
 void DrawTemplateVehicle(const TemplateVehicle*, int, int, int, VehicleID, int, VehicleID);

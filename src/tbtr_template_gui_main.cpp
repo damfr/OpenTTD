@@ -1,7 +1,7 @@
 // mygui.c
 
 
-//#include "aaa_mygui.h"
+//#include "tbtr_mygui.h"
 #include <iostream>
 #include <stdio.h>
 
@@ -43,10 +43,10 @@
 // drawing the vehicle length based on occupied tiles
 #include "spritecache.h"
 
-#include "aaa_template_gui_main.h"
-#include "aaa_template_gui_create.h"
-#include "aaa_template_vehicle.h"
-//#include "aaa_template_vehicle_func.h"
+#include "tbtr_template_gui_main.h"
+#include "tbtr_template_gui_create.h"
+#include "tbtr_template_vehicle.h"
+//#include "tbtr_template_vehicle_func.h"
 
 
 typedef GUIList<const Group*> GUIGroupList;

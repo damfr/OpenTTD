@@ -30,9 +30,9 @@
 #include "group.h"
 #include "company_base.h"
 
-#include "aaa_template_gui_create.h"
-#include "aaa_template_vehicle.h"
-#include "aaa_template_vehicle_func.h"
+#include "tbtr_template_gui_create.h"
+#include "tbtr_template_vehicle.h"
+#include "tbtr_template_vehicle_func.h"
 
 #include "train.h"
 

@@ -16,8 +16,8 @@
 #include "vehicle_base.h"
 #include "vehicle_func.h"
 
-#include "aaa_template_vehicle.h"
-#include "aaa_template_vehicle_func.h"
+#include "tbtr_template_vehicle.h"
+#include "tbtr_template_vehicle_func.h"
 
 #include "core/math_func.hpp"
 #include "table/strings.h"

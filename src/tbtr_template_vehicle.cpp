@@ -25,7 +25,7 @@
 #include "table/train_cmd.h"
 
 
-#include "aaa_template_vehicle.h"
+#include "tbtr_template_vehicle.h"
 
 // since doing stuff with sprites
 #include "newgrf_spritegroup.h"

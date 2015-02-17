@@ -1,6 +1,6 @@
 #include "../stdafx.h"
 
-#include "../aaa_template_vehicle.h"
+#include "../tbtr_template_vehicle.h"
 
 #include "saveload.h"
 
