@@ -37,6 +37,7 @@
 #include "engine_func.h"
 #include "station_base.h"
 #include "tilehighlight_func.h"
+#include "tbtr_template_gui_main.h"
 #include "zoom_func.h"
 
 #include "safeguards.h"
@@ -1657,6 +1658,9 @@ public:
 				switch (index) {
 					case ADI_REPLACE: // Replace window
 						ShowReplaceGroupVehicleWindow(ALL_GROUP, this->vli.vtype);
+						break;
+					case ADI_TEMPLATE_REPLACE:
+						ShowTemplateReplaceWindow(this->unitnumber_digits, this->resize.step_height);
 						break;
 					case ADI_SERVICE: // Send for servicing
 					case ADI_DEPOT: // Send to Depots
