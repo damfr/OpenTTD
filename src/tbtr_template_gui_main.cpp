@@ -51,11 +51,6 @@
 
 typedef GUIList<const Group*> GUIGroupList;
 
-
-/* template creation */
-void ShowTemplateCreationWindow(TileIndex);
-void ShowTestWindow();
-
 enum TemplateReplaceWindowWidgets {
 	TRW_CAPTION,
 
@@ -101,7 +96,6 @@ enum TemplateReplaceWindowWidgets {
 
 	TRW_WIDGET_SEL_TMPL_DISPLAY_CREATE,
 };
-
 
 static const NWidgetPart _widgets[] = {
 	// Title bar
@@ -693,7 +687,6 @@ public:
 
 void ShowTemplateReplaceWindow(byte dig, int step_h)
 {
-
 	new TemplateReplaceWindow(&_replace_rail_vehicle_desc, dig, step_h);
 }
 
