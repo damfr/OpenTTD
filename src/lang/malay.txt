@@ -895,10 +895,6 @@ STR_GAME_OPTIONS_CURRENCY_ZAR                                   :South African R
 STR_GAME_OPTIONS_CURRENCY_CUSTOM                                :Sesuaikan...
 ############ end of currency region
 
-
-############ start of measuring units region
-############ end of measuring units region
-
 STR_GAME_OPTIONS_ROAD_VEHICLES_FRAME                            :{BLACK}Kenderaan Jalanraya
 STR_GAME_OPTIONS_ROAD_VEHICLES_DROPDOWN_TOOLTIP                 :{BLACK}Pilih laluan memandu kenderaan sebelah kiri atau kanan
 STR_GAME_OPTIONS_ROAD_VEHICLES_DROPDOWN_LEFT                    :Memandu di sebelah kiri
@@ -2203,7 +2199,7 @@ STR_TREES_RANDOM_TREES_TOOLTIP                                  :{BLACK}Tanam po
 # Land generation window (SE)
 STR_TERRAFORM_TOOLBAR_LAND_GENERATION_CAPTION                   :{WHITE}Pembentukan Tanah
 STR_TERRAFORM_TOOLTIP_PLACE_ROCKY_AREAS_ON_LANDSCAPE            :{BLACK}Letakkan kawasan berbatu atas lanskap
-STR_TERRAFORM_TOOLTIP_DEFINE_DESERT_AREA                        :{BLACK}Pilih kawasan gurun {}Tekan Ctrl untuk membuangkannya
+STR_TERRAFORM_TOOLTIP_DEFINE_DESERT_AREA                        :{BLACK}Pilih kawasan gurun{}Tekan Ctrl untuk membuangkannya
 STR_TERRAFORM_TOOLTIP_INCREASE_SIZE_OF_LAND_AREA                :{BLACK}Meningkatan penyebaran kawasan tanah untuk dinaikkan/diturunkan
 STR_TERRAFORM_TOOLTIP_DECREASE_SIZE_OF_LAND_AREA                :{BLACK}Menurunkan penyebaran kawasan tanah untuk dinaikkan/diturunkan
 STR_TERRAFORM_TOOLTIP_GENERATE_RANDOM_LAND                      :{BLACK}Janakan tanah secara rawak
@@ -2573,7 +2569,6 @@ STR_SPRITE_ALIGNER_PREVIOUS_BUTTON                              :{BLACK}Peperi s
 STR_SPRITE_ALIGNER_PREVIOUS_TOOLTIP                             :{BLACK}Teruskan ke peperi dahulu yang biasa, melangkau sebarang peperi pseudo/warna kembali/fon dan memusing balik semula
 STR_SPRITE_ALIGNER_SPRITE_TOOLTIP                               :{BLACK}Perwakilan peperi yang terpilih. Penjajaran tidak diendahkan apabila sedang melukiskan peperi.
 STR_SPRITE_ALIGNER_MOVE_TOOLTIP                                 :{BLACK}Alih peperi, mengubahkan ofset X dan Y
-STR_SPRITE_ALIGNER_OFFSETS                                      :{BLACK}X ofset: {NUM}, Y ofset: {NUM}
 STR_SPRITE_ALIGNER_PICKER_BUTTON                                :{BLACK}Pilih peperi
 STR_SPRITE_ALIGNER_PICKER_TOOLTIP                               :{BLACK}Pilih peperi di mana-mana sahaja dari skrin
 
@@ -2584,7 +2579,7 @@ STR_NEWGRF_ERROR_MSG_INFO                                       :{SILVER}{STRING
 STR_NEWGRF_ERROR_MSG_WARNING                                    :{RED}Amaran: {SILVER}{STRING}
 STR_NEWGRF_ERROR_MSG_ERROR                                      :{RED}Kesilapan: {SILVER}{STRING}
 STR_NEWGRF_ERROR_MSG_FATAL                                      :{RED}Bahaya: {SILVER}{STRING}
-STR_NEWGRF_ERROR_FATAL_POPUP                                    :{WHITE}Kesilapan NewGRF yang bahaya telah berlaku: {}{STRING}
+STR_NEWGRF_ERROR_FATAL_POPUP                                    :{WHITE}Kesilapan NewGRF yang bahaya telah berlaku:{}{STRING}
 STR_NEWGRF_ERROR_VERSION_NUMBER                                 :{1:STRING} tidak akan berfungsi dengan versi TTDPatch seperti yang dilaporkan oleh OpenTTD.
 STR_NEWGRF_ERROR_DOS_OR_WINDOWS                                 :{1:STRING} adalah untuk TTD versi {STRING}.
 STR_NEWGRF_ERROR_UNSET_SWITCH                                   :{1:STRING} direkabentuk untuk digunakan bersama {STRING}
@@ -2738,7 +2733,7 @@ STR_GOAL_QUESTION_CAPTION_INFORMATION                           :Maklumat
 STR_GOAL_QUESTION_CAPTION_WARNING                               :Amaran
 STR_GOAL_QUESTION_CAPTION_ERROR                                 :Kesilapan
 
-### Start of Goal Question button list
+############ Start of Goal Question button list
 STR_GOAL_QUESTION_BUTTON_CANCEL                                 :Batal
 STR_GOAL_QUESTION_BUTTON_OK                                     :OK
 STR_GOAL_QUESTION_BUTTON_NO                                     :Tidak
@@ -2757,6 +2752,7 @@ STR_GOAL_QUESTION_BUTTON_RESTART                                :Mula semula
 STR_GOAL_QUESTION_BUTTON_POSTPONE                               :Tangguh
 STR_GOAL_QUESTION_BUTTON_SURRENDER                              :Menyerah
 STR_GOAL_QUESTION_BUTTON_CLOSE                                  :Tutup
+############ End of Goal Question button list
 
 # Subsidies window
 STR_SUBSIDIES_CAPTION                                           :{WHITE}Subsidi

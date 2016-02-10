@@ -1396,12 +1396,14 @@ CommandCost CmdSellRailWagon(DoCommandFlag flags, Vehicle *t, uint16 data, uint3
 		return ret;
 	}
 
-	CommandCost cost(EXPENSES_NEW_VEHICLES);
-	for (Train *t = sell_head; t != NULL; t = t->Next()) cost.AddCost(-t->value);
-
 	if (first->orders.list == NULL && !OrderList::CanAllocateItem()) {
+		/* Restore the train we had. */
+		RestoreTrainBackup(original);
 		return_cmd_error(STR_ERROR_NO_MORE_SPACE_FOR_ORDERS);
 	}
+
+	CommandCost cost(EXPENSES_NEW_VEHICLES);
+	for (Train *t = sell_head; t != NULL; t = t->Next()) cost.AddCost(-t->value);
 
 	/* do it? */
 	if (flags & DC_EXEC) {
@@ -2229,8 +2231,12 @@ static void ClearPathReservation(const Train *v, TileIndex tile, Trackdir track_
 				SetTunnelBridgeReservation(end, false);
 
 				if (_settings_client.gui.show_track_reservation) {
-					MarkTileDirtyByTile(tile);
-					MarkTileDirtyByTile(end);
+					if (IsBridge(tile)) {
+						MarkBridgeDirty(tile);
+					} else {
+						MarkTileDirtyByTile(tile);
+						MarkTileDirtyByTile(end);
+					}
 				}
 			}
 		}
