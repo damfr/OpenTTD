@@ -886,11 +886,20 @@ void VehicleEnteredDepotThisTick(Vehicle *v)
 		if ( stayInDepot )	_vehicles_to_templatereplace[(Train*)v] = true;
 		else				_vehicles_to_templatereplace[(Train*)v] = false;
 	}
-	/* Moved the assignment for auto replacement here to prevent auto replacement
-	 * from happening if template replacement is also scheduled */
-	else
-		/* Vehicle should stop in the depot if it was in 'stopping' state */
-		_vehicles_to_autoreplace[v] = !(v->vehstatus & VS_STOPPED);
+	/*
+	 * Always schedule trains for auto replacement, even if they're already
+	 * scheduled for template replacement. This ensures that if a vehicle is
+	 * too old and needs to be auto-replaced, but template replacement fails,
+	 * it will still try to auto replace the vehicle.
+	 * Later, we first try to template replace a vehicle and if that succeeds,
+	 * we de-schedule its auto-replacement. Doing the template replacement first
+	 * and then auto-replacement ensures that we don't enter a state where the
+	 * vehicle does not have a proper template vehicle assigned, thus skipping
+	 * its template replacement entirely and auto-replacing it instead, even
+	 * when a template replacement was originally intended
+	 */
+	/* Vehicle should stop in the depot if it was in 'stopping' state */
+	_vehicles_to_autoreplace[v] = !(v->vehstatus & VS_STOPPED);
 
 	/* We ALWAYS set the stopped state. Even when the vehicle does not plan on
 	 * stopping in the depot, so we stop it to ensure that it will not reserve
@@ -1016,6 +1025,27 @@ void CallVehicleTicks()
 		}
 	}
 
+	/* do Template Replacement */
+	Backup<CompanyByte> tmpl_cur_company(_current_company, FILE_LINE);
+	for (TemplateReplacementMap::iterator it = _vehicles_to_templatereplace.Begin(); it != _vehicles_to_templatereplace.End(); it++) {
+
+		Train *t = it->first;
+
+		tmpl_cur_company.Change(t->owner);
+
+		bool stayInDepot = it->second;
+
+		it->first->vehstatus |= VS_STOPPED;
+		CommandCost cost = CmdTemplateReplaceVehicle(t, stayInDepot, DC_EXEC);
+		/* if it wasn't for free, it succeeded, so don't auto-replace it */
+		if(cost.GetCost() != 0) {
+			_vehicles_to_autoreplace.Erase(t);
+		}
+		/* Redraw main gui for changed statistics */
+		SetWindowClassesDirty(WC_TEMPLATEGUI_MAIN);
+	}
+	tmpl_cur_company.Restore();
+
 	/* do Auto Replacement */
 	Backup<CompanyByte> cur_company(_current_company, FILE_LINE);
 	for (AutoreplaceMap::iterator it = _vehicles_to_autoreplace.Begin(); it != _vehicles_to_autoreplace.End(); it++) {
@@ -1062,23 +1092,6 @@ void CallVehicleTicks()
 		AddVehicleAdviceNewsItem(message, v->index);
 	}
 	cur_company.Restore();
-
-	/* do Template Replacement */
-	Backup<CompanyByte> tmpl_cur_company(_current_company, FILE_LINE);
-	for (TemplateReplacementMap::iterator it = _vehicles_to_templatereplace.Begin(); it != _vehicles_to_templatereplace.End(); it++) {
-
-		Train *t = it->first;
-
-		tmpl_cur_company.Change(t->owner);
-
-		bool stayInDepot = it->second;
-
-		it->first->vehstatus |= VS_STOPPED;
-		DoCommand(0, t->index, stayInDepot, DC_EXEC, CMD_TEMPLATE_REPLACE_TRAIN);
-		/* Redraw main gui for changed statistics */
-		SetWindowClassesDirty(WC_TEMPLATEGUI_MAIN);
-	}
-	tmpl_cur_company.Restore();
 }
 
 /**
