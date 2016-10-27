@@ -37,13 +37,13 @@ static const NWidgetPart _nested_build_vehicle_widgets[] = {
 		NWidget(WWT_STICKYBOX, COLOUR_GREY),
 	EndContainer(),
 	NWidget(WWT_PANEL, COLOUR_GREY),
-		NWidget(NWID_HORIZONTAL),
-			NWidget(NWID_VERTICAL),
+		NWidget(NWID_VERTICAL),
+			NWidget(NWID_HORIZONTAL),
 				NWidget(WWT_PUSHTXTBTN, COLOUR_GREY, WID_BV_SORT_ASCENDING_DESCENDING), SetDataTip(STR_BUTTON_SORT_BY, STR_TOOLTIP_SORT_ORDER), SetFill(1, 0),
-				NWidget(NWID_SPACER), SetFill(1, 1),
-			EndContainer(),
-			NWidget(NWID_VERTICAL),
 				NWidget(WWT_DROPDOWN, COLOUR_GREY, WID_BV_SORT_DROPDOWN), SetResize(1, 0), SetFill(1, 0), SetDataTip(STR_JUST_STRING, STR_TOOLTIP_SORT_CRITERIA),
+			EndContainer(),
+			NWidget(NWID_HORIZONTAL),
+				NWidget(WWT_TEXTBTN, COLOUR_GREY, WID_BV_SHOW_HIDDEN_ENGINES),
 				NWidget(WWT_DROPDOWN, COLOUR_GREY, WID_BV_CARGO_FILTER_DROPDOWN), SetResize(1, 0), SetFill(1, 0), SetDataTip(STR_JUST_STRING, STR_TOOLTIP_FILTER_CRITERIA),
 			EndContainer(),
 		EndContainer(),
@@ -58,6 +58,7 @@ static const NWidgetPart _nested_build_vehicle_widgets[] = {
 	/* Build/rename buttons, resize button. */
 	NWidget(NWID_HORIZONTAL),
 		NWidget(WWT_PUSHTXTBTN, COLOUR_GREY, WID_BV_BUILD), SetResize(1, 0), SetFill(1, 0), SetDataTip(STR_TMPL_CONFIRM, STR_TMPL_CONFIRM),
+		NWidget(WWT_PUSHTXTBTN, COLOUR_GREY, WID_BV_SHOW_HIDE), SetResize(1, 0), SetFill(1, 0), SetDataTip(STR_JUST_STRING, STR_NULL),
 		NWidget(WWT_PUSHTXTBTN, COLOUR_GREY, WID_BV_RENAME), SetResize(1, 0), SetFill(1, 0),
 		NWidget(WWT_RESIZEBOX, COLOUR_GREY),
 	EndContainer(),
@@ -361,39 +362,46 @@ static GUIEngineList::FilterFunction * const _filter_funcs[] = {
  */
 static void DrawEngineList(VehicleType type, int l, int r, int y, const GUIEngineList *eng_list, uint16 min, uint16 max, EngineID selected_id, bool show_count, GroupID selected_group)
 {
-	static const int sprite_widths[]  = { 60, 60, 76, 67 };
 	static const int sprite_y_offsets[] = { -1, -1, -2, -2 };
 
 	/* Obligatory sanity checks! */
-	assert((uint)type < lengthof(sprite_widths));
-	assert_compile(lengthof(sprite_y_offsets) == lengthof(sprite_widths));
 	assert(max <= eng_list->Length());
 
 	bool rtl = _current_text_dir == TD_RTL;
 	int step_size = GetEngineListHeight(type);
-	int sprite_width = sprite_widths[type];
+	int sprite_left  = GetVehicleImageCellSize(type, EIT_PURCHASE).extend_left;
+	int sprite_right = GetVehicleImageCellSize(type, EIT_PURCHASE).extend_right;
+	int sprite_width = sprite_left + sprite_right;
 
-	int sprite_x        = (rtl ? r - sprite_width / 2 : l + sprite_width / 2) - 1;
+	int sprite_x        = rtl ? r - sprite_right - 1 : l + sprite_left + 1;
 	int sprite_y_offset = sprite_y_offsets[type] + step_size / 2;
 
-	int text_left  = l + (rtl ? WD_FRAMERECT_LEFT : sprite_width);
-	int text_right = r - (rtl ? sprite_width : WD_FRAMERECT_RIGHT);
+	Dimension replace_icon = {0, 0};
+	int count_width = 0;
+	if (show_count) {
+		replace_icon = GetSpriteSize(SPR_GROUP_REPLACE_ACTIVE);
+		SetDParamMaxDigits(0, 3, FS_SMALL);
+		count_width = GetStringBoundingBox(STR_TINY_BLACK_COMA).width;
+	}
+
+	int text_left  = l + (rtl ? WD_FRAMERECT_LEFT + replace_icon.width + 8 + count_width : sprite_width + WD_FRAMETEXT_LEFT);
+	int text_right = r - (rtl ? sprite_width + WD_FRAMETEXT_RIGHT : WD_FRAMERECT_RIGHT + replace_icon.width + 8 + count_width);
 
 	int normal_text_y_offset = (step_size - FONT_HEIGHT_NORMAL) / 2;
-	int small_text_y_offset  = step_size - FONT_HEIGHT_SMALL - WD_FRAMERECT_BOTTOM - 1;
 
 	for (; min < max; min++, y += step_size) {
 		const EngineID engine = (*eng_list)[min];
 		/* Note: num_engines is only used in the autoreplace GUI, so it is correct to use _local_company here. */
 		const uint num_engines = GetGroupNumEngines(_local_company, selected_group, engine);
 
+		const Engine *e = Engine::Get(engine);
+		bool hidden = HasBit(e->company_hidden, _local_company);
+		StringID str = hidden ? STR_HIDDEN_ENGINE_NAME : STR_ENGINE_NAME;
+		TextColour tc = (engine == selected_id) ? TC_WHITE : (TC_NO_SHADE | (hidden ? TC_GREY : TC_BLACK));
+
 		SetDParam(0, engine);
-		DrawString(text_left, text_right, y + normal_text_y_offset, STR_ENGINE_NAME, engine == selected_id ? TC_WHITE : TC_BLACK);
+		DrawString(text_left, text_right, y + normal_text_y_offset, str, tc);
 		DrawVehicleEngine(l, r, sprite_x, y + sprite_y_offset, engine, (show_count && num_engines == 0) ? PALETTE_CRASH : GetEnginePalette(engine, _local_company), EIT_PURCHASE);
-		if (show_count) {
-			SetDParam(0, num_engines);
-			DrawString(text_left, text_right, y + small_text_y_offset, STR_TINY_BLACK_COMA, TC_FROMSTRING, SA_RIGHT);
-		}
 	}
 }
 
@@ -439,11 +447,19 @@ struct BuildVirtualTrainWindow : Window {
 
 		NWidgetCore *widget = this->GetWidget<NWidgetCore>(WID_BV_LIST);
 
+		widget = this->GetWidget<NWidgetCore>(WID_BV_SHOW_HIDE);
+		widget->tool_tip = STR_BUY_VEHICLE_TRAIN_HIDE_SHOW_TOGGLE_TOOLTIP + VEH_TRAIN;
+
 		widget = this->GetWidget<NWidgetCore>(WID_BV_BUILD);
 
 		widget = this->GetWidget<NWidgetCore>(WID_BV_RENAME);
 		widget->widget_data = STR_BUY_VEHICLE_TRAIN_RENAME_BUTTON + VEH_TRAIN;
 		widget->tool_tip    = STR_BUY_VEHICLE_TRAIN_RENAME_TOOLTIP + VEH_TRAIN;
+
+		widget = this->GetWidget<NWidgetCore>(WID_BV_SHOW_HIDDEN_ENGINES);
+		widget->widget_data = STR_SHOW_HIDDEN_ENGINES_VEHICLE_TRAIN + VEH_TRAIN;
+		widget->tool_tip    = STR_SHOW_HIDDEN_ENGINES_VEHICLE_TRAIN_TOOLTIP + VEH_TRAIN;
+		widget->SetLowered(this->show_hidden_engines);
 
 		this->details_height = ((this->vehicle_type == VEH_TRAIN) ? 10 : 9) * FONT_HEIGHT_NORMAL + WD_FRAMERECT_TOP + WD_FRAMERECT_BOTTOM;
 
@@ -609,12 +625,22 @@ struct BuildVirtualTrainWindow : Window {
 				this->SetDirty();
 				break;
 
+			/* XXX Between this and the train vehicle creation window, there are sync issues (will only rebuild list in one window once the button has been clicked for that particular window) */
+			case WID_BV_SHOW_HIDDEN_ENGINES:
+				this->show_hidden_engines ^= true;
+				_engine_sort_show_hidden_engines[this->vehicle_type] = this->show_hidden_engines;
+				this->eng_list.ForceRebuild();
+				this->SetWidgetLoweredState(widget, this->show_hidden_engines);
+				this->SetDirty();
+				break;
+
 			case WID_BV_LIST: {
 				uint i = this->vscroll->GetScrolledRowFromWidget(pt.y, this, WID_BV_LIST);
 				size_t num_items = this->eng_list.Length();
 				this->sel_engine = (i < num_items) ? this->eng_list[i] : INVALID_ENGINE;
 				this->SetDirty();
-				if (click_count > 1 && !this->listview_mode) this->OnClick(pt, WID_BV_BUILD, 1);
+				if (_ctrl_pressed) this->OnClick(pt, WID_BV_SHOW_HIDE, 1);
+				else if (click_count > 1 && !this->listview_mode) this->OnClick(pt, WID_BV_BUILD, 1);
 				break;
 			}
 			case WID_BV_SORT_DROPDOWN: { // Select sorting criteria dropdown menu
@@ -638,6 +664,15 @@ struct BuildVirtualTrainWindow : Window {
 			case WID_BV_CARGO_FILTER_DROPDOWN: // Select cargo filtering criteria dropdown menu
 				ShowDropDownMenu(this, this->cargo_filter_texts, this->cargo_filter_criteria, WID_BV_CARGO_FILTER_DROPDOWN, 0, 0);
 				break;
+
+			case WID_BV_SHOW_HIDE: {
+				const Engine *e = (this->sel_engine == INVALID_ENGINE) ? NULL : Engine::Get(this->sel_engine);
+				if (e != NULL) {
+					DoCommandP(0, 0, this->sel_engine | (e->IsHidden(_current_company) ? 0 : (1u << 31)), CMD_SET_VEHICLE_VISIBILITY);
+					this->eng_list.ForceRebuild();
+				}
+				break;
+			}
 
 			case WID_BV_BUILD: {
 				EngineID sel_eng = this->sel_engine;
@@ -686,6 +721,17 @@ struct BuildVirtualTrainWindow : Window {
 
 			case WID_BV_CARGO_FILTER_DROPDOWN:
 				SetDParam(0, this->cargo_filter_texts[this->cargo_filter_criteria]);
+				break;
+
+			case WID_BV_SHOW_HIDE: {
+				const Engine *e = (this->sel_engine == INVALID_ENGINE) ? NULL : Engine::Get(this->sel_engine);
+				if (e != NULL && e->IsHidden(_local_company)) {
+					SetDParam(0, STR_BUY_VEHICLE_TRAIN_SHOW_TOGGLE_BUTTON + this->vehicle_type);
+				} else {
+					SetDParam(0, STR_BUY_VEHICLE_TRAIN_HIDE_TOGGLE_BUTTON + this->vehicle_type);
+				}
+				break;
+			}
 		}
 	}
 
@@ -708,6 +754,14 @@ struct BuildVirtualTrainWindow : Window {
 				*size = maxdim(*size, d);
 				break;
 			}
+
+			case WID_BV_SHOW_HIDE: {
+				*size = GetStringBoundingBox(STR_BUY_VEHICLE_TRAIN_HIDE_TOGGLE_BUTTON + this->vehicle_type);
+				*size = maxdim(*size, GetStringBoundingBox(STR_BUY_VEHICLE_TRAIN_SHOW_TOGGLE_BUTTON + this->vehicle_type));
+				size->width += padding.width;
+				size->height += padding.height;
+				break;
+			}
 		}
 	}
 
@@ -728,6 +782,8 @@ struct BuildVirtualTrainWindow : Window {
 	{
 		this->GenerateBuildList();
 		this->vscroll->SetCount(this->eng_list.Length());
+
+		this->SetWidgetDisabledState(WID_BV_SHOW_HIDE, this->sel_engine == INVALID_ENGINE);
 
 		this->DrawWidgets();
 
