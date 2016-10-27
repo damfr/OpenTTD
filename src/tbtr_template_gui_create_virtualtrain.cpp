@@ -399,6 +399,7 @@ static void DrawEngineList(VehicleType type, int l, int r, int y, const GUIEngin
 
 struct BuildVirtualTrainWindow : Window {
 	VehicleType vehicle_type;
+	bool show_hidden_engines;
 	union {
 		RailTypeByte railtype;
 		RoadTypes roadtypes;
@@ -420,6 +421,7 @@ struct BuildVirtualTrainWindow : Window {
 	BuildVirtualTrainWindow(WindowDesc *desc, Train **vt, bool *notice) : Window(desc)
 	{
 		this->vehicle_type = VEH_TRAIN;
+		this->show_hidden_engines   = _engine_sort_show_hidden_engines[this->vehicle_type];
 		this->window_number = 0;//tile == INVALID_TILE ? (int)type : tile;
 
 		this->sel_engine      = INVALID_ENGINE;
@@ -542,6 +544,7 @@ struct BuildVirtualTrainWindow : Window {
 		 * when engines become obsolete and are removed */
 		const Engine *e;
 		FOR_ALL_ENGINES_OF_TYPE(e, VEH_TRAIN) {
+			if (!this->show_hidden_engines && e->IsHidden(_local_company)) continue;
 			EngineID eid = e->index;
 			const RailVehicleInfo *rvi = &e->u.rail;
 
