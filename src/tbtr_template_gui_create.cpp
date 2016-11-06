@@ -443,7 +443,6 @@ public:
 			this->sel = v->index;
 			this->SetDirty();
 
-			_cursor.short_vehicle_offset = v->IsGroundVehicle() ? 16 - v->GetGroundVehicleCache()->cached_veh_length * 2 : 0;
 			_cursor.vehchain = _ctrl_pressed;
 		}
 	}
