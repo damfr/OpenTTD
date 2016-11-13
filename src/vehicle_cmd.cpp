@@ -459,7 +459,8 @@ CommandCost CmdRefitVehicle(TileIndex tile, DoCommandFlag flags, uint32 p1, uint
 	if ((flags & DC_QUERY_COST) == 0 && // used by the refit GUI, including the order refit GUI.
 			!free_wagon && // used by autoreplace/renew
 			(!auto_refit || !front->current_order.IsType(OT_LOADING)) && // refit inside stations
-			!front->IsStoppedInDepot()) { // refit inside depots
+			!front->IsStoppedInDepot() && // refit inside depots
+			!is_virtual_train) { // if it's a virtual train, don't check for depot
 		return_cmd_error(STR_ERROR_TRAIN_MUST_BE_STOPPED_INSIDE_DEPOT + front->type);
 	}
 
