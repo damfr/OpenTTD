@@ -437,13 +437,12 @@ public:
 		if (sel != INVALID_VEHICLE) {
 			this->sel = INVALID_VEHICLE;
 		} else if (v != NULL) {
-			int image = v->GetImage(_current_text_dir == TD_RTL ? DIR_E : DIR_W, EIT_PURCHASE);
-			SetObjectToPlaceWnd(image, GetVehiclePalette(v), HT_DRAG, this);
+            SetObjectToPlaceWnd(SPR_CURSOR_MOUSE, PAL_NONE, HT_DRAG, this);
+			SetMouseCursorVehicle(v, EIT_IN_DEPOT);
+			_cursor.vehchain = _ctrl_pressed;
 
 			this->sel = v->index;
 			this->SetDirty();
-
-			_cursor.vehchain = _ctrl_pressed;
 		}
 	}
 
