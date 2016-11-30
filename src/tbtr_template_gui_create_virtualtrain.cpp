@@ -7,7 +7,7 @@
  * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** @file build_vehicle_gui.cpp GUI for building vehicles. */
+/** @file tbtr_template_gui_create_virtualtrain.cpp Window to add more train parts to a template train. */
 
 #include "stdafx.h"
 #include "engine_base.h"
