@@ -11,8 +11,6 @@
 
 #include "tbtr_template_gui_replaceall.h"
 
-#include <stdio.h>
-
 /*
  * A wrapper which contains a virtual train and additional info of the template vehicle it is replacing
  * We will restore this additional info when creating a new template from the changed virtual train

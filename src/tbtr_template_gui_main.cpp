@@ -9,10 +9,6 @@
 
  /** @file tbtr_template_gui_main.cpp Main window for template configuration and overview. */
 
-#include <iostream>
-#include <stdio.h>
-
-
 #include "stdafx.h"
 #include "command_func.h"
 #include "vehicle_gui.h"
