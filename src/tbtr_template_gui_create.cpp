@@ -456,7 +456,6 @@ public:
 			this->SetDirty();
 		}
 	}
-
 };
 
 void ShowTemplateCreateWindow(TemplateVehicle *to_edit, bool *noticeParent, bool *createWindowOpen, int step_h)
@@ -464,5 +463,4 @@ void ShowTemplateCreateWindow(TemplateVehicle *to_edit, bool *noticeParent, bool
 	if ( BringWindowToFrontById(WC_CREATE_TEMPLATE, VEH_TRAIN) != NULL ) return;
 	new TemplateCreateWindow(&_template_create_window_desc, to_edit, noticeParent, createWindowOpen, step_h);
 }
-
 

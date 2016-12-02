@@ -407,7 +407,6 @@ static void DrawEngineList(VehicleType type, int l, int r, int y, const GUIEngin
 	}
 }
 
-
 struct BuildVirtualTrainWindow : Window {
 	VehicleType vehicle_type;
 	union {
@@ -827,3 +826,4 @@ void ShowBuildVirtualTrainWindow(Train **vt, bool *noticeParent)
 
 	new BuildVirtualTrainWindow(&_build_vehicle_desc, vt, noticeParent);
 }
+

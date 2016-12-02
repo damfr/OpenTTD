@@ -35,7 +35,6 @@
 
 #include "table/train_cmd.h"
 
-
 #include "tbtr_template_vehicle.h"
 
 // since doing stuff with sprites
@@ -48,7 +47,6 @@ INSTANTIATE_POOL_METHODS(Template)
 
 TemplateReplacementPool _template_replacement_pool("TemplateReplacementPool");
 INSTANTIATE_POOL_METHODS(TemplateReplacement)
-
 
 TemplateVehicle::TemplateVehicle(VehicleType ty, EngineID eid, byte subtypeflag, Owner current_owner)
 {
@@ -200,39 +198,4 @@ short deleteIllegalTemplateReplacements(GroupID g_id)
 	}
 	return del_amount;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

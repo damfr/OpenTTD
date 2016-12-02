@@ -524,3 +524,4 @@ void ShowTemplateReplaceAllGui()
 {
 	new TemplateReplacementReplaceAllWindow(&_template_replace_replaceall_desc);
 }
+

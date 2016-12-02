@@ -754,32 +754,3 @@ CommandCost CmdTemplateReplaceVehicle(Train *incoming, bool stayInDepot, DoComma
 	return buy;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

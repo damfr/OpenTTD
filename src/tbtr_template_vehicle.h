@@ -203,4 +203,3 @@ bool IssueTemplateReplacement(GroupID, TemplateID);
 short deleteIllegalTemplateReplacements(GroupID);
 
 #endif /* TEMPLATE_VEH_H */
-
