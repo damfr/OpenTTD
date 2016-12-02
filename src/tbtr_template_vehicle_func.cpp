@@ -108,7 +108,6 @@ inline void SetupTemplateVehicleFromVirtual(TemplateVehicle *tmp, TemplateVehicl
 	tmp->max_te = gcache->cached_max_te / 1000;
 
 	tmp->spritenum = virt->spritenum;
-	// TODO old sprite system updated
 	VehicleSpriteSeq seq;
 	virt->GetImage(DIR_W, EIT_PURCHASE, &seq);
 	tmp->cur_image = seq.seq[0].sprite;
@@ -502,7 +501,7 @@ CommandCost TestBuyAllTemplateVehiclesInChain(TemplateVehicle *tv, TileIndex til
  *  to store the cargo from the given single vehicle.
  *  @param old_veh:		ptr to the single vehicle, which's cargo shall be moved
  *  @param new_head:	ptr to the head of the chain, which shall obtain old_veh's cargo
- *  @return:			amount of moved cargo	TODO
+ *  @return:			amount of moved cargo
  */
 void TransferCargoForTrain(Train *old_veh, Train *new_head)
 {
@@ -530,8 +529,7 @@ void TransferCargoForTrain(Train *old_veh, Train *new_head)
 		}
 	}
 
-	// TODO: needs to be implemented, too
-	// // from autoreplace_cmd.cpp : 121
+	// from autoreplace_cmd.cpp : 121
 	/* Any left-overs will be thrown away, but not their feeder share. */
 	//if (src->cargo_cap < src->cargo.TotalCount()) src->cargo.Truncate(src->cargo.TotalCount() - src->cargo_cap);
 
@@ -539,8 +537,6 @@ void TransferCargoForTrain(Train *old_veh, Train *new_head)
 	new_head->ConsistChanged(ConsistChangeFlags::CCF_LOADUNLOAD);
 }
 
-// TODO: fit signature to regular cmd-structure
-//		 do something with move_cost, it is not used right now
 // if exec==DC_EXEC, test first and execute if sucessful
 CommandCost CmdTemplateReplaceVehicle(Train *incoming, bool stayInDepot, DoCommandFlag flags) {
 	Train	*new_chain=0,
@@ -572,7 +568,6 @@ CommandCost CmdTemplateReplaceVehicle(Train *incoming, bool stayInDepot, DoComma
 			}
 	}
 
-	// TODO: set result status to success/no success before returning
 	if ( !need_replacement ) {
 		if ( !need_refit || !use_refit ) {
 			/* before returning, release incoming train first if 2nd param says so */
@@ -669,13 +664,10 @@ CommandCost CmdTemplateReplaceVehicle(Train *incoming, bool stayInDepot, DoComma
 				tmp_chain = Train::Get(_new_vehicle_id);
 				move_cost.AddCost(CmdMoveRailVehicle(tile, flags, tmp_chain->index, last_veh->index, 0));
 			}
-			// TODO: is this enough ? might it be that we bought a new wagon here and it now has std refit ?
 			if ( need_refit && flags == DC_EXEC ) {
 				if ( use_refit ) {
 					uint32 cb = GetCmdRefitVeh(tmp_chain);
 					DoCommandP(tmp_chain->tile, tmp_chain->index, cur_tmpl->cargo_type | cur_tmpl->cargo_subtype << 8 | 1 << 16 , cb);
-					// old
-					// CopyWagonStatus(cur_tmpl, tmp_chain);
 				} else {
 					uint32 cb = GetCmdRefitVeh(tmp_chain);
 					DoCommandP(tmp_chain->tile, tmp_chain->index, store_refit_ct | store_refit_csubt << 8 | 1 << 16 , cb);
