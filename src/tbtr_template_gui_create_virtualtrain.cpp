@@ -424,7 +424,7 @@ struct BuildVirtualTrainWindow : Window {
 	byte cargo_filter_criteria;                 ///< Selected cargo filter
 	int details_height;                         ///< Minimal needed height of the details panels (found so far).
 	Scrollbar *vscroll;
-	Train **virtual_train;						///< the virtual train that is currently being created
+	Train **virtual_train;                      ///< the virtual train that is currently being created
 	bool *noticeParent;
 
 	BuildVirtualTrainWindow(WindowDesc *desc, Train **vt, bool *notice) : Window(desc)

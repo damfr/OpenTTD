@@ -108,10 +108,10 @@ inline void SetupTemplateVehicleFromVirtual(TemplateVehicle *tmp, TemplateVehicl
 	tmp->max_te = gcache->cached_max_te / 1000;
 
 	tmp->spritenum = virt->spritenum;
-    // TODO old sprite system updated
-    VehicleSpriteSeq seq;
-    virt->GetImage(DIR_W, EIT_PURCHASE, &seq);
-    tmp->cur_image = seq.seq[0].sprite;
+	// TODO old sprite system updated
+	VehicleSpriteSeq seq;
+	virt->GetImage(DIR_W, EIT_PURCHASE, &seq);
+	tmp->cur_image = seq.seq[0].sprite;
 	Point *p = new Point();
 	tmp->image_width = virt->GetDisplayImageWidth(p);
 }

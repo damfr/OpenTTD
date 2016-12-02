@@ -448,7 +448,7 @@ public:
 		if (sel != INVALID_VEHICLE) {
 			this->sel = INVALID_VEHICLE;
 		} else if (v != NULL) {
-            SetObjectToPlaceWnd(SPR_CURSOR_MOUSE, PAL_NONE, HT_DRAG, this);
+			SetObjectToPlaceWnd(SPR_CURSOR_MOUSE, PAL_NONE, HT_DRAG, this);
 			SetMouseCursorVehicle(v, EIT_IN_DEPOT);
 			_cursor.vehchain = _ctrl_pressed;
 
