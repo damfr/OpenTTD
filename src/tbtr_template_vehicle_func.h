@@ -13,6 +13,7 @@
 #define TEMPLATE_VEHICLE_FUNC_H
 
 #include "stdafx.h"
+
 #include "window_gui.h"
 
 #include "tbtr_template_vehicle.h"

@@ -10,34 +10,31 @@
 /** @file tbtr_template_gui_create_virtualtrain.cpp Window to add more train parts to a template train. */
 
 #include "stdafx.h"
-#include "engine_base.h"
-#include "engine_func.h"
-#include "station_base.h"
+
 #include "articulated_vehicles.h"
-#include "textbuf_gui.h"
+#include "cargotype.h"
 #include "command_func.h"
 #include "company_func.h"
-#include "vehicle_gui.h"
+#include "core/geometry_func.hpp"
+#include "date_func.h"
+#include "engine_base.h"
+#include "engine_func.h"
+#include "engine_gui.h"
+#include "group.h"
 #include "newgrf_engine.h"
 #include "newgrf_text.h"
-#include "group.h"
+#include "station_base.h"
 #include "string_func.h"
 #include "strings_func.h"
-#include "window_func.h"
-#include "date_func.h"
-#include "vehicle_func.h"
-#include "widgets/dropdown_func.h"
-#include "engine_gui.h"
-#include "cargotype.h"
-#include "core/geometry_func.hpp"
-
-#include "widgets/build_vehicle_widget.h"
-
 #include "table/strings.h"
+#include "textbuf_gui.h"
+#include "vehicle_func.h"
+#include "vehicle_gui.h"
+#include "widgets/build_vehicle_widget.h"
+#include "widgets/dropdown_func.h"
+#include "window_func.h"
 
 #include "tbtr_template_gui_create_virtualtrain.h"
-
-#include "vehicle_gui.h"
 
 static const NWidgetPart _nested_build_vehicle_widgets[] = {
 	NWidget(NWID_HORIZONTAL),
