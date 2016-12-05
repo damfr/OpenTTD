@@ -12,22 +12,18 @@
 #ifndef TEMPLATE_VEH_H
 #define TEMPLATE_VEH_H
 
-#include "company_func.h"
-
-#include "vehicle_type.h"
-#include "vehicle_base.h"
-#include "vehicle_func.h"
-
 #include "articulated_vehicles.h"
+#include "company_func.h"
+#include "engine_base.h"
+#include "engine_func.h"
+#include "engine_type.h"
 #include "newgrf_callbacks.h"
 #include "newgrf_engine.h"
 #include "newgrf_spritegroup.h"
-
-#include "engine_base.h"
-#include "engine_type.h"
-#include "engine_func.h"
-
 #include "sortlist_type.h"
+#include "vehicle_base.h"
+#include "vehicle_func.h"
+#include "vehicle_type.h"
 
 #define FOR_ALL_TEMPLATES_FROM(var, start) FOR_ALL_ITEMS_FROM(TemplateVehicle, template_index, var, start)
 #define FOR_ALL_TEMPLATES(var) FOR_ALL_TEMPLATES_FROM(var, 0)
