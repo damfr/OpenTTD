@@ -38,6 +38,14 @@
 Vehicle *vhead, *vtmp;
 static const uint MAX_ARTICULATED_PARTS = 100;
 
+/*
+ * forward declaration, from train_cmd.cpp
+ */
+CommandCost CmdSellRailWagon(DoCommandFlag, Vehicle*, uint16, uint32);
+
+/**
+ * Fill the given GUITemplateList with all template vehicles defined for the given owner, which are the head of a chain.
+ */
 void BuildTemplateGuiList(GUITemplateList *list, Scrollbar *vscroll, Owner oid, RailType railtype)
 {
 	list->Clear();
@@ -53,6 +61,10 @@ void BuildTemplateGuiList(GUITemplateList *list, Scrollbar *vscroll, Owner oid, 
 	if (vscroll) vscroll->SetCount(list->Length());
 }
 
+/**
+ * Calculate the total Money-value of a given template vehicle chain.
+ * @param tv: The given template vehicle is treated as the head of a chain. The value is only summed up for this vehicle and all following vehicles in the chain.
+ */
 Money CalculateOverallTemplateCost(const TemplateVehicle *tv)
 {
 	Money val = 0;
@@ -62,6 +74,9 @@ Money CalculateOverallTemplateCost(const TemplateVehicle *tv)
 	return val;
 }
 
+/**
+ * Draw a given template vehicle by its stored sprite id and a given position.
+ */
 void DrawTemplate(const TemplateVehicle *tv, int left, int right, int y)
 {
 	if ( !tv ) return;
@@ -78,7 +93,12 @@ void DrawTemplate(const TemplateVehicle *tv, int left, int right, int y)
 	}
 }
 
-// copy important stuff from the virtual vehicle to the template
+/**
+ * Copy relevant values from a (virtual) train onto a template vehicle.
+ * @param tmp: The template for which the values are to be setthat receives the values
+ * @param prev: The previous template vehicle in a chain. Used to chain the current template vehicle to it's precedessor.
+ * @param virt: The train from which to copy the values.
+ */
 inline void SetupTemplateVehicleFromVirtual(TemplateVehicle *tmp, TemplateVehicle *prev, Train *virt)
 {
 	if (prev) {
@@ -111,7 +131,9 @@ inline void SetupTemplateVehicleFromVirtual(TemplateVehicle *tmp, TemplateVehicl
 	tmp->image_width = virt->GetDisplayImageWidth(p);
 }
 
-// create a new virtual train as clone of a real train
+/*
+ * Create a Virtual Train as a clone from a Train object.
+ */
 Train* CloneVirtualTrainFromTrain(const Train *clicked)
 {
 	if ( !clicked ) return 0;
@@ -135,6 +157,10 @@ Train* CloneVirtualTrainFromTrain(const Train *clicked)
 	}
 	return head;
 }
+
+/*
+ * Create a Template Train as a clone from a Train object.
+ */
 TemplateVehicle* CloneTemplateVehicleFromTrain(const Train *t)
 {
 	Train *clicked = Train::Get(t->index);
@@ -157,7 +183,12 @@ TemplateVehicle* CloneTemplateVehicleFromTrain(const Train *t)
 	tmp->First()->SetRealLength(CeilDiv(init_clicked->gcache.cached_total_length * 10, TILE_SIZE));
 	return tmp->First();
 }
-// create a full TemplateVehicle based train according to a virtual train
+
+/*
+ * Create a new Template Train as a clone from a Virtual Train.
+ * The new template will contain all necessary details that can be extracted
+ * from the virtual train.
+ */
 TemplateVehicle* TemplateVehicleFromVirtualTrain(Train *virt)
 {
 	if ( !virt )
@@ -180,8 +211,9 @@ TemplateVehicle* TemplateVehicleFromVirtualTrain(Train *virt)
 	return tmp->First();
 }
 
-// attempt to buy a train after a given template vehicle
-// this might fail if the template e.g. deprecated and contains engines that are not sold anymore
+/*
+ * Create a Virtual Train corresponding to a given Template Vehicle.
+ */
 Train* VirtualTrainFromTemplateVehicle(TemplateVehicle *tv)
 {
 	if ( !tv ) return 0;
@@ -206,20 +238,28 @@ Train* VirtualTrainFromTemplateVehicle(TemplateVehicle *tv)
 	return head;
 }
 
-// return last in a chain (really last, so even a singular articulated part of a vehicle if the last one is artic)
+/*
+ * Return the last part of a Template Vehicle chain
+ * This will return really the last part, i.e. even the last part of an
+ * articulated vehicle, if chain ends with such an articulated vehicle.
+ */
 inline TemplateVehicle* Last(TemplateVehicle *chain) {
 	if ( !chain ) return 0;
 	while ( chain->Next() ) chain = chain->Next();
 	return chain;
 }
 
+/*
+ * Return the last part of a Train
+ * This will return really the last part, i.e. even the last part of an
+ * articulated vehicle, if chain ends with such an articulated vehicle.
+ */
 inline Train* Last(Train *chain) {
 	if ( !chain ) return 0;
 	while ( chain->GetNextUnit() ) chain = chain->GetNextUnit();
 	return chain;
 }
 
-// return: pointer to former vehicle
 TemplateVehicle *DeleteTemplateVehicle(TemplateVehicle *todel)
 {
 	if ( !todel )
@@ -228,9 +268,6 @@ TemplateVehicle *DeleteTemplateVehicle(TemplateVehicle *todel)
 	delete todel;
 	return cur;
 }
-
-// forward declaration, defined in train_cmd.cpp
-CommandCost CmdSellRailWagon(DoCommandFlag, Vehicle*, uint16, uint32);
 
 Train* DeleteVirtualTrain(Train *chain, Train *to_del) {
 	if ( chain != to_del ) {
@@ -245,6 +282,14 @@ Train* DeleteVirtualTrain(Train *chain, Train *to_del) {
 }
 
 // retrieve template vehicle from templatereplacement that belongs to the given group
+/*
+ * Find the Template Vehicle for a given vehicle group.
+ * The template is looked up by finding the template replacement that is
+ * currently set for the given group, if any is set.
+ * @param: gid	the ID of the group for which to find the currently used template
+ * @return		pointer to the corresponding template vechicle, NULL if no
+ * template replacement is defined for the given group.
+ */
 TemplateVehicle* GetTemplateVehicleByGroupID(GroupID gid) {
 	TemplateReplacement *tr;
 	// first try to find a templatereplacement issued for the given groupid
@@ -263,7 +308,7 @@ TemplateVehicle* GetTemplateVehicleByGroupID(GroupID gid) {
 }
 
 /**
- * Check a template consist whether it contains any engine of the given railtype
+ * Check, if a given template consist contains any engine of the given railtype
  */
 bool TemplateVehicleContainsEngineOfRailtype(const TemplateVehicle *tv, RailType type)
 {
@@ -285,7 +330,11 @@ bool TemplateVehicleContainsEngineOfRailtype(const TemplateVehicle *tv, RailType
 	return false;
 }
 
-//helper
+/*
+ * Check, whether a given Train object contains another Train
+ * The maybe-contained train is not check for complete inclusion, it is rather
+ * treated as if it was a one-vehicle chain
+ */
 bool ChainContainsVehicle(Train *chain, Train *mem) {
 	for (; chain; chain=chain->Next())
 		if ( chain == mem )
@@ -293,7 +342,9 @@ bool ChainContainsVehicle(Train *chain, Train *mem) {
 	return false;
 }
 
-// has O(n)
+/*
+ * Checks, if any vehicle in a given Train contains has a given EngineID
+ */
 Train* ChainContainsEngine(EngineID eid, Train *chain) {
 	for (; chain; chain=chain->GetNextUnit())
 		if (chain->engine_type == eid)
@@ -301,7 +352,12 @@ Train* ChainContainsEngine(EngineID eid, Train *chain) {
 	return 0;
 }
 
-// has O(n^2)
+/*
+ * Check, if any train in a given Depot contains a given EngineID
+ * @param tile:     the tile of the depot
+ * @param eid:      the EngineID to look up
+ * @param not_in    this Train will be ignored during the check
+ */
 Train* DepotContainsEngine(TileIndex tile, EngineID eid, Train *not_in=0) {
 	Train *t;
 	FOR_ALL_TRAINS(t) {
@@ -318,6 +374,9 @@ Train* DepotContainsEngine(TileIndex tile, EngineID eid, Train *not_in=0) {
 	return 0;
 }
 
+/*
+ * Copy some details of one Train onto another
+ */
 void CopyStatus(Train *from, Train *to) {
 	DoCommand(to->tile, from->group_id, to->index, DC_EXEC, CMD_ADD_VEHICLE_GROUP);
 	to->cargo_type = from->cargo_type;
@@ -327,17 +386,22 @@ void CopyStatus(Train *from, Train *to) {
 	char *tmp = to->name;
 	to->name = from->name;
 	from->name = tmp;
-	/*if ( !from->name || !to->name ) {
-		int tmpind = from->index;
-		from->index = to->index;
-		to->index = tmpind;
-	}*/
 }
+
+/*
+ * Reset a train's group and name
+ */
 void NeutralizeStatus(Train *t) {
 	DoCommand(t->tile, DEFAULT_GROUP, t->index, DC_EXEC, CMD_ADD_VEHICLE_GROUP);
 
 	t->name = 0;
 }
+
+/*
+ * Check, if a given train fully matches a template train's engine ids
+ * Both chains must have the exact same number of members all of which have the
+ * same engine ids.
+ */
 bool TrainMatchesTemplate(const Train *t, TemplateVehicle *tv) {
 	while ( t && tv ) {
 		if ( t->engine_type != tv->engine_type )
@@ -350,7 +414,11 @@ bool TrainMatchesTemplate(const Train *t, TemplateVehicle *tv) {
 	return true;
 }
 
-
+/*
+ * Check, if a given train completely matches a template's refit settings
+ * This check will still succeed if any of the two given chains has more
+ * vehicles than the other.
+ */
 bool TrainMatchesTemplateRefit(const Train *t, TemplateVehicle *tv)
 {
 	if ( !tv->refit_as_template )
@@ -364,6 +432,14 @@ bool TrainMatchesTemplateRefit(const Train *t, TemplateVehicle *tv)
 	}
 	return true;
 }
+
+/*
+ * Break up the remainders of a chain after template replacement
+ * All primary vehicles in the given chain are moved to form a new chain on the
+ * same tile (presumably inside a depot). All following wagons after a train
+ * engine are kept with the engine in order to create only as many new chains
+ * as necessary.
+ */
 void BreakUpRemainders(Train *t) {
 	while ( t ) {
 		Train *move;
@@ -378,6 +454,9 @@ void BreakUpRemainders(Train *t) {
 	}
 }
 
+/*
+ * Count and return the number of engines in a given train
+ */
 short CountEnginesInChain(Train *t)
 {
 	short count = 0;
@@ -387,6 +466,9 @@ short CountEnginesInChain(Train *t)
 	return count;
 }
 
+/*
+ * Count and return the number of vehicles with a spcific engine id in a train
+ */
 int countOccurrencesInTrain(Train *t, EngineID eid) {
 	int count = 0;
 	Train *tmp = t;
@@ -396,6 +478,9 @@ int countOccurrencesInTrain(Train *t, EngineID eid) {
 	return count;
 }
 
+/*
+ * Count and return the number of parts with a given engine id in a template
+ */
 int countOccurrencesInTemplateVehicle(TemplateVehicle *contain, EngineID eid) {
 	int count = 0;
 	for ( ; contain; contain=contain->GetNextUnit() )
@@ -404,6 +489,12 @@ int countOccurrencesInTemplateVehicle(TemplateVehicle *contain, EngineID eid) {
 	return count;
 }
 
+/*
+ * Count the number of occurrences of a specific engine id in a depot
+ * @param tile:     the tile of the depot
+ * @param eid:      the engine id to count
+ * @param not_in:   ignore this train for the count
+ */
 int countOccurrencesInDepot(TileIndex tile, EngineID eid, Train *not_in=0) {
 	int count = 0;
 	Vehicle *v;
@@ -444,12 +535,18 @@ CommandCost CalculateTemplateReplacementCost(Train *incoming) {
 	return estimate;
 }
 
-// make sure the real train wagon has the right cargo
+/*
+ * Copy the status of a single template wagon onto a Train wagon
+ * Both inputs are treated as singular vehicles.
+ */
 void CopyWagonStatus(TemplateVehicle *from, Train *to) {
 	to->cargo_type = from->cargo_type;
 	to->cargo_subtype = from->cargo_subtype;
 }
 
+/*
+ * Count and return the number of Trains that currently need template replacement
+ */
 int NumTrainsNeedTemplateReplacement(GroupID g_id, TemplateVehicle *tv)
 {
 	int count = 0;
@@ -462,7 +559,10 @@ int NumTrainsNeedTemplateReplacement(GroupID g_id, TemplateVehicle *tv)
 	}
 	return count;
 }
-// refit each vehicle in t as is in tv, assume t and tv contain the same types of vehicles
+
+/*
+ * Copy the refit status from a complete Template train onto a complete Train
+ */
 static void RefitTrainFromTemplate(Train *t, TemplateVehicle *tv)
 {
 	while ( t && tv ) {
@@ -477,9 +577,8 @@ static void RefitTrainFromTemplate(Train *t, TemplateVehicle *tv)
 	}
 }
 
-/** using cmdtemplatereplacevehicle as test-function (i.e. with flag DC_NONE) is not a good idea as that function relies on
- *  actually moving vehicles around to work properly.
- *  We do this worst-cast test instead.
+/*
+ * Return the total cost of all parts of a Template train
  */
 CommandCost TestBuyAllTemplateVehiclesInChain(TemplateVehicle *tv, TileIndex tile)
 {
