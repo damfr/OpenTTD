@@ -14,6 +14,9 @@
 
 #include "stdafx.h"
 
+#include "window_func.h"
+#include "window_gui.h"
+
 #include "company_func.h"
 #include "core/math_func.hpp"
 #include "engine_base.h"
@@ -24,8 +27,6 @@
 #include "train.h"
 #include "vehicle_base.h"
 #include "vehicle_func.h"
-#include "window_func.h"
-#include "window_gui.h"
 
 #include "tbtr_template_vehicle.h"
 #include "tbtr_template_vehicle_func.h"

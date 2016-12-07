@@ -11,6 +11,8 @@
 
 #include "stdafx.h"
 
+#include "window_func.h"
+
 #include "articulated_vehicles.h"
 #include "cargotype.h"
 #include "command_func.h"
@@ -32,7 +34,6 @@
 #include "vehicle_gui.h"
 #include "widgets/build_vehicle_widget.h"
 #include "widgets/dropdown_func.h"
-#include "window_func.h"
 
 #include "tbtr_template_gui_create_virtualtrain.h"
 

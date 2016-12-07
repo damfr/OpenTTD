@@ -11,6 +11,9 @@
 
 #include "stdafx.h"
 
+#include "window_func.h"
+#include "window_gui.h"
+
 #include "command_func.h"
 #include "company_base.h"
 #include "company_func.h"
@@ -33,8 +36,6 @@
 #include "vehicle_gui.h"
 #include "vehiclelist.h"
 #include "viewport_func.h"
-#include "window_func.h"
-#include "window_gui.h"
 
 #include "tbtr_template_gui_create.h"
 #include "tbtr_template_vehicle.h"
