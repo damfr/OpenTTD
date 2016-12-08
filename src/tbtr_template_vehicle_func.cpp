@@ -345,7 +345,7 @@ bool ChainContainsVehicle(Train *chain, Train *mem) {
 /*
  * Checks, if any vehicle in a given Train contains has a given EngineID
  */
-Train* ChainContainsEngine(EngineID eid, Train *chain) {
+Train* ChainContainsEngine(Train* chain, EngineID eid) {
 	for (; chain; chain=chain->GetNextUnit())
 		if (chain->engine_type == eid)
 			return chain;
@@ -695,7 +695,7 @@ CommandCost CmdTemplateReplaceVehicle(Train *incoming, bool stayInDepot, DoComma
 			if ( remainder_chain )
 				move_cost.AddCost(CmdMoveRailVehicle(tile, flags, remainder_chain->index|(1<<20), INVALID_VEHICLE, 0));
 		}
-		else if ( (tmp_chain = ChainContainsEngine(eid, incoming)) && tmp_chain!=NULL )	{		// 2
+		else if ( (tmp_chain = ChainContainsEngine(incoming, eid)) && tmp_chain!=NULL )	{		// 2
 			// new_chain is the needed engine, move it to an empty spot in the depot
 			new_chain = tmp_chain;
 			move_cost.AddCost(DoCommand(tile, new_chain->index, INVALID_VEHICLE, flags,CMD_MOVE_RAIL_VEHICLE));
@@ -740,7 +740,7 @@ CommandCost CmdTemplateReplaceVehicle(Train *incoming, bool stayInDepot, DoComma
 		Train *last_veh = new_chain;
 		while (cur_tmpl) {
 			// 1. engine contained in remainder chain
-			if ( (tmp_chain = ChainContainsEngine(cur_tmpl->engine_type, remainder_chain)) && tmp_chain!=NULL )	{
+			if ( (tmp_chain = ChainContainsEngine(remainder_chain, cur_tmpl->engine_type)) && tmp_chain!=NULL )	{
 				// advance remainder_chain (if necessary) to not lose track of it
 				if ( tmp_chain == remainder_chain )
 					remainder_chain = remainder_chain->GetNextUnit();

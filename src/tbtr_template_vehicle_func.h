@@ -57,7 +57,7 @@ void pvt(const Train*);
 // for testing
 TemplateVehicle* GetTemplateVehicleByGroupID(GroupID);
 bool ChainContainsVehicle(Train*, Train*);
-Train* ChainContainsEngine(EngineID, Train*);
+Train* ChainContainsEngine(Train*, EngineID);
 Train* DepotContainsEngine(TileIndex, EngineID, Train*);
 
 int NumTrainsNeedTemplateReplacement(GroupID, TemplateVehicle*);
