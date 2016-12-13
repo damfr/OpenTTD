@@ -121,7 +121,7 @@ private:
 	bool *noticeParent;
 	bool *createWindowOpen;			/// used to notify main window of progress (dummy way of disabling 'delete' while editing a template)
 	bool virtualTrainChangedNotice;
-	VehicleID sel;
+	VehicleID selected_train;		/// the selected train in the GUI
 	VehicleID vehicle_over;
 	TemplateVehicle *editTemplate;
 
@@ -145,7 +145,7 @@ public:
 		if ( to_edit ) editMode = true;
 		else editMode = false;
 
-		this->sel = INVALID_VEHICLE;
+		this->selected_train = INVALID_VEHICLE;
 		this->vehicle_over = INVALID_VEHICLE;
 
 		this->virtual_train = VirtualTrainFromTemplateVehicle(to_edit);
@@ -244,7 +244,7 @@ public:
 		switch(widget) {
 			case TCW_MATRIX_NEW_TMPL: {
 				if ( this->virtual_train ) {
-					DrawTrainImage(virtual_train, r.left+TRAIN_FRONT_SPACE, r.right, r.top+2, this->sel, EIT_PURCHASE, this->hscroll->GetPosition(), this->vehicle_over);
+					DrawTrainImage(virtual_train, r.left+TRAIN_FRONT_SPACE, r.right, r.top+2, this->selected_train, EIT_PURCHASE, this->hscroll->GetPosition(), this->vehicle_over);
 					SetDParam(0, CeilDiv(virtual_train->gcache.cached_total_length * 10, TILE_SIZE));
 					SetDParam(1, 1);
 					DrawString(r.left, r.right, r.top, STR_TINY_BLACK_DECIMAL, TC_BLACK, SA_RIGHT);
@@ -313,26 +313,26 @@ public:
 			}
 			case TCW_SELL_TMPL: {
 				if (this->IsWidgetDisabled(widget)) return;
-				if (this->sel == INVALID_VEHICLE) return;
+				if (this->selected_train == INVALID_VEHICLE) return;
 
-				virtual_train = DeleteVirtualTrain(virtual_train, Train::Get(this->sel));
+				this->virtual_train = DeleteVirtualTrain(this->virtual_train, Train::Get(this->selected_train));
 
-				this->sel = INVALID_VEHICLE;
+				this->selected_train = INVALID_VEHICLE;
 
 				this->SetDirty();
 				break;
 			}
 			default:
-				this->sel = INVALID_VEHICLE;
+				this->selected_train = INVALID_VEHICLE;
 				this->SetDirty();
 		}
 		_cursor.vehchain = false;
-		this->sel = INVALID_VEHICLE;
+		this->selected_train = INVALID_VEHICLE;
 		this->SetDirty();
 	}
 	virtual void OnMouseDrag(Point pt, int widget)
 	{
-		if (this->sel == INVALID_VEHICLE) return;
+		if (this->selected_train == INVALID_VEHICLE) return;
 		/* A rail vehicle is dragged.. */
 		if (widget != TCW_MATRIX_NEW_TMPL) { // ..outside of the depot matrix.
 			if (this->vehicle_over != INVALID_VEHICLE) {
@@ -349,15 +349,15 @@ public:
 		if (this->GetVehicleFromDepotWndPt(pt.x - matrix->pos_x, pt.y - matrix->pos_y, &v, &gdvp) != MODE_DRAG_VEHICLE) return;
 		VehicleID new_vehicle_over = INVALID_VEHICLE;
 		if (gdvp.head != NULL) {
-			if (gdvp.wagon == NULL && gdvp.head->Last()->index != this->sel) { // ..at the end of the train.
+			if (gdvp.wagon == NULL && gdvp.head->Last()->index != this->selected_train) { // ..at the end of the train.
 				/* NOTE: As a wagon can't be moved at the begin of a train, head index isn't used to mark a drag-and-drop
 				 * destination inside a train. This head index is then used to indicate that a wagon is inserted at
 				 * the end of the train.
 				 */
 				new_vehicle_over = gdvp.head->index;
 			} else if (gdvp.wagon != NULL && gdvp.head != gdvp.wagon &&
-					gdvp.wagon->index != this->sel &&
-					gdvp.wagon->Previous()->index != this->sel) { // ..over an existing wagon.
+					gdvp.wagon->index != this->selected_train &&
+					gdvp.wagon->Previous()->index != this->selected_train) { // ..over an existing wagon.
 				new_vehicle_over = gdvp.wagon->index;
 			}
 		}
@@ -437,16 +437,16 @@ public:
 		v = gdvp.wagon;
 
 		if (v != NULL && VehicleClicked(v)) return;
-		VehicleID sel = this->sel;
+		VehicleID sel = this->selected_train;
 
 		if (sel != INVALID_VEHICLE) {
-			this->sel = INVALID_VEHICLE;
+			this->selected_train = INVALID_VEHICLE;
 		} else if (v != NULL) {
 			SetObjectToPlaceWnd(SPR_CURSOR_MOUSE, PAL_NONE, HT_DRAG, this);
 			SetMouseCursorVehicle(v, EIT_IN_DEPOT);
 			_cursor.vehchain = _ctrl_pressed;
 
-			this->sel = v->index;
+			this->selected_train = v->index;
 			this->SetDirty();
 		}
 	}
