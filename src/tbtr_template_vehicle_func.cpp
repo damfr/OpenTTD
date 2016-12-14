@@ -479,17 +479,6 @@ int countOccurrencesInTrain(Train *t, EngineID eid) {
 }
 
 /*
- * Count and return the number of parts with a given engine id in a template
- */
-int countOccurrencesInTemplateVehicle(TemplateVehicle *contain, EngineID eid) {
-	int count = 0;
-	for ( ; contain; contain=contain->GetNextUnit() )
-		if ( contain->engine_type == eid )
-			count++;
-	return count;
-}
-
-/*
  * Count the number of occurrences of a specific engine id in a depot
  * @param tile:     the tile of the depot
  * @param eid:      the engine id to count
