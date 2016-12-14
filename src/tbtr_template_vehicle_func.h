@@ -45,16 +45,10 @@ inline TemplateVehicle* Last(TemplateVehicle*);
 
 TemplateVehicle *DeleteTemplateVehicle(TemplateVehicle*);
 
-Train* DeleteVirtualTrainPart(Train*, Train*);
 Train* DeleteVirtualTrain(Train*, Train *);
 
 CommandCost CmdTemplateReplaceVehicle(Train*, bool, DoCommandFlag);
 
-void pat();
-void pav();
-void ptv(TemplateVehicle*);
-void pvt(const Train*);
-// for testing
 TemplateVehicle* GetTemplateVehicleByGroupID(GroupID);
 bool ChainContainsVehicle(Train*, Train*);
 Train* ChainContainsEngine(Train*, EngineID);
