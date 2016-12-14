@@ -95,40 +95,40 @@ void DrawTemplate(const TemplateVehicle *tv, int left, int right, int y)
 
 /**
  * Copy relevant values from a (virtual) train onto a template vehicle.
- * @param tmp: The template for which the values are to be setthat receives the values
- * @param prev: The previous template vehicle in a chain. Used to chain the current template vehicle to it's precedessor.
  * @param virt: The train from which to copy the values.
+ * @param tmpl_veh: The template for which the values are to be setthat receives the values
+ * @param prev: The previous template vehicle in a chain. Used to chain the current template vehicle to it's precedessor.
  */
-inline void SetupTemplateVehicleFromVirtual(TemplateVehicle *tmp, TemplateVehicle *prev, Train *virt)
+inline void SetupTemplateVehicleFromVirtual(Train* virt, TemplateVehicle* tmpl_veh, TemplateVehicle* prev)
 {
 	if (prev) {
-		prev->SetNext(tmp);
-		tmp->SetPrev(prev);
-		tmp->SetFirst(prev->First());
+		prev->SetNext(tmpl_veh);
+		tmpl_veh->SetPrev(prev);
+		tmpl_veh->SetFirst(prev->First());
 	}
-	tmp->railtype = virt->railtype;
-	tmp->owner = virt->owner;
-	tmp->value = virt->value;
+	tmpl_veh->railtype = virt->railtype;
+	tmpl_veh->owner = virt->owner;
+	tmpl_veh->value = virt->value;
 
 	// set the subtype but also clear the virtual flag while doing it
-	tmp->subtype = virt->subtype & ~(1 << GVSF_VIRTUAL);
+	tmpl_veh->subtype = virt->subtype & ~(1 << GVSF_VIRTUAL);
 	// set the cargo type and capacity
-	tmp->cargo_type = virt->cargo_type;
-	tmp->cargo_subtype = virt->cargo_subtype;
-	tmp->cargo_cap = virt->cargo_cap;
+	tmpl_veh->cargo_type = virt->cargo_type;
+	tmpl_veh->cargo_subtype = virt->cargo_subtype;
+	tmpl_veh->cargo_cap = virt->cargo_cap;
 
 	const GroundVehicleCache *gcache = virt->GetGroundVehicleCache();
-	tmp->max_speed = virt->GetDisplayMaxSpeed();
-	tmp->power = gcache->cached_power;
-	tmp->weight = gcache->cached_weight;
-	tmp->max_te = gcache->cached_max_te / 1000;
+	tmpl_veh->max_speed = virt->GetDisplayMaxSpeed();
+	tmpl_veh->power = gcache->cached_power;
+	tmpl_veh->weight = gcache->cached_weight;
+	tmpl_veh->max_te = gcache->cached_max_te / 1000;
 
-	tmp->spritenum = virt->spritenum;
+	tmpl_veh->spritenum = virt->spritenum;
 	VehicleSpriteSeq seq;
 	virt->GetImage(DIR_W, EIT_PURCHASE, &seq);
-	tmp->cur_image = seq.seq[0].sprite;
+	tmpl_veh->cur_image = seq.seq[0].sprite;
 	Point *p = new Point();
-	tmp->image_width = virt->GetDisplayImageWidth(p);
+	tmpl_veh->image_width = virt->GetDisplayImageWidth(p);
 }
 
 /*
@@ -176,7 +176,7 @@ TemplateVehicle* CloneTemplateVehicleFromTrain(const Train *t)
 	TemplateVehicle *tmp, *prev=0;
 	for ( ; clicked; clicked=clicked->Next() ) {
 		tmp = new TemplateVehicle(clicked->engine_type);
-		SetupTemplateVehicleFromVirtual(tmp, prev, clicked);
+		SetupTemplateVehicleFromVirtual(clicked, tmp, prev);
 		prev = tmp;
 	}
 
@@ -203,7 +203,7 @@ TemplateVehicle* TemplateVehicleFromVirtualTrain(Train *virt)
 	TemplateVehicle *tmp, *prev=0;
 	for ( ; virt; virt=virt->Next() ) {
 		tmp = new TemplateVehicle(virt->engine_type);
-		SetupTemplateVehicleFromVirtual(tmp, prev, virt);
+		SetupTemplateVehicleFromVirtual(virt, tmp, prev);
 		prev = tmp;
 	}
 
