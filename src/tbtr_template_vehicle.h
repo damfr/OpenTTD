@@ -34,8 +34,6 @@
 struct TemplateVehicle;
 struct TemplateReplacement;
 
-CommandCost CmdBuildTemplateVehicle(uint i, DoCommandFlag flags, uint p1, uint p2, char const* text);
-CommandCost CmdTemplateReplaceVehicle(uint i, DoCommandFlag flags, uint p1, uint p2, char const* text);
 typedef uint16 TemplateID;
 
 
@@ -132,7 +130,6 @@ public:
 
 	inline bool IsFreeWagonChain() const { return HasBit(this->subtype, GVSF_FREE_WAGON); }
 
-	// since CmdBuildTemplateVehicle(...)
 	inline void SetFrontEngine() 		{ SetBit(this->subtype, GVSF_FRONT); }
 	inline void SetEngine()			{ SetBit(this->subtype, GVSF_ENGINE); }
 	inline void SetArticulatedPart()	{ SetBit(this->subtype, GVSF_ARTICULATED_PART); }
