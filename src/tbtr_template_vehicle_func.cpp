@@ -792,3 +792,8 @@ CommandCost CmdTemplateReplaceVehicle(Train *incoming, bool stayInDepot, DoComma
 	return buy;
 }
 
+CommandCost CmdTemplateReplaceVehicle(TileIndex, DoCommandFlag, uint32, uint32, char const*) {
+	CommandCost c;
+	return c;
+}
+
