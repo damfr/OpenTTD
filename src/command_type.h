@@ -222,6 +222,8 @@ enum Commands {
 	CMD_FORCE_TRAIN_PROCEED,          ///< proceed a train to pass a red signal
 	CMD_REVERSE_TRAIN_DIRECTION,      ///< turn a train around
 
+	CMD_TEMPLATE_REPLACEMENT,         ///< execute a template replacement on a train
+
 	CMD_CLEAR_ORDER_BACKUP,           ///< clear the order backup of a given user/tile
 	CMD_MODIFY_ORDER,                 ///< modify an order (like set full-load)
 	CMD_SKIP_TO_ORDER,                ///< skip an order to the next of specific one
