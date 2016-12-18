@@ -556,9 +556,7 @@ static void RefitTrainFromTemplate(Train *t, TemplateVehicle *tv)
 {
 	while ( t && tv ) {
 		// refit t as tv
-		uint32 cb = GetCmdRefitVeh(t);
-
-		DoCommandP(t->tile, t->index, tv->cargo_type | tv->cargo_subtype << 8 | 1 << 16 , cb);
+		DoCommand(t->tile, t->index, tv->cargo_type | tv->cargo_subtype << 8 | 1 << 16 , DC_EXEC, CMD_REFIT_VEHICLE);
 
 		// next
 		t = t->GetNextUnit();
