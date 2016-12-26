@@ -712,8 +712,7 @@ CommandCost cmd_helper_func(Train *incoming, bool stayInDepot, DoCommandFlag fla
 			// additionally, if we don't want to use the template refit, refit as incoming
 			// the template refit will be set further down, if we use it at all
 			if ( !use_refit ) {
-				uint32 cb = GetCmdRefitVeh(new_chain);
-				DoCommandP(new_chain->tile, new_chain->index, store_refit_ct | store_refit_csubt << 8 | 1 << 16 , cb);
+				DoCommand(new_chain->tile, new_chain->index, store_refit_ct | store_refit_csubt << 8 | 1 << 16 , DC_EXEC, CMD_REFIT_VEHICLE);
 			}
 
 		}
@@ -748,11 +747,9 @@ CommandCost cmd_helper_func(Train *incoming, bool stayInDepot, DoCommandFlag fla
 			}
 			if ( need_refit && flags == DC_EXEC ) {
 				if ( use_refit ) {
-					uint32 cb = GetCmdRefitVeh(tmp_chain);
-					DoCommandP(tmp_chain->tile, tmp_chain->index, cur_tmpl->cargo_type | cur_tmpl->cargo_subtype << 8 | 1 << 16 , cb);
+					DoCommand(tmp_chain->tile, tmp_chain->index, cur_tmpl->cargo_type | cur_tmpl->cargo_subtype << 8 | 1 << 16 , DC_EXEC, CMD_REFIT_VEHICLE);
 				} else {
-					uint32 cb = GetCmdRefitVeh(tmp_chain);
-					DoCommandP(tmp_chain->tile, tmp_chain->index, store_refit_ct | store_refit_csubt << 8 | 1 << 16 , cb);
+					DoCommand(tmp_chain->tile, tmp_chain->index, store_refit_ct | store_refit_csubt << 8 | 1 << 16 , DC_EXEC, CMD_REFIT_VEHICLE);
 				}
 			}
 			cur_tmpl = cur_tmpl->GetNextUnit();
