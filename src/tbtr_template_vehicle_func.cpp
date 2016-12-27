@@ -566,6 +566,12 @@ static void RefitTrainFromTemplate(Train *t, TemplateVehicle *tv)
 
 /*
  * Return the total cost of all parts of a Template train
+ *
+ * This function is currently too simplistic. It should take into account what vehicles can be reused from either 
+ * the incoming train or from the vehicles in the depot. Though both these factors also depend on the settings of
+ * the currently used template.
+ * What this function currently does is to assume that ALL vehicles in the given template train must be bought.
+ * This seems to be safe minimum requirement but it will be extended in the future.
  */
 CommandCost TestBuyAllTemplateVehiclesInChain(TemplateVehicle *tv, TileIndex tile)
 {
@@ -632,7 +638,6 @@ CommandCost cmd_helper_func(Train *incoming, bool stayInDepot, DoCommandFlag fla
 	CommandCost move_cost(EXPENSES_NEW_VEHICLES);
 	CommandCost tmp_result(EXPENSES_NEW_VEHICLES);
 
-
 	/* first some tests on necessity and sanity */
 	if ( !tv )
 		return buy;
@@ -649,20 +654,24 @@ CommandCost cmd_helper_func(Train *incoming, bool stayInDepot, DoCommandFlag fla
 				break;
 			}
 	}
-
 	if ( !need_replacement ) {
 		if ( !need_refit || !use_refit ) {
 			/* before returning, release incoming train first if 2nd param says so */
 			if ( !stayInDepot ) incoming->vehstatus &= ~VS_STOPPED;
 			return buy;
 		}
-	} else {
-		CommandCost buyCost = TestBuyAllTemplateVehiclesInChain(tv, tile);
-		if ( !buyCost.Succeeded() || !CheckCompanyHasMoney(buyCost) ) {
-			if ( !stayInDepot ) incoming->vehstatus &= ~VS_STOPPED;
-			return buy;
-		}
 	}
+
+	/* check overall cost of applying this template replacement */
+	CommandCost testbuy_cost = TestBuyAllTemplateVehiclesInChain(tv, tile);
+	/* Under flags DC_NONE we just want to know the overall cost of the replacement and whether the current company can
+	 * afford it. */
+	if (flags != DC_EXEC)
+		return testbuy_cost;
+	/* Under flags DC_EXEC we still abort only if the current company can NOT affort the replacement. */
+	else if (!testbuy_cost.Succeeded())
+		return testbuy_cost;
+
 
 	/* define replacement behaviour */
 	bool reuseDepot = tv->IsSetReuseDepotVehicles();
@@ -743,7 +752,7 @@ CommandCost cmd_helper_func(Train *incoming, bool stayInDepot, DoCommandFlag fla
 					return tmp_result;
 				buy.AddCost(tmp_result);
 				tmp_chain = Train::Get(_new_vehicle_id);
-				move_cost.AddCost(CmdMoveRailVehicle(tile, flags, tmp_chain->index, last_veh->index, 0));
+				move_cost.AddCost(DoCommand(tile, tmp_chain->index, last_veh->index, flags, CMD_MOVE_RAIL_VEHICLE));
 			}
 			if ( need_refit && flags == DC_EXEC ) {
 				if ( use_refit ) {
