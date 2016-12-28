@@ -497,7 +497,7 @@ int countOccurrencesInDepot(TileIndex tile, EngineID eid, Train *not_in=0) {
 	return count;
 }
 
-// basically does the same steps as CmdTemplateReplaceVehicle but without actually moving things around
+// basically does the same steps as CmdTemplateReplaceTrain but without actually moving things around
 CommandCost CalculateTemplateReplacementCost(Train *incoming) {
 	TileIndex tile = incoming->tile;
 	TemplateVehicle *tv = GetTemplateVehicleByGroupID(incoming->group_id);
@@ -795,7 +795,7 @@ CommandCost cmd_helper_func(Train *incoming, bool stayInDepot, DoCommandFlag fla
 	}
 	return buy;
 }
-CommandCost CmdTemplateReplaceVehicle(TileIndex ti, DoCommandFlag flags, uint32 p1, uint32 p2, char const* msg) {
+CommandCost CmdTemplateReplaceTrain(TileIndex ti, DoCommandFlag flags, uint32 p1, uint32 p2, char const* msg) {
 	VehicleID id_inc = GB(p1, 0, 20);
 	Train* incoming = Train::GetIfValid(id_inc);
 	// TODO check if null

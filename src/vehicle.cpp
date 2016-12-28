@@ -1074,7 +1074,7 @@ void CallVehicleTicks()
 		bool stayInDepot = it->second;
 
 		it->first->vehstatus |= VS_STOPPED;
-		DoCommand(0, t->index, stayInDepot, DC_EXEC, CMD_TEMPLATE_REPLACE_VEHICLE);
+		DoCommand(0, t->index, stayInDepot, DC_EXEC, CMD_TEMPLATE_REPLACE_TRAIN);
 		/* Redraw main gui for changed statistics */
 		SetWindowClassesDirty(WC_TEMPLATEGUI_MAIN);
 	}
