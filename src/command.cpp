@@ -89,6 +89,8 @@ CommandProc CmdSetVehicleVisibility;
 CommandProc CmdForceTrainProceed;
 CommandProc CmdReverseTrainDirection;
 
+CommandProc CmdTemplateReplaceVehicle;
+
 CommandProc CmdClearOrderBackup;
 CommandProc CmdModifyOrder;
 CommandProc CmdSkipToOrder;
@@ -249,6 +251,8 @@ static const Command _command_proc_table[] = {
 	DEF_CMD(CmdMoveRailVehicle,                                0, CMDT_VEHICLE_CONSTRUCTION  ), // CMD_MOVE_RAIL_VEHICLE
 	DEF_CMD(CmdForceTrainProceed,                              0, CMDT_VEHICLE_MANAGEMENT    ), // CMD_FORCE_TRAIN_PROCEED
 	DEF_CMD(CmdReverseTrainDirection,                          0, CMDT_VEHICLE_MANAGEMENT    ), // CMD_REVERSE_TRAIN_DIRECTION
+
+	DEF_CMD(CmdTemplateReplaceVehicle,                         0, CMDT_VEHICLE_CONSTRUCTION  ), // CMD_TEMPLATE_REPLACE_VEHICLE
 
 	DEF_CMD(CmdClearOrderBackup,                   CMD_CLIENT_ID, CMDT_SERVER_SETTING        ), // CMD_CLEAR_ORDER_BACKUP
 	DEF_CMD(CmdModifyOrder,                                    0, CMDT_ROUTE_MANAGEMENT      ), // CMD_MODIFY_ORDER

@@ -47,7 +47,7 @@ TemplateVehicle *DeleteTemplateVehicle(TemplateVehicle*);
 
 Train* DeleteVirtualTrain(Train*, Train *);
 
-CommandCost CmdTemplateReplaceVehicle(Train*, bool, DoCommandFlag);
+CommandCost CmdTemplateReplaceVehicle(TileIndex, DoCommandFlag, uint32, uint32, char const*);
 
 TemplateVehicle* GetTemplateVehicleByGroupID(GroupID);
 bool ChainContainsVehicle(Train*, Train*);

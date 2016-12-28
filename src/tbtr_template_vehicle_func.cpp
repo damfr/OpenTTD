@@ -556,9 +556,7 @@ static void RefitTrainFromTemplate(Train *t, TemplateVehicle *tv)
 {
 	while ( t && tv ) {
 		// refit t as tv
-		uint32 cb = GetCmdRefitVeh(t);
-
-		DoCommandP(t->tile, t->index, tv->cargo_type | tv->cargo_subtype << 8 | 1 << 16 , cb);
+		DoCommand(t->tile, t->index, tv->cargo_type | tv->cargo_subtype << 8 | 1 << 16 , DC_EXEC, CMD_REFIT_VEHICLE);
 
 		// next
 		t = t->GetNextUnit();
@@ -568,6 +566,12 @@ static void RefitTrainFromTemplate(Train *t, TemplateVehicle *tv)
 
 /*
  * Return the total cost of all parts of a Template train
+ *
+ * This function is currently too simplistic. It should take into account what vehicles can be reused from either 
+ * the incoming train or from the vehicles in the depot. Though both these factors also depend on the settings of
+ * the currently used template.
+ * What this function currently does is to assume that ALL vehicles in the given template train must be bought.
+ * This seems to be safe minimum requirement but it will be extended in the future.
  */
 CommandCost TestBuyAllTemplateVehiclesInChain(TemplateVehicle *tv, TileIndex tile)
 {
@@ -621,8 +625,8 @@ void TransferCargoForTrain(Train *old_veh, Train *new_head)
 	new_head->ConsistChanged(ConsistChangeFlags::CCF_LOADUNLOAD);
 }
 
-// if exec==DC_EXEC, test first and execute if sucessful
-CommandCost CmdTemplateReplaceVehicle(Train *incoming, bool stayInDepot, DoCommandFlag flags) {
+// TODO this contains the exact content of the old Cmd function above
+CommandCost cmd_helper_func(Train *incoming, bool stayInDepot, DoCommandFlag flags) {
 	Train	*new_chain=0,
 			*remainder_chain=0,
 			*tmp_chain=0;
@@ -633,7 +637,6 @@ CommandCost CmdTemplateReplaceVehicle(Train *incoming, bool stayInDepot, DoComma
 	CommandCost buy(EXPENSES_NEW_VEHICLES);
 	CommandCost move_cost(EXPENSES_NEW_VEHICLES);
 	CommandCost tmp_result(EXPENSES_NEW_VEHICLES);
-
 
 	/* first some tests on necessity and sanity */
 	if ( !tv )
@@ -651,20 +654,24 @@ CommandCost CmdTemplateReplaceVehicle(Train *incoming, bool stayInDepot, DoComma
 				break;
 			}
 	}
-
 	if ( !need_replacement ) {
 		if ( !need_refit || !use_refit ) {
 			/* before returning, release incoming train first if 2nd param says so */
 			if ( !stayInDepot ) incoming->vehstatus &= ~VS_STOPPED;
 			return buy;
 		}
-	} else {
-		CommandCost buyCost = TestBuyAllTemplateVehiclesInChain(tv, tile);
-		if ( !buyCost.Succeeded() || !CheckCompanyHasMoney(buyCost) ) {
-			if ( !stayInDepot ) incoming->vehstatus &= ~VS_STOPPED;
-			return buy;
-		}
 	}
+
+	/* check overall cost of applying this template replacement */
+	CommandCost testbuy_cost = TestBuyAllTemplateVehiclesInChain(tv, tile);
+	/* Under flags DC_NONE we just want to know the overall cost of the replacement and whether the current company can
+	 * afford it. */
+	if (flags != DC_EXEC)
+		return testbuy_cost;
+	/* Under flags DC_EXEC we still abort only if the current company can NOT affort the replacement. */
+	else if (!testbuy_cost.Succeeded())
+		return testbuy_cost;
+
 
 	/* define replacement behaviour */
 	bool reuseDepot = tv->IsSetReuseDepotVehicles();
@@ -714,8 +721,7 @@ CommandCost CmdTemplateReplaceVehicle(Train *incoming, bool stayInDepot, DoComma
 			// additionally, if we don't want to use the template refit, refit as incoming
 			// the template refit will be set further down, if we use it at all
 			if ( !use_refit ) {
-				uint32 cb = GetCmdRefitVeh(new_chain);
-				DoCommandP(new_chain->tile, new_chain->index, store_refit_ct | store_refit_csubt << 8 | 1 << 16 , cb);
+				DoCommand(new_chain->tile, new_chain->index, store_refit_ct | store_refit_csubt << 8 | 1 << 16 , DC_EXEC, CMD_REFIT_VEHICLE);
 			}
 
 		}
@@ -746,15 +752,13 @@ CommandCost CmdTemplateReplaceVehicle(Train *incoming, bool stayInDepot, DoComma
 					return tmp_result;
 				buy.AddCost(tmp_result);
 				tmp_chain = Train::Get(_new_vehicle_id);
-				move_cost.AddCost(CmdMoveRailVehicle(tile, flags, tmp_chain->index, last_veh->index, 0));
+				move_cost.AddCost(DoCommand(tile, tmp_chain->index, last_veh->index, flags, CMD_MOVE_RAIL_VEHICLE));
 			}
 			if ( need_refit && flags == DC_EXEC ) {
 				if ( use_refit ) {
-					uint32 cb = GetCmdRefitVeh(tmp_chain);
-					DoCommandP(tmp_chain->tile, tmp_chain->index, cur_tmpl->cargo_type | cur_tmpl->cargo_subtype << 8 | 1 << 16 , cb);
+					DoCommand(tmp_chain->tile, tmp_chain->index, cur_tmpl->cargo_type | cur_tmpl->cargo_subtype << 8 | 1 << 16 , DC_EXEC, CMD_REFIT_VEHICLE);
 				} else {
-					uint32 cb = GetCmdRefitVeh(tmp_chain);
-					DoCommandP(tmp_chain->tile, tmp_chain->index, store_refit_ct | store_refit_csubt << 8 | 1 << 16 , cb);
+					DoCommand(tmp_chain->tile, tmp_chain->index, store_refit_ct | store_refit_csubt << 8 | 1 << 16 , DC_EXEC, CMD_REFIT_VEHICLE);
 				}
 			}
 			cur_tmpl = cur_tmpl->GetNextUnit();
@@ -790,5 +794,14 @@ CommandCost CmdTemplateReplaceVehicle(Train *incoming, bool stayInDepot, DoComma
 		buy.AddCost(DoCommand(tile, remainder_chain->index | (1<<20), 0, flags, CMD_SELL_VEHICLE));
 	}
 	return buy;
+}
+CommandCost CmdTemplateReplaceVehicle(TileIndex ti, DoCommandFlag flags, uint32 p1, uint32 p2, char const* msg) {
+	VehicleID id_inc = GB(p1, 0, 20);
+	Train* incoming = Train::GetIfValid(id_inc);
+	// TODO check if null
+
+	bool stayInDepot = p2;
+
+	return cmd_helper_func(incoming, stayInDepot, flags);
 }
 
