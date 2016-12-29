@@ -10,40 +10,15 @@
  /** @file tbtr_template_gui_main.cpp Main window for template configuration and overview. */
 
 #include "stdafx.h"
-#include "window_func.h"
-#include "window_gui.h"
 
-#include "autoreplace_func.h"
-#include "command_func.h"
-#include "company_func.h"
 #include "core/geometry_func.hpp"
-#include "engine_base.h"
-#include "engine_func.h"
-#include "engine_gui.h"
-#include "gfx_type.h"
 #include "group.h"
-#include "newgrf_engine.h"
-#include "rail.h"
 #include "rail_gui.h"
-#include "settings_func.h"
-#include "spritecache.h"
-#include "strings_func.h"
-#include "table/sprites.h"
-#include "table/strings.h"
 #include "tilehighlight_func.h"
-#include "train.h"
-#include "vehicle_base.h"
-#include "vehicle_func.h"
-#include "vehicle_gui.h"
 #include "vehicle_gui_base.h"
-#include "viewport_func.h"
-
-// test creating pool -> creating vehicles
-#include "core/pool_func.hpp"
 
 #include "tbtr_template_gui_create.h"
 #include "tbtr_template_gui_main.h"
-#include "tbtr_template_vehicle.h"
 
 typedef GUIList<const Group*> GUIGroupList;
 

@@ -9,30 +9,12 @@
 
 /** @file tbtr_template_vehicle_func.cpp Various setup and utility functions around template trains. */
 
-#include <map>
 #include "stdafx.h"
 
-#include "articulated_vehicles.h"
 #include "autoreplace_func.h"
-#include "cargoaction.h"
 #include "command_func.h"
-#include "company_func.h"
-#include "core/geometry_type.hpp"
-#include "debug.h"
-#include "depot_base.h"
-#include "gfx_func.h"
-#include "newgrf.h"
-#include "spritecache.h"
-#include "strings_func.h"
-#include "table/sprites.h"
-#include "table/strings.h"
 #include "train.h"
-#include "vehicle_func.h"
-#include "vehicle_gui.h"
-#include "window_func.h"
-#include "window_gui.h"
 
-#include "tbtr_template_vehicle.h"
 #include "tbtr_template_vehicle_func.h"
 
 Vehicle *vhead, *vtmp;

@@ -11,28 +11,7 @@
 
 #include "stdafx.h"
 
-#include "articulated_vehicles.h"
-#include "autoreplace_func.h"
-#include "autoreplace_gui.h"
-#include "command_func.h"
-#include "company_func.h"
 #include "core/pool_func.hpp"
-#include "core/pool_type.hpp"
-#include "core/random_func.hpp"
-#include "engine_func.h"
-#include "engine_type.h"
-#include "group.h"
-#include "group_type.h"
-#include "newgrf.h"
-#include "newgrf_cargo.h"
-#include "newgrf_engine.h"
-#include "newgrf_spritegroup.h"
-#include "table/strings.h"
-#include "table/train_cmd.h"
-#include "train.h"
-#include "vehicle_base.h"
-#include "vehicle_func.h"
-#include "vehicle_type.h"
 
 #include "tbtr_template_vehicle.h"
 
