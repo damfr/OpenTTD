@@ -7,37 +7,27 @@
  * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** @file build_vehicle_gui.cpp GUI for building vehicles. */
+/** @file tbtr_template_gui_create_virtualtrain.cpp Window to add more train parts to a template train. */
 
 #include "stdafx.h"
-#include "engine_base.h"
-#include "engine_func.h"
-#include "station_base.h"
+
+#include "window_func.h"
+
 #include "articulated_vehicles.h"
-#include "textbuf_gui.h"
 #include "command_func.h"
 #include "company_func.h"
-#include "vehicle_gui.h"
-#include "newgrf_engine.h"
-#include "newgrf_text.h"
+#include "core/geometry_func.hpp"
+#include "engine_func.h"
+#include "engine_gui.h"
 #include "group.h"
+#include "station_base.h"
 #include "string_func.h"
 #include "strings_func.h"
-#include "window_func.h"
-#include "date_func.h"
 #include "vehicle_func.h"
-#include "widgets/dropdown_func.h"
-#include "engine_gui.h"
-#include "cargotype.h"
-#include "core/geometry_func.hpp"
-
 #include "widgets/build_vehicle_widget.h"
-
-#include "table/strings.h"
+#include "widgets/dropdown_func.h"
 
 #include "tbtr_template_gui_create_virtualtrain.h"
-
-#include "vehicle_gui.h"
 
 static const NWidgetPart _nested_build_vehicle_widgets[] = {
 	NWidget(NWID_HORIZONTAL),
@@ -407,7 +397,6 @@ static void DrawEngineList(VehicleType type, int l, int r, int y, const GUIEngin
 	}
 }
 
-
 struct BuildVirtualTrainWindow : Window {
 	VehicleType vehicle_type;
 	union {
@@ -425,7 +414,7 @@ struct BuildVirtualTrainWindow : Window {
 	byte cargo_filter_criteria;                 ///< Selected cargo filter
 	int details_height;                         ///< Minimal needed height of the details panels (found so far).
 	Scrollbar *vscroll;
-	Train **virtual_train;						///< the virtual train that is currently being created
+	Train **virtual_train;                      ///< the virtual train that is currently being created
 	bool *noticeParent;
 
 	BuildVirtualTrainWindow(WindowDesc *desc, Train **vt, bool *notice) : Window(desc)
@@ -827,3 +816,4 @@ void ShowBuildVirtualTrainWindow(Train **vt, bool *noticeParent)
 
 	new BuildVirtualTrainWindow(&_build_vehicle_desc, vt, noticeParent);
 }
+

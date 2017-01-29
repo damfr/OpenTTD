@@ -1,53 +1,24 @@
-// mygui.c
+/* $Id$ */
 
+/*
+ * This file is part of OpenTTD.
+ * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
+ * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ */
 
-//#include "tbtr_mygui.h"
-#include <iostream>
-#include <stdio.h>
-
+ /** @file tbtr_template_gui_main.cpp Main window for template configuration and overview. */
 
 #include "stdafx.h"
-#include "command_func.h"
-#include "vehicle_gui.h"
-#include "newgrf_engine.h"
-#include "group.h"
-#include "rail.h"
-#include "strings_func.h"
-#include "window_func.h"
-#include "autoreplace_func.h"
-#include "company_func.h"
-#include "engine_base.h"
-#include "window_gui.h"
-#include "viewport_func.h"
-#include "tilehighlight_func.h"
-#include "engine_gui.h"
-#include "settings_func.h"
+
 #include "core/geometry_func.hpp"
+#include "group.h"
 #include "rail_gui.h"
-
-#include "table/sprites.h"
-#include "table/strings.h"
-
-// test creating pool -> creating vehicles
-#include "core/pool_func.hpp"
-
+#include "tilehighlight_func.h"
 #include "vehicle_gui_base.h"
-#include "vehicle_base.h"
-#include "train.h"
-#include "vehicle_func.h"
 
-#include "gfx_type.h"
-
-#include "engine_func.h"
-
-// drawing the vehicle length based on occupied tiles
-#include "spritecache.h"
-
-#include "tbtr_template_gui_main.h"
 #include "tbtr_template_gui_create.h"
-#include "tbtr_template_vehicle.h"
-//#include "tbtr_template_vehicle_func.h"
-
+#include "tbtr_template_gui_main.h"
 
 typedef GUIList<const Group*> GUIGroupList;
 

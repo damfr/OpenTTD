@@ -897,8 +897,8 @@ STR_GAME_OPTIONS_CURRENCY_USD                                   :Amerikan Dolar�
 STR_GAME_OPTIONS_CURRENCY_EUR                                   :Avro (€)
 STR_GAME_OPTIONS_CURRENCY_JPY                                   :Japon Yeni (¥)
 STR_GAME_OPTIONS_CURRENCY_ATS                                   :Avusturya Şilini (ATS)
-STR_GAME_OPTIONS_CURRENCY_BEF                                   :Belcika Frangı (BEF)
-STR_GAME_OPTIONS_CURRENCY_CHF                                   :İsviçre Frangı (CHF)
+STR_GAME_OPTIONS_CURRENCY_BEF                                   :Belçika Frankı (BEF)
+STR_GAME_OPTIONS_CURRENCY_CHF                                   :İsviçre Frankı (CHF)
 STR_GAME_OPTIONS_CURRENCY_CZK                                   :Çek Korunası (CZK)
 STR_GAME_OPTIONS_CURRENCY_DEM                                   :Alman markı (DEM)
 STR_GAME_OPTIONS_CURRENCY_DKK                                   :Danimarka Kronu (DKK)
@@ -2590,6 +2590,7 @@ STR_LAND_AREA_INFORMATION_AIRPORTTILE_NAME                      :{BLACK}Havalima
 STR_LAND_AREA_INFORMATION_NEWGRF_NAME                           :{BLACK}NewGRF: {LTBLUE}{STRING}
 STR_LAND_AREA_INFORMATION_CARGO_ACCEPTED                        :{BLACK}İstenen: {LTBLUE}
 STR_LAND_AREA_INFORMATION_CARGO_EIGHTS                          :({COMMA}/8 {STRING})
+STR_LANG_AREA_INFORMATION_RAIL_TYPE                             :{BLACK}Ray türü: {LTBLUE}{STRING}
 STR_LANG_AREA_INFORMATION_RAIL_SPEED_LIMIT                      :{BLACK}Ray hız sınırı: {LTBLUE}{VELOCITY}
 STR_LANG_AREA_INFORMATION_ROAD_SPEED_LIMIT                      :{BLACK}Yol hız sınırı: {LTBLUE}{VELOCITY}
 
@@ -2602,29 +2603,29 @@ STR_LAI_CLEAR_DESCRIPTION_FIELDS                                :Mera
 STR_LAI_CLEAR_DESCRIPTION_SNOW_COVERED_LAND                     :Karlı arazi
 STR_LAI_CLEAR_DESCRIPTION_DESERT                                :Çöl
 
-STR_LAI_RAIL_DESCRIPTION_TRACK                                  :{STRING} ray
-STR_LAI_RAIL_DESCRIPTION_TRACK_WITH_NORMAL_SIGNALS              :{STRING} blok sinyalli ray
-STR_LAI_RAIL_DESCRIPTION_TRACK_WITH_PRESIGNALS                  :{STRING} ön sinyalli ray
-STR_LAI_RAIL_DESCRIPTION_TRACK_WITH_EXITSIGNALS                 :{STRING} çıkış sinyalli ray
-STR_LAI_RAIL_DESCRIPTION_TRACK_WITH_COMBOSIGNALS                :{STRING} karışık sinyalli ray
-STR_LAI_RAIL_DESCRIPTION_TRACK_WITH_PBSSIGNALS                  :{STRING} yol sinyalli ray
-STR_LAI_RAIL_DESCRIPTION_TRACK_WITH_NOENTRYSIGNALS              :{STRING} tek yön yol sinyalli ray
-STR_LAI_RAIL_DESCRIPTION_TRACK_WITH_NORMAL_PRESIGNALS           :{STRING} blok ve ön sinyalli ray
-STR_LAI_RAIL_DESCRIPTION_TRACK_WITH_NORMAL_EXITSIGNALS          :{STRING} blok ve çıkış sinyalli ray
-STR_LAI_RAIL_DESCRIPTION_TRACK_WITH_NORMAL_COMBOSIGNALS         :{STRING} blok ve karışık sinyalli ray
-STR_LAI_RAIL_DESCRIPTION_TRACK_WITH_NORMAL_PBSSIGNALS           :{STRING} blok ve yol sinyalli ray
-STR_LAI_RAIL_DESCRIPTION_TRACK_WITH_NORMAL_NOENTRYSIGNALS       :{STRING} blok ve tek yön yol sinyalli ray
-STR_LAI_RAIL_DESCRIPTION_TRACK_WITH_PRE_EXITSIGNALS             :{STRING} ön ve çıkış sinyalli ray
-STR_LAI_RAIL_DESCRIPTION_TRACK_WITH_PRE_COMBOSIGNALS            :{STRING} ön ve karışık sinyalli ray
-STR_LAI_RAIL_DESCRIPTION_TRACK_WITH_PRE_PBSSIGNALS              :{STRING} ön ve yol sinyalli ray
-STR_LAI_RAIL_DESCRIPTION_TRACK_WITH_PRE_NOENTRYSIGNALS          :{STRING} ön ve tek yön yol sinyalli ray
-STR_LAI_RAIL_DESCRIPTION_TRACK_WITH_EXIT_COMBOSIGNALS           :{STRING} çıkış ve karışık sinyalli ray
-STR_LAI_RAIL_DESCRIPTION_TRACK_WITH_EXIT_PBSSIGNALS             :{STRING} çıkış ve yol sinyalli ray
-STR_LAI_RAIL_DESCRIPTION_TRACK_WITH_EXIT_NOENTRYSIGNALS         :{STRING} çıkış ve tek yön yol sinyalli ray
-STR_LAI_RAIL_DESCRIPTION_TRACK_WITH_COMBO_PBSSIGNALS            :{STRING} karışık ve tek yön yol sinyalli ray
-STR_LAI_RAIL_DESCRIPTION_TRACK_WITH_COMBO_NOENTRYSIGNALS        :{STRING} karışık ve tek yön yol sinyalli ray
-STR_LAI_RAIL_DESCRIPTION_TRACK_WITH_PBS_NOENTRYSIGNALS          :{STRING} yol ve tek yön yol sinyalli ray
-STR_LAI_RAIL_DESCRIPTION_TRAIN_DEPOT                            :{STRING} tren garajı
+STR_LAI_RAIL_DESCRIPTION_TRACK                                  :Ray
+STR_LAI_RAIL_DESCRIPTION_TRACK_WITH_NORMAL_SIGNALS              :Blok sinyalli ray
+STR_LAI_RAIL_DESCRIPTION_TRACK_WITH_PRESIGNALS                  :Ön sinyalli ray
+STR_LAI_RAIL_DESCRIPTION_TRACK_WITH_EXITSIGNALS                 :Çıkış sinyalli ray
+STR_LAI_RAIL_DESCRIPTION_TRACK_WITH_COMBOSIGNALS                :Karışık sinyalli ray
+STR_LAI_RAIL_DESCRIPTION_TRACK_WITH_PBSSIGNALS                  :Yol sinyalli ray
+STR_LAI_RAIL_DESCRIPTION_TRACK_WITH_NOENTRYSIGNALS              :Tek yön yol sinyalli ray
+STR_LAI_RAIL_DESCRIPTION_TRACK_WITH_NORMAL_PRESIGNALS           :Blok ve ön sinyalli ray
+STR_LAI_RAIL_DESCRIPTION_TRACK_WITH_NORMAL_EXITSIGNALS          :Blok ve çıkış sinyalli ray
+STR_LAI_RAIL_DESCRIPTION_TRACK_WITH_NORMAL_COMBOSIGNALS         :Blok ve karışık sinyalli ray
+STR_LAI_RAIL_DESCRIPTION_TRACK_WITH_NORMAL_PBSSIGNALS           :Blok ve yol sinyalli ray
+STR_LAI_RAIL_DESCRIPTION_TRACK_WITH_NORMAL_NOENTRYSIGNALS       :Blok ve tek yön yol sinyalli ray
+STR_LAI_RAIL_DESCRIPTION_TRACK_WITH_PRE_EXITSIGNALS             :Ön ve çıkış sinyalli ray
+STR_LAI_RAIL_DESCRIPTION_TRACK_WITH_PRE_COMBOSIGNALS            :Ön ve karışık sinyalli ray
+STR_LAI_RAIL_DESCRIPTION_TRACK_WITH_PRE_PBSSIGNALS              :Ön ve yol sinyalli ray
+STR_LAI_RAIL_DESCRIPTION_TRACK_WITH_PRE_NOENTRYSIGNALS          :Ön ve tek yön yol sinyalli ray
+STR_LAI_RAIL_DESCRIPTION_TRACK_WITH_EXIT_COMBOSIGNALS           :Çıkış ve karışık sinyalli ray
+STR_LAI_RAIL_DESCRIPTION_TRACK_WITH_EXIT_PBSSIGNALS             :Çıkış ve yol sinyalli ray
+STR_LAI_RAIL_DESCRIPTION_TRACK_WITH_EXIT_NOENTRYSIGNALS         :Çıkış ve tek yön yol sinyalli ray
+STR_LAI_RAIL_DESCRIPTION_TRACK_WITH_COMBO_PBSSIGNALS            :Karışık ve tek yön yol sinyalli ray
+STR_LAI_RAIL_DESCRIPTION_TRACK_WITH_COMBO_NOENTRYSIGNALS        :Karışık ve tek yön yol sinyalli ray
+STR_LAI_RAIL_DESCRIPTION_TRACK_WITH_PBS_NOENTRYSIGNALS          :Yol ve tek yön yol sinyalli ray
+STR_LAI_RAIL_DESCRIPTION_TRAIN_DEPOT                            :Tren garajı
 
 STR_LAI_ROAD_DESCRIPTION_ROAD                                   :Yol
 STR_LAI_ROAD_DESCRIPTION_ROAD_WITH_STREETLIGHTS                 :Sokak lambalı yol
@@ -2688,7 +2689,7 @@ STR_LAI_OBJECT_DESCRIPTION_COMPANY_OWNED_LAND                   :Satın alınmı
 STR_ABOUT_OPENTTD                                               :{WHITE}OpenTTD Hakkında
 STR_ABOUT_ORIGINAL_COPYRIGHT                                    :{BLACK}Telif hakkı {COPYRIGHT} 1995 Chris Sawyer, Her hakkı saklıdır
 STR_ABOUT_VERSION                                               :{BLACK}OpenTTD sürüm {REV}
-STR_ABOUT_COPYRIGHT_OPENTTD                                     :{BLACK}OpenTTD {COPYRIGHT} 2002-2015 OpenTTD ekibi
+STR_ABOUT_COPYRIGHT_OPENTTD                                     :{BLACK}OpenTTD {COPYRIGHT} 2002-2016 OpenTTD ekibi
 
 # Save/load game/scenario
 STR_SAVELOAD_SAVE_CAPTION                                       :{WHITE}Oyunu Kaydet
@@ -2907,8 +2908,6 @@ STR_NEWGRF_ERROR_INVALID_ID                                     :Geçersiz ID ku
 STR_NEWGRF_ERROR_CORRUPT_SPRITE                                 :{YELLOW}{STRING} bozuk bir nesne içeriyor. Tüm bozuk nesneler kırmızı bir soru işareti (?) olarak görünecektir
 STR_NEWGRF_ERROR_MULTIPLE_ACTION_8                              :Birden çok Action 8 girişi içeriyor (nesne {3:NUM})
 STR_NEWGRF_ERROR_READ_BOUNDS                                    :Pseudo-nesne bitiminden sonrasını okudu (nesne {3:NUM})
-STR_NEWGRF_ERROR_MISSING_SPRITES                                :{WHITE}Kullanımda olan temel grafik kümesi bazı nesneleri içermiyor.{}Lütfen temel grafik kümesini güncelleyin
-STR_NEWGRF_ERROR_MISSING_SPRITES_UNSTABLE                       :{WHITE}Kullanımdaki temel grafik kümesi bazı nesneleri içermiyor.{}Lütfen temel grafik setinizi güncelleyin .{}{YELLOW}OpenTTD'nin geliştirme kopyasını {WHITE}kullandığınız için, {YELLOW}temel grafiklerin de{WHITE} geliştirme kopyasını kullanmalısınız.
 STR_NEWGRF_ERROR_GRM_FAILED                                     :İstenen GRF kaynakları mevcut değil (nesne {3:NUM})
 STR_NEWGRF_ERROR_FORCEFULLY_DISABLED                            :{1:STRING} {STRING} tarafından deaktive edildi
 STR_NEWGRF_ERROR_INVALID_SPRITE_LAYOUT                          :Geçersiz/bilinmeyen nesne yerleşim biçimi (nesne {3:NUM})
@@ -3558,10 +3557,10 @@ STR_REPLACE_REPLACING_WHEN_OLD                                  :{ENGINE} eskidi
 STR_REPLACE_VEHICLES_STOP                                       :{BLACK}Araçları değiştirmeyi durdur
 STR_REPLACE_HELP_STOP_BUTTON                                    :{BLACK}Değiştirme işlemini durdurmak için basın
 
-STR_REPLACE_ENGINE_WAGON_SELECT                                 :{BLACK}Değiştiriyor: {ORANGE}{STRING}
 STR_REPLACE_ENGINE_WAGON_SELECT_HELP                            :{BLACK}Lokomotif ve vagon değişimi pencereleri arasında geçiş yap.
 STR_REPLACE_ENGINES                                             :Lokomotifler
 STR_REPLACE_WAGONS                                              :Vagon
+STR_REPLACE_ALL_RAILTYPE                                        :Tüm demiryolu araçları
 
 STR_REPLACE_HELP_RAILTYPE                                       :{BLACK}Lokomatiflerini değiştireceğiniz ray türünü seçin
 STR_REPLACE_HELP_REPLACE_INFO_TAB                               :{BLACK}Soldaki değiştiriliyorsa neyle değiştirildiğini göster

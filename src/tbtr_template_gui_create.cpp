@@ -1,40 +1,21 @@
+/* $Id$ */
+
+/*
+ * This file is part of OpenTTD.
+ * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
+ * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/** @file tbtr_template_gui_create.cpp Window for the creation of template trains. */
+
 #include "stdafx.h"
 
-#include "gfx_func.h"
-#include "direction_type.h"
-
 #include "strings_func.h"
-#include "window_func.h"
-#include "company_func.h"
-#include "window_gui.h"
-#include "settings_func.h"
-#include "core/geometry_func.hpp"
-#include "table/sprites.h"
-#include "table/strings.h"
-#include "viewport_func.h"
-#include "window_func.h"
-#include "gui.h"
-#include "textbuf_gui.h"
-#include "command_func.h"
-#include "depot_base.h"
-#include "vehicle_gui.h"
-#include "spritecache.h"
-#include "strings_func.h"
-#include "window_func.h"
-#include "vehicle_func.h"
-#include "company_func.h"
 #include "tilehighlight_func.h"
-#include "window_gui.h"
-#include "vehiclelist.h"
-#include "order_backup.h"
-#include "group.h"
-#include "company_base.h"
 
 #include "tbtr_template_gui_create.h"
-#include "tbtr_template_vehicle.h"
 #include "tbtr_template_vehicle_func.h"
-
-#include "train.h"
 
 class TemplateReplaceWindow;
 
@@ -116,7 +97,7 @@ private:
 	bool *noticeParent;
 	bool *createWindowOpen;			/// used to notify main window of progress (dummy way of disabling 'delete' while editing a template)
 	bool virtualTrainChangedNotice;
-	VehicleID sel;
+	VehicleID selected_train;		/// the selected train in the GUI
 	VehicleID vehicle_over;
 	TemplateVehicle *editTemplate;
 
@@ -140,7 +121,7 @@ public:
 		if ( to_edit ) editMode = true;
 		else editMode = false;
 
-		this->sel = INVALID_VEHICLE;
+		this->selected_train = INVALID_VEHICLE;
 		this->vehicle_over = INVALID_VEHICLE;
 
 		this->virtual_train = VirtualTrainFromTemplateVehicle(to_edit);
@@ -239,7 +220,7 @@ public:
 		switch(widget) {
 			case TCW_MATRIX_NEW_TMPL: {
 				if ( this->virtual_train ) {
-					DrawTrainImage(virtual_train, r.left+TRAIN_FRONT_SPACE, r.right, r.top+2, this->sel, EIT_PURCHASE, this->hscroll->GetPosition(), this->vehicle_over);
+					DrawTrainImage(virtual_train, r.left+TRAIN_FRONT_SPACE, r.right, r.top+2, this->selected_train, EIT_PURCHASE, this->hscroll->GetPosition(), this->vehicle_over);
 					SetDParam(0, CeilDiv(virtual_train->gcache.cached_total_length * 10, TILE_SIZE));
 					SetDParam(1, 1);
 					DrawString(r.left, r.right, r.top, STR_TINY_BLACK_DECIMAL, TC_BLACK, SA_RIGHT);
@@ -308,26 +289,26 @@ public:
 			}
 			case TCW_SELL_TMPL: {
 				if (this->IsWidgetDisabled(widget)) return;
-				if (this->sel == INVALID_VEHICLE) return;
+				if (this->selected_train == INVALID_VEHICLE) return;
 
-				virtual_train = DeleteVirtualTrain(virtual_train, Train::Get(this->sel));
+				this->virtual_train = DeleteVirtualTrain(this->virtual_train, Train::Get(this->selected_train));
 
-				this->sel = INVALID_VEHICLE;
+				this->selected_train = INVALID_VEHICLE;
 
 				this->SetDirty();
 				break;
 			}
 			default:
-				this->sel = INVALID_VEHICLE;
+				this->selected_train = INVALID_VEHICLE;
 				this->SetDirty();
 		}
 		_cursor.vehchain = false;
-		this->sel = INVALID_VEHICLE;
+		this->selected_train = INVALID_VEHICLE;
 		this->SetDirty();
 	}
 	virtual void OnMouseDrag(Point pt, int widget)
 	{
-		if (this->sel == INVALID_VEHICLE) return;
+		if (this->selected_train == INVALID_VEHICLE) return;
 		/* A rail vehicle is dragged.. */
 		if (widget != TCW_MATRIX_NEW_TMPL) { // ..outside of the depot matrix.
 			if (this->vehicle_over != INVALID_VEHICLE) {
@@ -344,15 +325,15 @@ public:
 		if (this->GetVehicleFromDepotWndPt(pt.x - matrix->pos_x, pt.y - matrix->pos_y, &v, &gdvp) != MODE_DRAG_VEHICLE) return;
 		VehicleID new_vehicle_over = INVALID_VEHICLE;
 		if (gdvp.head != NULL) {
-			if (gdvp.wagon == NULL && gdvp.head->Last()->index != this->sel) { // ..at the end of the train.
+			if (gdvp.wagon == NULL && gdvp.head->Last()->index != this->selected_train) { // ..at the end of the train.
 				/* NOTE: As a wagon can't be moved at the begin of a train, head index isn't used to mark a drag-and-drop
 				 * destination inside a train. This head index is then used to indicate that a wagon is inserted at
 				 * the end of the train.
 				 */
 				new_vehicle_over = gdvp.head->index;
 			} else if (gdvp.wagon != NULL && gdvp.head != gdvp.wagon &&
-					gdvp.wagon->index != this->sel &&
-					gdvp.wagon->Previous()->index != this->sel) { // ..over an existing wagon.
+					gdvp.wagon->index != this->selected_train &&
+					gdvp.wagon->Previous()->index != this->selected_train) { // ..over an existing wagon.
 				new_vehicle_over = gdvp.wagon->index;
 			}
 		}
@@ -432,22 +413,19 @@ public:
 		v = gdvp.wagon;
 
 		if (v != NULL && VehicleClicked(v)) return;
-		VehicleID sel = this->sel;
+		VehicleID sel = this->selected_train;
 
 		if (sel != INVALID_VEHICLE) {
-			this->sel = INVALID_VEHICLE;
+			this->selected_train = INVALID_VEHICLE;
 		} else if (v != NULL) {
-			int image = v->GetImage(_current_text_dir == TD_RTL ? DIR_E : DIR_W, EIT_PURCHASE);
-			SetObjectToPlaceWnd(image, GetVehiclePalette(v), HT_DRAG, this);
-
-			this->sel = v->index;
-			this->SetDirty();
-
-			_cursor.short_vehicle_offset = v->IsGroundVehicle() ? 16 - v->GetGroundVehicleCache()->cached_veh_length * 2 : 0;
+			SetObjectToPlaceWnd(SPR_CURSOR_MOUSE, PAL_NONE, HT_DRAG, this);
+			SetMouseCursorVehicle(v, EIT_IN_DEPOT);
 			_cursor.vehchain = _ctrl_pressed;
+
+			this->selected_train = v->index;
+			this->SetDirty();
 		}
 	}
-
 };
 
 void ShowTemplateCreateWindow(TemplateVehicle *to_edit, bool *noticeParent, bool *createWindowOpen, int step_h)
@@ -455,5 +433,4 @@ void ShowTemplateCreateWindow(TemplateVehicle *to_edit, bool *noticeParent, bool
 	if ( BringWindowToFrontById(WC_CREATE_TEMPLATE, VEH_TRAIN) != NULL ) return;
 	new TemplateCreateWindow(&_template_create_window_desc, to_edit, noticeParent, createWindowOpen, step_h);
 }
-
 

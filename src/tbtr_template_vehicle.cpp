@@ -1,43 +1,25 @@
+/* $Id: build_vehicle_gui.cpp 23792 2012-01-12 19:23:00Z yexo $ */
+
+/*
+ * This file is part of OpenTTD.
+ * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
+ * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/** @file tbtr_template_vehicle.cpp The class definition for a template train. */
+
 #include "stdafx.h"
-#include "company_func.h"
-#include "train.h"
-#include "command_func.h"
-#include "engine_func.h"
-#include "vehicle_func.h"
-#include "autoreplace_func.h"
-#include "autoreplace_gui.h"
-#include "group.h"
-#include "articulated_vehicles.h"
-#include "core/random_func.hpp"
-#include "core/pool_type.hpp"
-#include "engine_type.h"
-#include "group_type.h"
+
 #include "core/pool_func.hpp"
 
-#include "table/strings.h"
-
-#include "newgrf.h"
-
-#include "vehicle_type.h"
-#include "vehicle_base.h"
-#include "vehicle_func.h"
-
-#include "table/train_cmd.h"
-
-
 #include "tbtr_template_vehicle.h"
-
-// since doing stuff with sprites
-#include "newgrf_spritegroup.h"
-#include "newgrf_engine.h"
-#include "newgrf_cargo.h"
 
 TemplatePool _template_pool("TemplatePool");
 INSTANTIATE_POOL_METHODS(Template)
 
 TemplateReplacementPool _template_replacement_pool("TemplateReplacementPool");
 INSTANTIATE_POOL_METHODS(TemplateReplacement)
-
 
 TemplateVehicle::TemplateVehicle(VehicleType ty, EngineID eid, byte subtypeflag, Owner current_owner)
 {
@@ -189,39 +171,4 @@ short deleteIllegalTemplateReplacements(GroupID g_id)
 	}
 	return del_amount;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

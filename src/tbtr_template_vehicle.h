@@ -1,22 +1,29 @@
+/* $Id: build_vehicle_gui.cpp 23792 2012-01-12 19:23:00Z yexo $ */
+
+/*
+ * This file is part of OpenTTD.
+ * OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
+ * OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/** @file tbtr_template_vehicle.h The class definitions for template trains, template replacements and virtual trains. */
+
 #ifndef TEMPLATE_VEH_H
 #define TEMPLATE_VEH_H
 
-#include "company_func.h"
-
-#include "vehicle_type.h"
-#include "vehicle_base.h"
-#include "vehicle_func.h"
-
 #include "articulated_vehicles.h"
+#include "company_func.h"
+#include "engine_base.h"
+#include "engine_func.h"
+#include "engine_type.h"
 #include "newgrf_callbacks.h"
 #include "newgrf_engine.h"
 #include "newgrf_spritegroup.h"
-
-#include "engine_base.h"
-#include "engine_type.h"
-#include "engine_func.h"
-
 #include "sortlist_type.h"
+#include "vehicle_base.h"
+#include "vehicle_func.h"
+#include "vehicle_type.h"
 
 #define FOR_ALL_TEMPLATES_FROM(var, start) FOR_ALL_ITEMS_FROM(TemplateVehicle, template_index, var, start)
 #define FOR_ALL_TEMPLATES(var) FOR_ALL_TEMPLATES_FROM(var, 0)
@@ -27,8 +34,6 @@
 struct TemplateVehicle;
 struct TemplateReplacement;
 
-CommandCost CmdBuildTemplateVehicle(uint i, DoCommandFlag flags, uint p1, uint p2, char const* text);
-CommandCost CmdTemplateReplaceVehicle(uint i, DoCommandFlag flags, uint p1, uint p2, char const* text);
 typedef uint16 TemplateID;
 
 
@@ -125,7 +130,6 @@ public:
 
 	inline bool IsFreeWagonChain() const { return HasBit(this->subtype, GVSF_FREE_WAGON); }
 
-	// since CmdBuildTemplateVehicle(...)
 	inline void SetFrontEngine() 		{ SetBit(this->subtype, GVSF_FRONT); }
 	inline void SetEngine()			{ SetBit(this->subtype, GVSF_ENGINE); }
 	inline void SetArticulatedPart()	{ SetBit(this->subtype, GVSF_ARTICULATED_PART); }
@@ -192,4 +196,3 @@ bool IssueTemplateReplacement(GroupID, TemplateID);
 short deleteIllegalTemplateReplacements(GroupID);
 
 #endif /* TEMPLATE_VEH_H */
-
