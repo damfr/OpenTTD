@@ -1036,7 +1036,7 @@ void CallVehicleTicks()
 		bool stayInDepot = it->second;
 
 		it->first->vehstatus |= VS_STOPPED;
-		CommandCost cost = CmdTemplateReplaceVehicle(t, stayInDepot, DC_EXEC);
+		CommandCost cost = DoCommand(0, t->index, stayInDepot, DC_EXEC, CMD_TEMPLATE_REPLACE_TRAIN);
 		/* if it wasn't for free, it succeeded, so don't auto-replace it */
 		if(cost.GetCost() != 0) {
 			_vehicles_to_autoreplace.Erase(t);
