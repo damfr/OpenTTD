@@ -612,17 +612,17 @@ CommandCost cmd_helper_func(Train *incoming, bool stayInDepot, DoCommandFlag fla
 	Train	*new_chain=0,
 			*remainder_chain=0,
 			*tmp_chain=0;
-	TileIndex tile = incoming->tile;
-	TemplateVehicle *tv = GetTemplateVehicleByGroupID(incoming->group_id);
-	EngineID eid = tv->engine_type;
 
 	CommandCost buy(EXPENSES_NEW_VEHICLES);
 	CommandCost move_cost(EXPENSES_NEW_VEHICLES);
 	CommandCost tmp_result(EXPENSES_NEW_VEHICLES);
 
 	/* first some tests on necessity and sanity */
+	TileIndex tile = incoming->tile;
+	TemplateVehicle *tv = GetTemplateVehicleByGroupID(incoming->group_id);
 	if ( !tv )
 		return buy;
+	EngineID eid = tv->engine_type;
 	bool need_replacement = !TrainMatchesTemplate(incoming, tv);
 	bool need_refit = !TrainMatchesTemplateRefit(incoming, tv);
 	bool use_refit = tv->refit_as_template;
