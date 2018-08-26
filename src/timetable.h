@@ -16,8 +16,12 @@
 #include "vehicle_type.h"
 
 struct Order;
+struct OrderList;
 
 void ShowTimetableWindow(const Vehicle *v);
+
+void UpdateSharedVehiclesTimetableData(OrderList *o);
+void UpdateVehicleStartTimes(Vehicle *vehicle);
 
 bool IsOrderTimetableValid(const Vehicle *vehicle, const Order *order);
 

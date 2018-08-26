@@ -326,6 +326,8 @@ enum Commands {
 	CMD_MOVE_ORDER,                   ///< move an order
 	CMD_AUTOFILL_TIMETABLE,           ///< autofill the timetable
 	CMD_SET_TIMETABLE_START,          ///< set the date that a timetable should start
+	CMD_SET_TIMETABLE_OFFSET,         ///< set the offset of a vehicles timetable relative to the timetable start date
+	CMD_SET_TIMETABLE_LENGTH,         ///< set the length of a timetable
 
 	CMD_OPEN_CLOSE_AIRPORT,           ///< open/close an airport to incoming aircraft
 

@@ -23,6 +23,7 @@
 #include "transport_type.h"
 #include "group_type.h"
 #include "base_consist.h"
+#include "timetable.h"
 #include "network/network.h"
 #include <list>
 #include <map>
@@ -476,6 +477,7 @@ public:
 	inline void SetTimetableOffset(Duration offset)
 	{
 		this->timetable_offset = offset;
+		UpdateVehicleStartTimes(this);
 	}
 
 	/**

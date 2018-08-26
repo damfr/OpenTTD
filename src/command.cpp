@@ -194,6 +194,8 @@ CommandProc CmdSetGroupReplaceProtection;
 CommandProc CmdMoveOrder;
 CommandProc CmdAutofillTimetable;
 CommandProc CmdSetTimetableStart;
+CommandProc CmdSetTimetableOffset;
+CommandProc CmdSetTimetableLength;
 
 CommandProc CmdOpenCloseAirport;
 
@@ -350,6 +352,8 @@ static const Command _command_proc_table[] = {
 	DEF_CMD(CmdMoveOrder,                                      0, CMDT_ROUTE_MANAGEMENT      ), // CMD_MOVE_ORDER
 	DEF_CMD(CmdAutofillTimetable,                              0, CMDT_ROUTE_MANAGEMENT      ), // CMD_AUTOFILL_TIMETABLE
 	DEF_CMD(CmdSetTimetableStart,                              0, CMDT_ROUTE_MANAGEMENT      ), // CMD_SET_TIMETABLE_START
+	DEF_CMD(CmdSetTimetableOffset,                             0, CMDT_ROUTE_MANAGEMENT      ), // CMD_SET_TIMETABLE_OFFSET
+	DEF_CMD(CmdSetTimetableLength,                             0, CMDT_ROUTE_MANAGEMENT      ), // CMD_SET_TIMETABLE_LENGTH
 
 	DEF_CMD(CmdOpenCloseAirport,                               0, CMDT_ROUTE_MANAGEMENT      ), // CMD_OPEN_CLOSE_AIRPORT
 };

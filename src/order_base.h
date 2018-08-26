@@ -20,6 +20,7 @@
 #include "station_type.h"
 #include "vehicle_type.h"
 #include "date_type.h"
+#include "timetable.h"
 
 typedef Pool<Order, OrderID, 256, 64000> OrderPool;
 typedef Pool<OrderList, OrderListID, 128, 64000> OrderListPool;
@@ -326,7 +327,7 @@ public:
 
 	inline Ticks GetTimetableTotalDuration() const { return 0; }
 
-	inline void SetTimetableDuration(Duration duration) { this->timetable_duration = duration; }
+	void SetTimetableDuration(Duration duration);
 
 	/**
 	 * Gets the total duration of the vehicles timetable or INVALID_TICKS is the timetable is not complete.
@@ -334,7 +335,9 @@ public:
 	 */
 	inline Duration GetTimetableDuration() const { return this->timetable_duration; }
 
-	inline void SetStartTime(Date start_time) { this->start_time = start_time; }
+	void SetStartTime(Date start_time);
+
+	inline bool HasStartTime() { return this->start_time != INVALID_DATE; }
 
 	inline Date GetStartTime() const { return this->start_time; }
 
