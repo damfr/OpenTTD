@@ -23,6 +23,7 @@
 #include "date_func.h"
 #include "date_gui.h"
 #include "vehicle_gui.h"
+#include "network/network.h"
 #include "settings_type.h"
 #include "timetable.h"
 #include "tilehighlight_func.h"
@@ -35,6 +36,9 @@
 
 #include "table/sprites.h"
 #include "table/strings.h"
+
+#include "order_func.h"
+#include "order_gui.h"
 
 #include "safeguards.h"
 
@@ -202,6 +206,12 @@ private:
 		return (IsDestinationLine(line) || IsTimetableLine(line)) ? line / 2 : INVALID_VEH_ORDER_ID;
  	}
 
+	void AdjustSelectionByNumberOfOrders(int n)
+	{
+		assert (selected_timetable_line != INVALID_SELECTION);
+		selected_timetable_line += n * 2;
+	}
+
 	/**********************************************************************************************************************/
 	/********************************************* Assembling output strings **********************************************/
 	/**********************************************************************************************************************/
@@ -357,6 +367,130 @@ private:
 		this->UpdateButtonState();
 	}
 
+	/**
+	 * Handle the click on the goto button.
+	 */
+	void ProcessGotoClick()
+	{
+		this->SetWidgetDirty(WID_VT_GOTO_BUTTON);
+		this->ToggleWidgetLoweredState(WID_VT_GOTO_BUTTON);
+		if (this->IsWidgetLowered(WID_VT_GOTO_BUTTON)) {
+			SetObjectToPlaceWnd(ANIMCURSOR_PICKSTATION, PAL_NONE, HT_RECT | HT_VEHICLE, this);
+			this->place_object_type = TIMETABLE_POS_GOTO;
+		} else {
+			ResetObjectToPlace();
+		}
+	}
+
+	/**
+	 * Handle the click on the service in nearest depot button.
+	 */
+	void ProcessGotoNearestDepotClick()
+	{
+		Order order;
+		order.next = NULL;
+		order.index = 0;
+		order.MakeGoToDepot(0, ODTFB_PART_OF_ORDERS,
+				_settings_client.gui.new_nonstop && this->vehicle->IsGroundVehicle() ? ONSF_NO_STOP_AT_INTERMEDIATE_STATIONS : ONSF_STOP_EVERYWHERE);
+		order.SetDepotActionType(ODATFB_NEAREST_DEPOT);
+
+		VehicleOrderID order_id = (IsDestinationLineSelected() || IsTimetableLineSelected() ? this->GetSelectedOrderID() : this->vehicle->GetNumOrders());
+		DoCommandP(this->vehicle->tile, this->vehicle->index + (order_id << 20), order.Pack(), CMD_INSERT_ORDER | CMD_MSG(STR_ERROR_CAN_T_INSERT_NEW_ORDER));
+	}
+
+	/**
+	 * Handle the click on the conditional order button.
+	 * @param i Dummy parameter.
+	 */
+	void ProcessGotoConditionalClick()
+	{
+		this->LowerWidget(WID_VT_GOTO_BUTTON);
+		this->SetWidgetDirty(WID_VT_GOTO_BUTTON);
+		SetObjectToPlaceWnd(ANIMCURSOR_PICKSTATION, PAL_NONE, HT_NONE, this);
+		this->place_object_type = TIMETABLE_POS_CONDITIONAL;
+	}
+
+	/**
+	 * Handle the click on the share button.
+	 * @param i Dummy parameter.
+	 */
+	void ProcessGotoShareClick()
+	{
+		this->LowerWidget(WID_VT_GOTO_BUTTON);
+		this->SetWidgetDirty(WID_VT_GOTO_BUTTON);
+		SetObjectToPlaceWnd(ANIMCURSOR_PICKSTATION, PAL_NONE, HT_VEHICLE, this);
+		this->place_object_type = TIMETABLE_POS_SHARE;
+	}
+
+	/**
+	 * Handle the click on the skip button.
+	 * If ctrl is pressed, skip to selected order, else skip to current order + 1
+	 * @param i Dummy parameter.
+	 */
+	void ProcessSkipClick()
+	{
+		VehicleOrderID order_id = (IsDestinationLineSelected() || IsTimetableLineSelected() ? this->GetSelectedOrderID() : this->vehicle->GetNumOrders());
+
+		/* Don't skip when there's nothing to skip */
+		if (_ctrl_pressed && this->vehicle->cur_implicit_order_index == order_id) return;
+		if (this->vehicle->GetNumOrders() <= 1) return;
+
+		DoCommandP(this->vehicle->tile, this->vehicle->index, _ctrl_pressed ? order_id : ((this->vehicle->cur_implicit_order_index + 1) % this->vehicle->GetNumOrders()),
+				CMD_SKIP_TO_ORDER | CMD_MSG(_ctrl_pressed ? STR_ERROR_CAN_T_SKIP_TO_ORDER : STR_ERROR_CAN_T_SKIP_ORDER));
+	}
+
+	/**
+	 * Handle the click on the delete button.
+	 * @param i Dummy parameter.
+	 */
+	void ProcessDeleteClick()
+	{
+		VehicleOrderID order_id = ((IsDestinationLineSelected() || IsTimetableLineSelected()) ? this->GetSelectedOrderID() : this->vehicle->GetNumOrders());
+		if (DoCommandP(this->vehicle->tile, this->vehicle->index, order_id, CMD_DELETE_ORDER | CMD_MSG(STR_ERROR_CAN_T_DELETE_THIS_ORDER))) {
+			this->UpdateButtonState();
+		}
+	}
+
+	/**
+	 * Handle the click on the 'stop sharing' button.
+	 * If 'End of Shared Orders' isn't selected, do nothing. If Ctrl is pressed, call OrderClick_Delete and exit.
+	 * To stop sharing this vehicle order list, we copy the orders of a vehicle that share this order list. That way we
+	 * exit the group of shared vehicles while keeping the same order list.
+	 * @param i Dummy parameter.
+	 */
+	void ProcessStopSharingClick()
+	{
+		/* Don't try to stop sharing orders if 'End of Shared Orders' isn't selected. */
+		if (!this->vehicle->IsOrderListShared() || !IsEndOfOrdersLineSelected()) return;
+		/* If Ctrl is pressed, delete the order list as if we clicked the 'Delete' button. */
+		if (_ctrl_pressed) {
+			this->ProcessDeleteClick();
+			return;
+		}
+
+		/* Get another vehicle that share orders with this vehicle. */
+		Vehicle *other_shared = (this->vehicle->FirstShared() == this->vehicle) ? this->vehicle->NextShared() : this->vehicle->PreviousShared();
+		/* Copy the order list of the other vehicle. */
+		if (DoCommandP(this->vehicle->tile, this->vehicle->index | CO_COPY << 30, other_shared->index, CMD_CLONE_ORDER | CMD_MSG(STR_ERROR_CAN_T_STOP_SHARING_ORDER_LIST))) {
+			this->UpdateButtonState();
+		}
+	}
+
+	virtual void OnDropdownSelect(int widget, int index)
+	{
+		switch (widget) {
+			case WID_VT_GOTO_BUTTON:
+				switch (index) {
+					case 0: this->ProcessGotoClick(); break;
+					case 1: this->ProcessGotoNearestDepotClick(); break;
+					case 2: this->ProcessGotoConditionalClick(); break;
+					case 3: this->ProcessGotoShareClick(); break;
+					default: NOT_REACHED();
+				}
+				break;
+		}
+	}
+
 public:
 	TimetableWindow(WindowDesc *desc, WindowNumber window_number) :
 			Window(desc),
@@ -422,37 +556,47 @@ public:
 
 				if (from == to) break; /* no need to change anything */
 
-				/* if from == INVALID_VEH_ORDER_ID, one order was added; if to == INVALID_VEH_ORDER_ID, one order was removed */
-				uint old_num_orders = this->vehicle->GetNumOrders() - (uint)(from == INVALID_VEH_ORDER_ID) + (uint)(to == INVALID_VEH_ORDER_ID);
+				VehicleOrderID old_selected_order = GetSelectedOrderID();
+				if (selected_timetable_line == INVALID_SELECTION) {
+					/* If there is no selection, we don´t have to adjust one */
+					break;
+				}
 
-				VehicleOrderID selected_order = (this->selected_timetable_line + 1) / 2;
-				if (selected_order == old_num_orders) selected_order = 0; /* when last travel time is selected, it belongs to order 0 */
-
-				bool travel = HasBit(this->selected_timetable_line, 0);
-
-				if (from != selected_order) {
-					/* Moving from preceding order? */
-					selected_order -= (int)(from <= selected_order);
-					/* Moving to   preceding order? */
-					selected_order += (int)(to   <= selected_order);
-				} else {
-					/* Now we are modifying the selected order */
-					if (to == INVALID_VEH_ORDER_ID) {
-						/* Deleting selected order */
-						this->DeleteChildWindows();
-						UpdateSelectedTimetableLine(INVALID_SELECTION);
-						break;
+				if (to == INVALID_VEH_ORDER_ID) {
+					if (old_selected_order == INVALID_VEH_ORDER_ID) {
+						/* The case that selection scrolls out to the end of orders line */
+						selected_timetable_line = GetEndOfOrdersIndex();
+						this->property_line_selected = false;
+						this->vehicle_interval_line_selected = false;
+					} else if (from < old_selected_order) {
+						/* a line above the current selection was deleted, thus selection scrolls by one line towards the top of the list */
+						AdjustSelectionByNumberOfOrders(-1);
+					} else if (from == old_selected_order) {
+						/* the currently selected order was deleted.  Keep the selection in the same line, but adress the possible case that that line
+						   now is below the end of orders line. */
+						if (selected_timetable_line > GetEndOfOrdersIndex()) {
+							selected_timetable_line = GetEndOfOrdersIndex();
+							this->property_line_selected = false;
+							this->vehicle_interval_line_selected = false;
+						}
 					} else {
-						/* Moving selected order */
-						selected_order = to;
+						/* Deleting an order below the currently selected one does not cause any need for changing the selection. */
 					}
 				}
 
-				/* recompute new selected_timetable_line */
-				this->selected_timetable_line = 2 * selected_order - (int)travel;
+				if (from == INVALID_VEH_ORDER_ID) {
+					if (to <= old_selected_order) {
+						/* a line was added above or at the index of the current selection.  Keep the same order selected. */
+						AdjustSelectionByNumberOfOrders(1);
+					} else {
+						/* Again, we don´t care about anything happening below the current selection */
+					}
+				}
 
-				/* travel time of first order needs special handling */
-				if (this->selected_timetable_line == INVALID_SELECTION) this->selected_timetable_line = this->vehicle->GetNumOrders() * 2 - 1;
+				/* Scroll to the new order. */
+				if (from == INVALID_VEH_ORDER_ID && to != INVALID_VEH_ORDER_ID && !this->vscroll->IsVisible(to)) {
+					this->vscroll->ScrollTowards(to);
+				}
 				break;
 			}
 		}
@@ -567,10 +711,79 @@ public:
 			case WID_VT_SHARED_ORDER_LIST:
 				ShowVehicleListWindow(v);
 				break;
+
+			case WID_VT_GOTO_BUTTON: {
+				if (this->GetWidget<NWidgetLeaf>(widget)->ButtonHit(pt)) {
+					this->ProcessGotoClick();
+				} else {
+					ShowDropDownMenu(this, this->vehicle->type == VEH_AIRCRAFT ? _order_goto_dropdown_aircraft : _order_goto_dropdown, 0, WID_VT_GOTO_BUTTON, 0, 0);
+				}
+				break;
+			}
+
+			case WID_VT_DELETE_ORDER_BUTTON: {
+				ProcessDeleteClick();
+				break;
+			}
+
+			case WID_VT_STOP_SHARING_BUTTON: {
+				ProcessStopSharingClick();
+				break;
+			}
+
+			case WID_VT_SKIP_ORDER_BUTTON: {
+				ProcessSkipClick();
+				break;
+			}
 		}
 
 		this->SetDirty();
 	}
+
+	virtual void OnPlaceObject(Point pt, TileIndex tile)
+	{
+		if (this->place_object_type == TIMETABLE_POS_GOTO) {
+			const Order cmd = GetOrderCmdFromTile(this->vehicle, tile);
+			if (cmd.IsType(OT_NOTHING)) return;
+
+			VehicleOrderID order_id = (IsDestinationLineSelected() || IsTimetableLineSelected() ? this->GetSelectedOrderID() : this->vehicle->GetNumOrders());
+			if (DoCommandP(this->vehicle->tile, this->vehicle->index + (order_id << 20), cmd.Pack(), CMD_INSERT_ORDER | CMD_MSG(STR_ERROR_CAN_T_INSERT_NEW_ORDER))) {
+				/* With quick goto the Go To button stays active */
+				if (!_settings_client.gui.quick_goto) ResetObjectToPlace();
+			}
+		}
+	}
+
+	virtual bool OnVehicleSelect(const Vehicle *v)
+	{
+		/* v is vehicle getting orders. Only copy/clone orders if vehicle doesn't have any orders yet.
+		 * We disallow copying orders of other vehicles if we already have at least one order entry
+		 * ourself as it easily copies orders of vehicles within a station when we mean the station.
+		 * Obviously if you press CTRL on a non-empty orders vehicle you know what you are doing
+		 * TODO: give a warning message */
+		bool share_order = _ctrl_pressed || this->place_object_type == TIMETABLE_POS_SHARE;
+		if (this->vehicle->GetNumOrders() != 0 && !share_order) return false;
+
+		if (DoCommandP(this->vehicle->tile, this->vehicle->index | (share_order ? CO_SHARE : CO_COPY) << 30, v->index,
+				share_order ? CMD_CLONE_ORDER | CMD_MSG(STR_ERROR_CAN_T_SHARE_ORDER_LIST) : CMD_CLONE_ORDER | CMD_MSG(STR_ERROR_CAN_T_COPY_ORDER_LIST))) {
+			UpdateSelectedTimetableLine(INVALID_SELECTION);
+			ResetObjectToPlace();
+		}
+		return true;
+	}
+
+	virtual void OnPlaceObjectAbort()
+	{
+		this->RaiseWidget(WID_VT_GOTO_BUTTON);
+		this->SetWidgetDirty(WID_VT_GOTO_BUTTON);
+
+		/* Remove drag highlighting if it exists. */
+		if (this->order_over != INVALID_VEH_ORDER_ID) {
+			this->order_over = INVALID_VEH_ORDER_ID;
+			this->SetWidgetDirty(WID_VT_TIMETABLE_PANEL);
+		}
+	}
+
 
 	virtual void OnQueryTextFinished(char *str)
 	{

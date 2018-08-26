@@ -294,6 +294,7 @@ openttd.h
 order_backup.h
 order_base.h
 order_func.h
+order_gui.h
 order_type.h
 pbs.h
 progress.h

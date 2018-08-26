@@ -29,6 +29,7 @@
 #include "hotkeys.h"
 #include "aircraft.h"
 #include "engine_func.h"
+#include "order_gui.h"
 
 #include "widgets/order_widget.h"
 
@@ -129,22 +130,6 @@ static const StringID _order_unload_drowdown[] = {
 	STR_ORDER_DROP_TRANSFER,
 	STR_EMPTY,
 	STR_ORDER_DROP_NO_UNLOADING,
-	INVALID_STRING_ID
-};
-
-static const StringID _order_goto_dropdown[] = {
-	STR_ORDER_GO_TO,
-	STR_ORDER_GO_TO_NEAREST_DEPOT,
-	STR_ORDER_CONDITIONAL,
-	STR_ORDER_SHARE,
-	INVALID_STRING_ID
-};
-
-static const StringID _order_goto_dropdown_aircraft[] = {
-	STR_ORDER_GO_TO,
-	STR_ORDER_GO_TO_NEAREST_HANGAR,
-	STR_ORDER_CONDITIONAL,
-	STR_ORDER_SHARE,
 	INVALID_STRING_ID
 };
 
@@ -340,7 +325,7 @@ void DrawOrderString(const Vehicle *v, const Order *order, int order_index, int 
  * @param tile Tile being queried.
  * @return The order associated to vehicle v in given tile (or empty order if vehicle can do nothing in the tile).
  */
-static Order GetOrderCmdFromTile(const Vehicle *v, TileIndex tile)
+Order GetOrderCmdFromTile(const Vehicle *v, TileIndex tile)
 {
 	/* Hack-ish; unpack order 0, so everything gets initialised with either zero
 	 * or a suitable default value for the variable. Then also override the index
