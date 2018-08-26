@@ -1209,6 +1209,70 @@ private:
 		}
 	}
 
+
+	/**********************************************************************************************************************/
+	/*********************************************************** Drawing **************************************************/
+	/**********************************************************************************************************************/
+
+	static void DrawTabularTimetableLine(const Vehicle *vehicle, VehicleOrderID order_id, Dimension dest_bounding_box, Dimension date_bounding_box,
+										 Dimension speed_bounding_box, int x1, int x2, int y, TextColour colour)
+	{
+		const Order *order = vehicle->GetOrder(order_id);
+
+		int curr_x = x1 + dest_bounding_box.width;
+		StringID str;
+
+		/* First draw the destination column, aligned to the right in order to paint the destinations closer to the timetable information */
+       if (order->IsWaypointOrder()) {
+			SetDParam(0, order->GetDestination());
+			str = STR_WAYPOINT_NAME;
+		} else if (order->IsDepotOrder()) {
+			SetDParam(0, order->GetDestination());
+			str = STR_DEPOT_NAME;
+		} else if (order->IsStationOrder()) {
+			SetDParam(0, order->GetDestination());
+			str = STR_STATION_NAME;
+		} else {
+			assert(false);
+		}
+
+		DrawString(x1, curr_x, y, str, colour, SA_RIGHT);
+
+		/* Then draw the arrival and departure dates.  If departure and arrival are equal, e.g. in a waypoint, draw one date centered,
+		 * otherwise draw the arrival in the left column and the departure in the right column. */
+		int date_width = date_bounding_box.width + 10;
+ 		Duration offset = vehicle->timetable_offset;
+		Date arrival_date = (order->HasArrival() ? AddToDate(order->GetArrival(), offset) : INVALID_DATE);
+		Date departure_date = (order->HasDeparture() ? AddToDate(order->GetDeparture(), offset) : INVALID_DATE);
+
+		if (arrival_date != INVALID_DATE && departure_date != INVALID_DATE && arrival_date == departure_date) {
+			SetDParam(0, arrival_date);
+			DrawString(curr_x + date_width / 2, curr_x + date_width + date_width / 2, y, STR_JUST_DATE_LONG, colour, SA_HOR_CENTER);
+		} else {
+			if (arrival_date != INVALID_DATE) {
+				SetDParam(0, arrival_date);
+				DrawString(curr_x, curr_x + date_width, y, STR_JUST_DATE_LONG, colour, SA_HOR_CENTER);
+			}
+			if (departure_date != INVALID_DATE) {
+				SetDParam(0, departure_date);
+				DrawString(curr_x + date_width, curr_x + 2 * date_width, y, STR_JUST_DATE_LONG, colour, SA_HOR_CENTER);
+			}
+		}
+
+		curr_x += 2 * date_width;
+
+		/* Draw the speed limit (if it exists) */
+
+		int speed_width = speed_bounding_box.width + 20;
+		if (order->GetMaxSpeed() != UINT16_MAX) {
+			SetDParam(0, order->GetMaxSpeed());
+			DrawString(curr_x, curr_x + speed_width, y, STR_JUST_VELOCITY, colour, SA_RIGHT);
+		}
+
+		curr_x += speed_width;
+
+	}
+
 public:
 	TimetableWindow(WindowDesc *desc, WindowNumber window_number) :
 			Window(desc),
@@ -1439,6 +1503,21 @@ public:
  		const Vehicle *v = this->vehicle;
 		int selected = this->selected_timetable_line;
 
+		/* If the filter mode is set to timetable only, we display a tabular view with timetable information.
+	     * The destination column is painted left, its width is set according to the width of the biggest
+		 * string bounding box for a destination of the vehicle. */
+		Dimension dest_bounding_box;
+		if (IsInShowTimetableMode()) {
+			dest_bounding_box = GetMaxOrderStringBoundingBox(v);
+		}
+
+		Date some_date = ConvertYMDToDate(2222, 11, 30);
+		SetDParam(0, some_date);
+		Dimension date_bounding_box = GetStringBoundingBox(STR_JUST_DATE_LONG);
+
+		SetDParam(0, ConvertKmhishSpeedToDisplaySpeed(1000));
+		Dimension speed_bounding_box = GetStringBoundingBox(STR_JUST_VELOCITY);
+
 		switch (widget) {
 			case WID_VT_TIMETABLE_PANEL: {
 				int y = r.top + WD_FRAMERECT_TOP;
@@ -1482,16 +1561,26 @@ public:
 								DrawOrderMarker(this->vehicle, order_id, y, r.left + WD_FRAMERECT_LEFT, r.right - WD_FRAMERECT_RIGHT);
 							}
 						} else {
-							char buffer[2048] = "";
-							const char* timetable_string = this->GetTimetableLineString(buffer, lastof(buffer), order, order_id);
 							/* Mark orders which violate the time order, e.g. because arrival is later than departure. */
 							if (!IsOrderTimetableValid(v, order)) {
 								colour = TC_RED;
 							}
+							/* Mark orders which violate the time order, e.g. because arrival is later than departure. */
+							if (!IsOrderTimetableValid(this->vehicle, order)) {
+								colour = TC_RED;
+							}
+
+							// If we are in the mode "show only timetable information", then we draw it in a tabular manner.
 							if (IsInShowTimetableMode()) {
 								DrawOrderMarker(this->vehicle, order_id, y, r.left + WD_FRAMERECT_LEFT, r.right - WD_FRAMERECT_RIGHT);
+								// TODO: Replace approximation for the order marker width by a calculated value
+							    DrawTabularTimetableLine(this->vehicle, order_id, dest_bounding_box, date_bounding_box, speed_bounding_box,
+														 r.left + WD_FRAMERECT_LEFT + 30, r.right - WD_FRAMERECT_LEFT, y, colour);
+							} else {
+								char buffer[2048] = "";
+								const char* timetable_string = this->GetTimetableLineString(buffer, lastof(buffer), order, order_id);
+								DrawString(rtl ? r.left + WD_FRAMERECT_LEFT : middle, rtl ? middle : r.right - WD_FRAMERECT_LEFT, y, timetable_string, colour);
 							}
-							DrawString(rtl ? r.left + WD_FRAMERECT_LEFT : middle, rtl ? middle : r.right - WD_FRAMERECT_LEFT, y, timetable_string, colour);
 						}
 						order_id++;
 

@@ -145,6 +145,7 @@ void PrepareShortOrderText(const Vehicle *vehicle, const Order *order)
 		case OT_DUMMY:
 			SetDParam(0, STR_INVALID_ORDER);
 			SetDParam(1, order->GetDestination());
+			SetDParam(2, STR_EMPTY);
 			break;
 
 		case OT_IMPLICIT:
@@ -185,6 +186,7 @@ void PrepareShortOrderText(const Vehicle *vehicle, const Order *order)
 		case OT_GOTO_WAYPOINT:
 			SetDParam(0, (order->GetNonStopType() & ONSF_NO_STOP_AT_INTERMEDIATE_STATIONS) ? STR_ORDER_GO_NON_STOP_TO_WAYPOINT : STR_ORDER_GO_TO_WAYPOINT);
 			SetDParam(1, order->GetDestination());
+			SetDParam(2, STR_EMPTY);
 			break;
 
 		case OT_CONDITIONAL:
