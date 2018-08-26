@@ -2835,10 +2835,11 @@ int Train::UpdateSpeed()
  */
 static void TrainEnterStation(Train *v, StationID station)
 {
-	if (v->current_order.IsStationOrder() && v->current_order.GetDestination() == station) {
+	if (v->current_order.IsStationOrder() && v->current_order.GetDestination() == station && !v->IsAutofilling()) {
 		v->lateness_counter = (v->current_order.HasArrival() ? _date - AddToDate(v->current_order.GetArrival(), v->timetable_offset) : 0);
 		DEBUG(misc, 9, "TrainEnterStation updates lateness counter to %i", v->lateness_counter);
 	}
+	ProcessAutofillEnterStation(v, false);
 
 	v->last_station_visited = station;
 

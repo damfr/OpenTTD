@@ -1251,6 +1251,8 @@ void CheckVehicleBreakdown(Vehicle *v)
 	/* reduced breakdowns? */
 	if (_settings_game.difficulty.vehicle_breakdowns == 1) rel += 0x6666;
 
+//	v->breakdown_chance *= 3; //LATENESS: more breakdowns for easier testing autofill
+
 	/* check if to break down */
 	if (_breakdown_chance[(uint)min(rel, 0xffff) >> 10] <= v->breakdown_chance) {
 		v->breakdown_ctr    = GB(r, 16, 6) + 0x3F;
@@ -1300,6 +1302,12 @@ bool Vehicle::HandleBreakdown()
 					EffectVehicle *u = CreateEffectVehicleRel(this, 4, 4, 5, EV_BREAKDOWN_SMOKE);
 					if (u != NULL) u->animation_state = this->breakdown_delay * 2;
 				}
+			}
+
+			/* In case of autofill, record the time lost due to breakdowns in the lateness_counter.  That time will not be
+			 * be considered when reaching the next station, and calculating how much time the vehicle has needed. */
+			if (this->IsAutofilling()) {
+				this->lateness_counter += this->breakdown_delay / (DAY_TICKS / 2);
 			}
 
 			this->MarkDirty(); // Update graphics after speed is zeroed
@@ -1534,7 +1542,12 @@ void VehicleEnterDepot(Vehicle *v)
 			/* Part of orders */
 			v->DeleteUnreachedImplicitOrders();
 			v->current_order_time = 0;
-			v->lateness_counter = (v->current_order.HasArrival() ? _date - AddToDate(v->current_order.GetArrival(), v->timetable_offset) : 0);
+
+			if (!v->IsAutofilling()) {
+				v->lateness_counter = (v->current_order.HasArrival() ? _date - AddToDate(v->current_order.GetArrival(), v->timetable_offset) : 0);
+			}
+			ProcessAutofillEnterStation(v, true);
+
 			v->IncrementImplicitOrderIndex();
 		}
 		if (v->current_order.GetDepotActionType() & ODATFB_HALT) {
@@ -1554,6 +1567,141 @@ void VehicleEnterDepot(Vehicle *v)
 	}
 }
 
+void ProcessAutofillEnterStation(Vehicle *v, bool non_stop)
+{
+	if (v->IsAutofilling()) {
+	    uint default_stay_time = (non_stop == true ? 0 : _settings_game.vehicle.autofill_default_station_time);
+		uint autofill_relax_factor = _settings_game.vehicle.autofill_relax_factor;
+		Duration vehicle_offset = v->timetable_offset;
+
+		Date arrival;
+		VehicleOrderID prev_order_index = v->GetPreviousNonImplicitOrderIndex(v->cur_real_order_index);
+		Order *prev_order = v->GetOrder(prev_order_index);
+	    Order *order = v->GetOrder(v->cur_real_order_index);
+
+		bool start_autofill = v->cur_real_order_index == v->autofill_start_order_index && !order->HasArrival();
+		bool finish_autofill = false;
+		int additional_length = 0;
+		if (prev_order != NULL) {
+			if (!start_autofill && prev_order->HasDeparture()) {
+				Duration timetable_duration = v->orders.list->GetTimetableDuration();
+				if (v->cur_real_order_index == v->autofill_start_order_index && order->HasArrival()) {
+					/* One round of autofill completed, finish and correct subsequent orders */
+
+					/* Determine the travel time between the last order, and the first order autofill processed. */
+					int travel_time = max(SubtractFromDate(_date, vehicle_offset) - prev_order->GetDeparture(), 0);
+					int additional_length = ((100 + autofill_relax_factor) * travel_time) / 100;
+
+					if (HasBit(v->vehicle_flags, VF_AUTOFILL_UPDATE_METADATA)) {
+						if (timetable_duration.IsInvalid()) {
+							timetable_duration = Duration(additional_length, DU_DAYS);
+						} else {
+							timetable_duration = v->orders.list->GetTimetableDuration();
+							timetable_duration.AddLength(additional_length);
+						}
+						v->orders.list->SetTimetableDuration(timetable_duration);
+					}
+
+					if (HasBit(v->vehicle_flags, VF_AUTOFILL_UPDATE_METADATA)) {
+						for (VehicleOrderID order_index = v->cur_real_order_index; order_index < v->GetNumOrders(); order_index++) {
+							Order *curr_order = v->GetOrder(order_index);
+							if (curr_order->HasArrival()) {
+								Date arrival_with_add_length = curr_order->GetArrival();
+								curr_order->SetArrival(AddToDate(arrival_with_add_length, timetable_duration));
+							}
+							if (curr_order->HasDeparture()) {
+								Date departure_with_add_length = curr_order->GetDeparture();
+								curr_order->SetDeparture(AddToDate(departure_with_add_length, timetable_duration));
+							}
+						}
+					}
+
+					if (HasBit(v->vehicle_flags, VF_AUTOFILL_UPDATE_METADATA)) {
+						Date first_timetable_date = INVALID_DATE;
+						for (VehicleOrderID order_index = 0; order_index < v->GetNumOrders(); order_index++) {
+							Order *curr_order = v->GetOrder(order_index);
+							if (curr_order->HasArrival()) {
+								first_timetable_date = curr_order->GetArrival();
+								break;
+							} else if (curr_order->HasDeparture()) {
+								first_timetable_date = curr_order->GetDeparture();
+								break;
+							}
+						}
+						if (first_timetable_date != INVALID_DATE) {
+							v->orders.list->SetStartTime(first_timetable_date);
+						}
+					}
+
+					finish_autofill = true;
+				} else {
+					Date prev_departure = prev_order->GetDeparture();
+
+					/* When not autofilling start date and length, the timetable is shifted
+					 * on the transition from last to first order.  We have to correct for that additional offset */
+					if (!HasBit(v->vehicle_flags, VF_AUTOFILL_UPDATE_METADATA) && v->cur_real_order_index < prev_order_index && !(timetable_duration.IsInvalid())) {
+						prev_departure = SubtractFromDate(prev_departure, v->orders.list->GetTimetableDuration());
+					}
+
+					/* Prevent negative travel times, the calculation below doesn´t like them, and they are only possible if the user does weird things
+					 * during autofill anyway.
+					 * Do not consider time lost due to breakdowns, which is stored in lateness_counter. */
+					int32 travel_time = max(SubtractFromDate(_date, vehicle_offset) - prev_departure - v->lateness_counter, 0);
+					additional_length = ((100 + autofill_relax_factor) * travel_time) / 100;
+					arrival = prev_departure + additional_length;
+
+					vehicle_offset.PrintToDebug(0, "vehicle_offset: ");
+					DEBUG(misc, 0, "autofill_relax_factor: %i, date %i, lateness %i, travel_time %i, term1: %i, term2 : %i, arrival %i", autofill_relax_factor, _date, v->lateness_counter,
+									travel_time, (100 + autofill_relax_factor) * travel_time, ((100 + autofill_relax_factor) * travel_time) / 100, arrival);
+				}
+			} else {
+				additional_length = 1;
+				arrival = SubtractFromDate(_date, vehicle_offset);
+			}
+		} else {
+			additional_length = 1;
+			arrival = SubtractFromDate(_date, vehicle_offset);;
+		}
+
+		if (finish_autofill) {
+			ClrBit(v->vehicle_flags, VF_AUTOFILL_TIMETABLE);
+			ClrBit(v->vehicle_flags, VF_AUTOFILL_PRES_WAIT_TIME);
+			v->autofill_start_order_index = INVALID_VEH_ORDER_ID;
+			AddVehicleAdviceNewsItem(STR_NEWS_VEHICLE_AUTOFILL_FINISHED, v->index);
+		} else {
+			order->SetArrival(arrival);
+			order->SetDeparture(arrival + default_stay_time);
+			additional_length += default_stay_time;
+
+			if (HasBit(v->vehicle_flags, VF_AUTOFILL_UPDATE_METADATA)) {
+				if (start_autofill) {
+					/* The start date is set to now, minus a possibly existing vehicle offset */
+					Date start_date = arrival;
+					if (!v->timetable_offset.IsInvalid()) {
+						start_date = SubtractFromDate(start_date, v->timetable_offset);
+					}
+					v->orders.list->SetStartTime(start_date);
+					v->orders.list->SetTimetableDuration(Duration(additional_length, DU_DAYS));
+				} else {
+					if (v->orders.list->GetTimetableDuration().IsInvalid()) {
+						Duration duration = Duration(additional_length, DU_DAYS);
+						v->orders.list->SetTimetableDuration(duration);
+					} else {
+						Duration duration = v->orders.list->GetTimetableDuration();
+						duration.AddLength(additional_length);
+						v->orders.list->SetTimetableDuration(duration);
+					}
+				}
+			}
+		}
+
+		/* Time lost due to breakdowns was processed here, thus reset this counter to zero */
+		v->lateness_counter = 0;
+
+		InvalidateWindowClassesData(WC_VEHICLE_TIMETABLE, false);
+	}
+}
+
 void UpdateDelayTextEffect(Vehicle *v)
 {
 	bool want_text_effect = true;
@@ -1563,8 +1711,8 @@ void UpdateDelayTextEffect(Vehicle *v)
 		want_text_effect = false;
 	}
 
-	/* Do not display lateness for vehicles that are on time */
-	if (v->lateness_counter == 0) {
+	/* Do not display lateness for vehicles that are on time.  Also do not display it during autofill, as there the lateness is the time not to consider in the sense of autofill. */
+	if (v->lateness_counter == 0 || v->IsAutofilling()) { // LATENESS: Negate second expression for easier testing breakdowns & autofill
 		want_text_effect = false;
 	}
 
@@ -2219,9 +2367,26 @@ void Vehicle::LeaveStation()
 	assert(this->cargo_payment == NULL); // cleared by ~CargoPayment
 
 	/* Only update the timetable if the vehicle was supposed to stop here. */
-	if (this->current_order.GetNonStopType() != ONSF_STOP_EVERYWHERE) {
+	if ((this->current_order.GetNonStopType() != ONSF_STOP_EVERYWHERE) && !this->IsAutofilling()) {
 		this->current_order_time = 0;
-		this->lateness_counter = (this->current_order.HasDeparture() ? _date - AddToDate(this->current_order.GetDeparture(), this->timetable_offset) : 0);
+ 		this->lateness_counter = (this->current_order.HasDeparture() ? _date - AddToDate(this->current_order.GetDeparture(), this->timetable_offset) : 0);
+	}
+
+	/* If and only if autofill started after arriving at the station, process it here */
+	Order *order = this->GetOrder(this->cur_real_order_index);
+	if (this->IsAutofilling() && !order->HasArrival()) {
+	    uint default_stay_time = _settings_game.vehicle.autofill_default_station_time;
+		Date departure = _date;
+		Date arrival = departure - default_stay_time;
+		order->SetArrival(arrival);
+		order->SetDeparture(departure);
+
+		if (HasBit(this->vehicle_flags, VF_AUTOFILL_UPDATE_METADATA)) {
+			this->orders.list->SetStartTime(arrival);
+			this->orders.list->SetTimetableDuration(Duration(default_stay_time + 1, DU_DAYS));
+		}
+
+		this->lateness_counter = 0;
 	}
 
 	if ((this->current_order.GetLoadType() & OLFB_NO_LOAD) == 0 ||

@@ -634,6 +634,7 @@ const SaveLoad *GetVehicleDescription(VehicleType vt)
 
 		     SLE_VAR(Vehicle, cur_implicit_order_index,  SLE_UINT8),
 		 SLE_CONDVAR(Vehicle, cur_real_order_index,  SLE_UINT8,                  158, SL_MAX_VERSION),
+		 SLE_CONDVAR(Vehicle, autofill_start_order_index, SLE_UINT8,             TIP_SAVEGAME_VERSION, SL_MAX_VERSION),
 		/* num_orders is now part of OrderList and is not saved but counted */
 		SLE_CONDNULL(1,                                                            0, 104),
 

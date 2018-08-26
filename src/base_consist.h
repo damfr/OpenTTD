@@ -30,6 +30,7 @@ struct BaseConsist {
 
 	VehicleOrderID cur_real_order_index;///< The index to the current real (non-implicit) order
 	VehicleOrderID cur_implicit_order_index;///< The index to the current implicit order
+	VehicleOrderID autofill_start_order_index; ///< If autofill for this vehicle is currently active (see vehicle_flags), the order where it started
 
 	uint16 vehicle_flags;               ///< Used for gradual loading and other miscellaneous things (@see VehicleFlags enum)
 

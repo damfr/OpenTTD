@@ -70,6 +70,7 @@ void VehicleEnteredDepotThisTick(Vehicle *v);
 UnitID GetFreeUnitNumber(VehicleType type);
 
 void VehicleEnterDepot(Vehicle *v);
+void ProcessAutofillEnterStation(Vehicle *v, bool non_stop);
 
 bool CanBuildVehicleInfrastructure(VehicleType type);
 

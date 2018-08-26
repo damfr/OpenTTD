@@ -1219,6 +1219,10 @@ private:
 				this->ProcessServiceClick(index);
 				break;
 
+			case WID_VT_START_AUTOFILL_DROPDOWN:
+				this->StartAutofill(index);
+				break;
+
 			case WID_VT_GOTO_BUTTON:
 				switch (index) {
 					case 0: this->ProcessGotoClick(); break;
@@ -1421,6 +1425,8 @@ public:
 			default: {
 				if (gui_scope) break; // only do this once; from command scope
 
+				this->UpdateButtonState();
+
 				/* Moving an order. If one of these is INVALID_VEH_ORDER_ID, then
 				 * the order is being created / removed */
 				if (this->selected_timetable_line == INVALID_SELECTION) break;
@@ -1587,8 +1593,9 @@ public:
 							if (!IsOrderTimetableValid(v, order)) {
 								colour = TC_RED;
 							}
-							/* Mark orders which violate the time order, e.g. because arrival is later than departure. */
-							if (!IsOrderTimetableValid(this->vehicle, order)) {
+							/* Mark orders which violate the time order, e.g. because arrival is later than departure.  But only if autofill isn´t
+							 * currently working (autofill may produce perfectly valid intermediate states, that still fail the IsOrderTimetableValid check. */
+							if (!this->vehicle->IsAutofilling() && !IsOrderTimetableValid(this->vehicle, order)) {
 								colour = TC_RED;
 							}
 
@@ -1649,18 +1656,24 @@ public:
 
 				y += FONT_HEIGHT_NORMAL;
 
+				char buffer[512] = "";
+				char* curr_buffer_pointer = buffer;
+				char tmp_buffer[200];
+
 				this->PrepareForVehicleIntervalLine();
 				TextColour status_color = IsVehicleIntervalLineSelected() ? TC_WHITE : TC_BLACK;
-				DrawString(r.left + WD_FRAMERECT_LEFT, r.right - WD_FRAMERECT_RIGHT - delay_info_width, y, STR_TIMETABLE_VEHICLE_INTERVAL_LINE, status_color);
+				
+				GetString(tmp_buffer, STR_TIMETABLE_VEHICLE_INTERVAL_LINE, lastof(tmp_buffer));
+				curr_buffer_pointer = strecat(curr_buffer_pointer, tmp_buffer, lastof(buffer));
 
-				if (lateness_counter < 0) {
-					DrawString(r.right - WD_FRAMERECT_RIGHT - delay_info_width, r.right - WD_FRAMERECT_RIGHT, y, STR_TIMETABLE_TOO_EARLY, TC_BLACK, SA_HOR_CENTER);
-				} else if (lateness_counter == 0) {
-					DrawString(r.right - WD_FRAMERECT_RIGHT - delay_info_width, r.right - WD_FRAMERECT_RIGHT, y, STR_TIMETABLE_ON_TIME_LOWER, TC_BLACK, SA_HOR_CENTER);
-				} else {
-					DrawString(r.right - WD_FRAMERECT_RIGHT - delay_info_width, r.right - WD_FRAMERECT_RIGHT, y, STR_TIMETABLE_DELAY, TC_BLACK, SA_HOR_CENTER);
+				bool autofilling = HasBit(this->vehicle->vehicle_flags, VF_AUTOFILL_TIMETABLE);
+				bool autofill_fills_metadata = HasBit(this->vehicle->vehicle_flags, VF_AUTOFILL_UPDATE_METADATA);
+				if (autofilling) {
+					StringID str = autofill_fills_metadata ? STR_TIMETABLE_AUTOFILL_RUNS_ORDERS_METADATA : STR_TIMETABLE_AUTOFILL_RUNS_ORDERS;
+					GetString(tmp_buffer, str, lastof(tmp_buffer));
+					curr_buffer_pointer = strecat(curr_buffer_pointer, tmp_buffer, lastof(buffer));
 				}
-
+				DrawString(r.left + WD_FRAMERECT_LEFT, r.right - WD_FRAMERECT_RIGHT, y, buffer, status_color);
 				break;
 			}
 		}
@@ -1938,6 +1951,21 @@ public:
 				break;
 			}
 
+			case WID_VT_START_AUTOFILL_DROPDOWN: {
+				if (this->GetWidget<NWidgetLeaf>(widget)->ButtonHit(pt)) {
+					StartAutofill(0);
+				} else {
+					ShowDropDownMenu(this, _order_autofill_dropdown, 0, WID_VT_START_AUTOFILL_DROPDOWN, 0, 0);
+				}
+
+				break;
+			}
+
+			case WID_VT_STOP_AUTOFILL_BUTTON: {
+				StopAutofill();
+				break;
+			}
+
 			case WID_VT_GOTO_BUTTON: {
 				if (this->GetWidget<NWidgetLeaf>(widget)->ButtonHit(pt)) {
 					this->ProcessGotoClick();
@@ -2139,6 +2167,23 @@ public:
 		}
 
 		ShowQueryString(str, STR_TIMETABLE_RENAME_CAPTION, MAX_LENGTH_TIMETABLE_NAME_CHARS, this, CS_ALPHANUMERAL, QSF_ENABLE_DEFAULT | QSF_LEN_IN_CHARS);
+	}
+
+	void StartAutofill(int index)
+	{
+		uint32 p2 = 0;
+		SetBit(p2, 0);
+		if (_ctrl_pressed) SetBit(p2, 1);
+		if (index == 1) {
+			SetBit(p2, 2);
+		}
+		DoCommandP(0, this->vehicle->index, p2, CMD_AUTOFILL_TIMETABLE | CMD_MSG(STR_ERROR_CAN_T_TIMETABLE_VEHICLE));
+	}
+
+	void StopAutofill()
+	{
+		uint32 p2 = 0;
+		DoCommandP(0, this->vehicle->index, p2, CMD_AUTOFILL_TIMETABLE | CMD_MSG(STR_ERROR_CAN_T_TIMETABLE_VEHICLE));
 	}
 };
 

@@ -43,9 +43,9 @@ void BaseConsist::CopyConsistPropertiesFrom(const BaseConsist *src)
 	this->cur_real_order_index = src->cur_real_order_index;
 	this->cur_implicit_order_index = src->cur_implicit_order_index;
 
-	if (HasBit(src->vehicle_flags, VF_TIMETABLE_STARTED)) SetBit(this->vehicle_flags, VF_TIMETABLE_STARTED);
 	if (HasBit(src->vehicle_flags, VF_AUTOFILL_TIMETABLE)) SetBit(this->vehicle_flags, VF_AUTOFILL_TIMETABLE);
 	if (HasBit(src->vehicle_flags, VF_AUTOFILL_PRES_WAIT_TIME)) SetBit(this->vehicle_flags, VF_AUTOFILL_PRES_WAIT_TIME);
+	if (HasBit(src->vehicle_flags, VF_AUTOFILL_UPDATE_METADATA)) SetBit(this->vehicle_flags, VF_AUTOFILL_UPDATE_METADATA);
 	if (HasBit(src->vehicle_flags, VF_SERVINT_IS_PERCENT) != HasBit(this->vehicle_flags, VF_SERVINT_IS_PERCENT)) {
 		ToggleBit(this->vehicle_flags, VF_SERVINT_IS_PERCENT);
 	}

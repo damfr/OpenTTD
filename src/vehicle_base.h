@@ -26,6 +26,7 @@
 #include "base_consist.h"
 #include "timetable.h"
 #include "date_func.h"
+#include "news_func.h"
 #include "network/network.h"
 #include <list>
 #include <map>
@@ -47,13 +48,14 @@ enum VehicleFlags {
 	VF_LOADING_FINISHED,        ///< Vehicle has finished loading.
 	VF_CARGO_UNLOADING,         ///< Vehicle is unloading cargo.
 	VF_BUILT_AS_PROTOTYPE,      ///< Vehicle is a prototype (accepted as exclusive preview).
-	VF_TIMETABLE_STARTED,       ///< Whether the vehicle has started running on the timetable yet.
+	VF_AUTOFILL_UPDATE_METADATA, ///< Autofill updates not only orders, but also start date and timetable duration
 	VF_AUTOFILL_TIMETABLE,      ///< Whether the vehicle should fill in the timetable automatically.
 	VF_AUTOFILL_PRES_WAIT_TIME, ///< Whether non-destructive auto-fill should preserve waiting times
 	VF_STOP_LOADING,            ///< Don't load anymore during the next load cycle.
 	VF_PATHFINDER_LOST,         ///< Vehicle's pathfinder is lost.
 	VF_SERVINT_IS_CUSTOM,       ///< Service interval is custom.
 	VF_SERVINT_IS_PERCENT,      ///< Service interval is percent.
+
 };
 
 /** Bit numbers used to indicate which of the #NewGRFCache values are valid. */
@@ -781,6 +783,8 @@ public:
 
 	inline void SetServiceIntervalIsPercent(bool on) { SB(this->vehicle_flags, VF_SERVINT_IS_PERCENT, 1, on); }
 
+	inline bool IsAutofilling() const { return HasBit(this->vehicle_flags, VF_AUTOFILL_TIMETABLE); }
+
 private:
 
 	void CorrectTimetableOffset();
@@ -799,7 +803,10 @@ private:
 				this->cur_real_order_index++;
 				if (this->cur_real_order_index >= this->GetNumOrders()) {
 					this->cur_real_order_index = 0;
-					ShiftTimetableOffset(1);
+					/* In case of autofill, we don´t shift the timetable, but shift the subsequent orders once it completes */
+					if (!(this->IsAutofilling() && HasBit(this->vehicle_flags, VF_AUTOFILL_UPDATE_METADATA))) {
+						ShiftTimetableOffset(1);
+					}
 				}
 			} while (this->GetOrder(this->cur_real_order_index)->IsType(OT_IMPLICIT));
 		} else {
@@ -879,6 +886,34 @@ public:
 	inline Order *GetOrder(int index) const
 	{
 		return (this->orders.list == NULL) ? NULL : this->orders.list->GetOrderAt(index);
+	}
+
+	VehicleOrderID GetPreviousNonImplicitOrderIndex(int index) const
+	{
+		VehicleOrderID prev_order_index = index;
+		VehicleOrderID ret_order_index = INVALID_VEH_ORDER_ID;
+
+		/* Find previous non-implicit order */
+		while (true) {
+			if (prev_order_index > 0) {
+				prev_order_index--;
+			} else {
+				prev_order_index = this->GetNumOrders() - 1;
+			}
+			/* Prevent endless loop - if we arrive again at the current order, we didn´t find any suitable order */
+			if (prev_order_index == index) {
+				break;
+			}
+
+			Order *order = this->GetOrder(prev_order_index);
+			if (order == NULL) {
+				break;
+			} else if (!(order->IsType(OT_IMPLICIT))) {
+				ret_order_index = prev_order_index;
+				break;
+			}
+		}
+		return ret_order_index;
 	}
 
 	/**

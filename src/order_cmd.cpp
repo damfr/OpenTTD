@@ -2181,7 +2181,10 @@ bool ProcessOrders(Vehicle *v)
 		 * visited station will cause the vehicle to still stop. */
 		v->last_station_visited = v->current_order.GetDestination();
 		v->current_order_time = 0;
-		v->lateness_counter = (v->current_order.HasArrival() ? _date - AddToDate(v->current_order.GetArrival(), v->timetable_offset) : 0);
+	    if (!v->IsAutofilling()) {
+			v->lateness_counter = (v->current_order.HasArrival() ? _date - AddToDate(v->current_order.GetArrival(), v->timetable_offset) : 0);
+		}
+		ProcessAutofillEnterStation(v, true);
 		v->IncrementImplicitOrderIndex();
 	}
 

@@ -855,6 +855,7 @@ STR_NEWS_TRAIN_IS_STUCK                                         :{WHITE}{VEHICLE
 STR_NEWS_VEHICLE_IS_LOST                                        :{WHITE}{VEHICLE} is lost
 STR_NEWS_VEHICLE_IS_UNPROFITABLE                                :{WHITE}{VEHICLE}'s profit last year was {CURRENCY_LONG}
 STR_NEWS_AIRCRAFT_DEST_TOO_FAR                                  :{WHITE}{VEHICLE} can't get to the next destination because it is out of range
+STR_NEWS_VEHICLE_AUTOFILL_FINISHED                              :{WHITE}{VEHICLE} has finished recording its timetable using autofill
 
 STR_NEWS_ORDER_REFIT_FAILED                                     :{WHITE}{VEHICLE} stopped because an ordered refit failed
 STR_NEWS_VEHICLE_AUTORENEW_FAILED                               :{WHITE}Autorenew failed on {VEHICLE}{}{STRING}
@@ -1269,6 +1270,10 @@ STR_CONFIG_SETTING_ORDER_REVIEW_EXDEPOT                         :Yes, but exclud
 STR_CONFIG_SETTING_ORDER_REVIEW_ON                              :Of all vehicles
 STR_CONFIG_SETTING_WARN_INCOME_LESS                             :Warn if a vehicle's income is negative: {STRING2}
 STR_CONFIG_SETTING_WARN_INCOME_LESS_HELPTEXT                    :When enabled, a news message gets sent when a vehicle has not made any profit within a calendar year
+STR_CONFIG_SETTING_AUTOFILL_DEFAULT_STATION_TIME                :By default, autofill makes vehicles stay in stations for {STRING2} day{P 0:2 "" s}
+STR_CONFIG_SETTING_AUTOFILL_DEFAULT_STATION_TIME_HELPTEXT       :When populating a timetable using the autofill feature, the departures are set to the arrival at the respective station plus this number of days.
+STR_CONFIG_SETTING_AUTOFILL_RELAX_FACTOR                        :Autofill increases the travel time between stations by {STRING2}
+STR_CONFIG_SETTING_AUTOFILL_RELAX_FACTOR_HELPTEXT               :Percentage by which autofill increases the measured travel time between stations, to account for extraordinary events like breakdowns
 STR_CONFIG_SETTING_NEVER_EXPIRE_VEHICLES                        :Vehicles never expire: {STRING2}
 STR_CONFIG_SETTING_NEVER_EXPIRE_VEHICLES_HELPTEXT               :When enabled, all vehicle models remain available forever after their introduction
 STR_CONFIG_SETTING_AUTORENEW_VEHICLE                            :Autorenew vehicle when it gets old: {STRING2}
@@ -1686,6 +1691,7 @@ STR_CONFIG_SETTING_ACCOUNTING                                   :{ORANGE}Account
 STR_CONFIG_SETTING_VEHICLES                                     :{ORANGE}Vehicles
 STR_CONFIG_SETTING_VEHICLES_PHYSICS                             :{ORANGE}Physics
 STR_CONFIG_SETTING_VEHICLES_ROUTING                             :{ORANGE}Routing
+STR_CONFIG_SETTING_VEHICLES_TIMETABLE                           :{ORANGE}Timetable
 STR_CONFIG_SETTING_LIMITATIONS                                  :{ORANGE}Limitations
 STR_CONFIG_SETTING_ACCIDENTS                                    :{ORANGE}Disasters / Accidents
 STR_CONFIG_SETTING_GENWORLD                                     :{ORANGE}World generation
@@ -4008,6 +4014,8 @@ STR_TIMETABLE_INVALID_DURATION                                  :----
 
 STR_TIMETABLE_PROPERTY_LINE                                     :Start {DATE_LONG}  Offset {DURATION}  Length {DURATION}
 STR_TIMETABLE_VEHICLE_INTERVAL_LINE                             :=> Vehicle timetable {DATE_LONG} to {DATE_LONG}
+STR_TIMETABLE_AUTOFILL_RUNS_ORDERS                              : Autofill is setting up orders.
+STR_TIMETABLE_AUTOFILL_RUNS_ORDERS_METADATA                     : Autofill is setting up start and length of timetable, and its orders.
 
 STR_TIMETABLE_DELAY                                             :{BLACK}delayed
 STR_TIMETABLE_TOO_EARLY                                         :{BLACK}too early

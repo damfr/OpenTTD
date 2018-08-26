@@ -403,6 +403,7 @@ CommandCost CmdSetOrderArrival(TileIndex tile, DoCommandFlag flags, uint32 p1, u
  * @param p2 Various bitstuffed elements
  * - p2 = (bit 0) - Set to 1 to enable, 0 to disable autofill.
  * - p2 = (bit 1) - Set to 1 to preserve waiting times in non-destructive mode
+ * - p2 = (bit 2) - Set to 1 to enable autofilling start date and timetable duration
  * @param text unused
  * @return the cost of this operation or an error
  */
@@ -422,16 +423,31 @@ CommandCost CmdAutofillTimetable(TileIndex tile, DoCommandFlag flags, uint32 p1,
 			 * "timetable has started" bit. Times are not cleared anymore, but are
 			 * overwritten when the order is reached now. */
 			SetBit(v->vehicle_flags, VF_AUTOFILL_TIMETABLE);
-			ClrBit(v->vehicle_flags, VF_TIMETABLE_STARTED);
 
 			/* Overwrite waiting times only if they got longer */
 			if (HasBit(p2, 1)) SetBit(v->vehicle_flags, VF_AUTOFILL_PRES_WAIT_TIME);
 
-			v->timetable_start = 0;
+			Order *curr_order = v->cur_real_order_index != INVALID_VEH_ORDER_ID ? v->GetOrder(v->cur_real_order_index) : NULL;
+			/* Remove arrival and departure of current order.  This way, we can easily detect the case where we have to determine the arrival
+			 * when processing the departure, because the arrival has already happened, i.e. the vehicle is currently located in the station */
+			if (curr_order != NULL) {
+				curr_order->SetArrival(INVALID_DATE);
+				curr_order->SetDeparture(INVALID_DATE);
+			}
+
+			/* If bit 2 is set, also update meta data. */
+			if (HasBit(p2, 2)) {
+				SetBit(v->vehicle_flags, VF_AUTOFILL_UPDATE_METADATA);
+			}
+
+			/* During autofill, the lateness_counter contains the lateness due to breakdowns not to be considered for autofill */
 			v->lateness_counter = 0;
+			v->autofill_start_order_index = v->cur_real_order_index;
 		} else {
 			ClrBit(v->vehicle_flags, VF_AUTOFILL_TIMETABLE);
 			ClrBit(v->vehicle_flags, VF_AUTOFILL_PRES_WAIT_TIME);
+			ClrBit(v->vehicle_flags, VF_AUTOFILL_UPDATE_METADATA);
+			v->autofill_start_order_index = INVALID_VEH_ORDER_ID;
 		}
 
 		for (Vehicle *v2 = v->FirstShared(); v2 != NULL; v2 = v2->NextShared()) {
@@ -440,6 +456,7 @@ CommandCost CmdAutofillTimetable(TileIndex tile, DoCommandFlag flags, uint32 p1,
 				ClrBit(v2->vehicle_flags, VF_AUTOFILL_TIMETABLE);
 				ClrBit(v2->vehicle_flags, VF_AUTOFILL_PRES_WAIT_TIME);
 			}
+			InvalidateWindowData(WC_VEHICLE_TIMETABLE, v2->index);
 			SetWindowDirty(WC_VEHICLE_TIMETABLE, v2->index);
 		}
 	}
