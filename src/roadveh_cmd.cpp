@@ -683,8 +683,13 @@ static RoadVehicle *RoadVehFindCloseTo(RoadVehicle *v, int x, int y, Direction d
  * @param v  Road vehicle that arrived.
  * @param st Station where the road vehicle arrived.
  */
-static void RoadVehArrivesAt(const RoadVehicle *v, Station *st)
+static void RoadVehArrivesAt(RoadVehicle *v, Station *st)
 {
+	if (v->current_order.IsStationOrder() && v->current_order.GetDestination() == st->index) {
+		v->lateness_counter = (v->current_order.HasArrival() ? _date - AddToDate(v->current_order.GetArrival(), v->timetable_offset) : 0);
+		DEBUG(misc, 9, "RoadVehArrivesAt updates lateness counter to %i", v->lateness_counter);
+	}
+
 	if (v->IsBus()) {
 		/* Check if station was ever visited before */
 		if (!(st->had_vehicle_of_type & HVOT_BUS)) {
@@ -984,6 +989,12 @@ static bool RoadVehLeaveDepot(RoadVehicle *v, bool first)
 	for (const RoadVehicle *u = v; u != NULL; u = u->Next()) {
 		if (u->state != RVSB_IN_DEPOT || u->tile != v->tile) return false;
 	}
+
+	/* If the departure time of the timetable is not yet reached, keep it in the order TODO see train_cmd */
+/*	if (v->current_order.HasDeparture() && AddToDate(v->current_order.GetDeparture(), v->timetable_offset) > _date) {
+		DEBUG(misc, 9, "Keeping train in depot because of timetable.");
+		return false;
+	}*/
 
 	DiagDirection dir = GetRoadDepotDirection(v->tile);
 	v->direction = DiagDirToDir(dir);

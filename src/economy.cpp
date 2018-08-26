@@ -1825,8 +1825,8 @@ static void LoadUnloadVehicle(Vehicle *front)
 		}
 		/* We loaded less cargo than possible for all cargo types and it's not full
 		 * load and we're not supposed to wait any longer: stop loading. */
-		if (!anything_unloaded && full_load_amount == 0 && reservation_left == 0 && !(front->current_order.GetLoadType() & OLFB_FULL_LOAD)) {
-			/* TODO: The timetable related condition will be re-added based on the improved concept in patch 480. */
+		if (!anything_unloaded && full_load_amount == 0 && reservation_left == 0 && !(front->current_order.GetLoadType() & OLFB_FULL_LOAD) &&
+			(front->current_order.HasDeparture() && AddToDate(front->current_order.GetDeparture(), front->timetable_offset) <= _date)) {
 			SetBit(front->vehicle_flags, VF_STOP_LOADING);
 		}
 

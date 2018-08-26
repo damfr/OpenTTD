@@ -1144,6 +1144,13 @@ CommandCost CmdSkipToOrder(TileIndex tile, DoCommandFlag flags, uint32 p1, uint3
 	if (ret.Failed()) return ret;
 
 	if (flags & DC_EXEC) {
+		VehicleOrderID old_real_order_index = v->cur_real_order_index;
+
+		/* If we skipped back to the beginning, increment the timetable offset */
+		if (v->cur_real_order_index < old_real_order_index) {
+			v->ShiftTimetableOffset(1);
+		}
+
 		if (v->current_order.IsType(OT_LOADING)) v->LeaveStation();
 
 		v->cur_implicit_order_index = v->cur_real_order_index = sel_ord;
@@ -2174,6 +2181,7 @@ bool ProcessOrders(Vehicle *v)
 		 * visited station will cause the vehicle to still stop. */
 		v->last_station_visited = v->current_order.GetDestination();
 		v->current_order_time = 0;
+		v->lateness_counter = (v->current_order.HasArrival() ? _date - AddToDate(v->current_order.GetArrival(), v->timetable_offset) : 0);
 		v->IncrementImplicitOrderIndex();
 	}
 

@@ -12,6 +12,7 @@
 #ifndef VEHICLE_BASE_H
 #define VEHICLE_BASE_H
 
+#include "debug.h"
 #include "core/smallmap_type.hpp"
 #include "track_type.h"
 #include "command_type.h"
@@ -24,6 +25,7 @@
 #include "group_type.h"
 #include "base_consist.h"
 #include "timetable.h"
+#include "date_func.h"
 #include "network/network.h"
 #include <list>
 #include <map>
@@ -779,24 +781,35 @@ public:
 	inline void SetServiceIntervalIsPercent(bool on) { SB(this->vehicle_flags, VF_SERVINT_IS_PERCENT, 1, on); }
 
 private:
+
+	void CorrectTimetableOffset();
+	void ShiftTimetable(Duration offset);
+
 	/**
 	 * Advance cur_real_order_index to the next real order.
 	 * cur_implicit_order_index is not touched.
 	 */
 	void SkipToNextRealOrderIndex()
 	{
+		DEBUG(misc, 9, "SkipToNextRealOrderIndex called, %i", this->cur_real_order_index);
 		if (this->GetNumManualOrders() > 0) {
 			/* Advance to next real order */
 			do {
 				this->cur_real_order_index++;
-				if (this->cur_real_order_index >= this->GetNumOrders()) this->cur_real_order_index = 0;
+				if (this->cur_real_order_index >= this->GetNumOrders()) {
+					this->cur_real_order_index = 0;
+					ShiftTimetableOffset(1);
+				}
 			} while (this->GetOrder(this->cur_real_order_index)->IsType(OT_IMPLICIT));
 		} else {
 			this->cur_real_order_index = 0;
 		}
+		DEBUG(misc, 9, "Now: %i", this->cur_real_order_index);
 	}
 
 public:
+	void ShiftTimetableOffset(int offset);
+
 	/**
 	 * Increments cur_implicit_order_index, keeps care of the wrap-around and invalidates the GUI.
 	 * cur_real_order_index is incremented as well, if needed.

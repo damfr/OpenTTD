@@ -106,6 +106,8 @@ public:
 
 	inline void Add(Duration d) { this->length += GetLengthInOurUnit(d); }
 	inline void AddLength(int32 length) { this->length += length; }
+	inline void Subtract(Duration d) { this->length -= GetLengthInOurUnit(d); }
+	inline void SubtractLength(int32 length) { this->length -= length; }
 
 	inline void SetLength(int32 length) { this->length = length; }
 	inline int32 GetLength() const { return this->length; }

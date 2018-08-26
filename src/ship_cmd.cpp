@@ -323,6 +323,12 @@ static bool CheckShipLeaveDepot(Ship *v)
 {
 	if (!v->IsChainInDepot()) return false;
 
+	/* If the departure time of the timetable is not yet reached, keep it in the order TODO see train_cmd */
+/*	if (v->current_order.HasDeparture() && AddToDate(v->current_order.GetDeparture(), v->timetable_offset) > _date) {
+		DEBUG(misc, 9, "Keeping ship in depot because of timetable.");
+		return false;
+	}*/
+
 	/* We are leaving a depot, but have to go to the exact same one; re-enter */
 	if (v->current_order.IsType(OT_GOTO_DEPOT) &&
 			IsShipDepotTile(v->tile) && GetDepotIndex(v->tile) == v->current_order.GetDestination()) {
@@ -409,8 +415,13 @@ static bool ShipAccelerate(Vehicle *v)
  * @param v  Ship that arrived.
  * @param st Station being visited.
  */
-static void ShipArrivesAt(const Vehicle *v, Station *st)
+static void ShipArrivesAt(Vehicle *v, Station *st)
 {
+	if (v->current_order.IsStationOrder() && v->current_order.GetDestination() == st->index) {
+		v->lateness_counter = (v->current_order.HasArrival() ? _date - AddToDate(v->current_order.GetArrival(), v->timetable_offset) : 0);
+		DEBUG(misc, 9, "ShipArrivesAt updates lateness counter to %i", v->lateness_counter);
+	}
+
 	/* Check if station was ever visited before */
 	if (!(st->had_vehicle_of_type & HVOT_SHIP)) {
 		st->had_vehicle_of_type |= HVOT_SHIP;
