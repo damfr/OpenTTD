@@ -540,7 +540,7 @@ private:
 			d_upper = GetStringBoundingBox(STR_TIMETABLE_DAYS);
 			d_lower = GetStringBoundingBox(STR_TIMETABLE_DELAY);
 		}
-		return max(d_upper.width, d_lower.width);
+		return std::max(d_upper.width, d_lower.width);
 	}
 
 	/**********************************************************************************************************************/

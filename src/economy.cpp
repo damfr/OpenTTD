@@ -1883,6 +1883,8 @@ static void LoadUnloadVehicle(Vehicle *front)
 		int percent = CalcPercentVehicleFilled(front, &percent_up_down);
 		if (front->fill_percent_te_id == INVALID_TE_ID) {
 			front->fill_percent_te_id = ShowFillingPercent(front->x_pos, front->y_pos, front->z_pos + 20, percent, percent_up_down);
+			/* Avoid overlapping with the delay info */
+			UpdateDelayTextEffect(front);
 		} else {
 			UpdateFillingPercent(front->fill_percent_te_id, percent, percent_up_down);
 		}
