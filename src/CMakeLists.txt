@@ -295,6 +295,7 @@ add_files(
     order_cmd.cpp
     order_func.h
     order_gui.cpp
+    order_gui.h
     order_type.h
     osk_gui.cpp
     pbs.cpp
