@@ -65,6 +65,16 @@ TextEffectID AddTextEffect(StringID msg, int center, int y, uint8 duration, Text
 	return i;
 }
 
+void UpdateTextEffectPosition(TextEffectID te_id, int center, int y, StringID msg)
+{
+	TextEffect *te = _text_effects.Get(te_id);
+	if (center == te->center && y == te->top && msg == te->string_id && GetDParam(0) == te->params_1) return;
+	te->string_id = msg;
+	te->params_1 = GetDParam(0);
+
+    te->UpdatePosition(center, y, msg);
+}
+
 void UpdateTextEffect(TextEffectID te_id, StringID msg)
 {
 	/* Update details */

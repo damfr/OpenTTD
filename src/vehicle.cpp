@@ -349,6 +349,7 @@ Vehicle::Vehicle(VehicleType type)
 	this->coord.left         = INVALID_COORD;
 	this->group_id           = DEFAULT_GROUP;
 	this->fill_percent_te_id = INVALID_TE_ID;
+	this->delay_te_id        = INVALID_TE_ID;
 	this->first              = this;
 	this->colourmap          = PAL_NONE;
 	this->cargo_age_counter  = 1;
@@ -810,6 +811,10 @@ void Vehicle::PreDestructor()
 		st->loading_vehicles.remove(this);
 
 		HideFillingPercent(&this->fill_percent_te_id);
+		if (this->delay_te_id != INVALID_TE_ID) {
+			RemoveTextEffect(this->delay_te_id);
+			this->delay_te_id = INVALID_TE_ID;
+		}
 		this->CancelReservation(INVALID_STATION, st);
 		delete this->cargo_payment;
 		assert(this->cargo_payment == NULL); // cleared by ~CargoPayment
@@ -1549,6 +1554,52 @@ void VehicleEnterDepot(Vehicle *v)
 	}
 }
 
+void UpdateDelayTextEffect(Vehicle *v)
+{
+	bool want_text_effect = true;
+
+	/* Do not try to display delay information if there is no complete timetable information available */
+	if (v->timetable_offset.IsInvalid() || v->orders.list == NULL || !v->orders.list->HasStartTime() || v->orders.list->GetTimetableDuration().IsInvalid()) {
+		want_text_effect = false;
+	}
+
+	/* Do not display lateness for vehicles that are on time */
+	if (v->lateness_counter == 0) {
+		want_text_effect = false;
+	}
+
+	if (v->delay_te_id != INVALID_TE_ID && !want_text_effect) {
+		/* Remove existing text effect if no longer wanted */
+		RemoveTextEffect(v->delay_te_id);
+		v->delay_te_id = INVALID_TE_ID;
+	} else {
+		if (want_text_effect) {
+			Point pt;
+			if (v->fill_percent_te_id == INVALID_TE_ID) {
+				pt = RemapCoords(v->x_pos, v->y_pos, v->z_pos + 20);
+			} else {
+				pt = RemapCoords(v->x_pos - 5, v->y_pos + 5, v->z_pos + 20);
+			}
+			SetDParam(0, v->lateness_counter);
+
+			StringID str;
+			if (v->lateness_counter < 0) {
+				str = STR_DELAY_MARKER_TOO_EARLY;
+			} else if (v->lateness_counter < 5) {
+				str = STR_DELAY_MARKER_ON_TIME;
+			} else {
+				str = STR_DELAY_MARKER_DELAY;
+			}
+
+			if (v->delay_te_id == INVALID_TE_ID) {
+				v->delay_te_id = AddTextEffect(str, pt.x, pt.y, 0, TE_STATIC);
+			} else {
+				UpdateTextEffectPosition(v->delay_te_id, pt.x, pt.y, str);
+			}
+		}
+	}
+}
+
 
 /**
  * Update the position of the vehicle. This will update the hash that tells
@@ -1557,6 +1608,7 @@ void VehicleEnterDepot(Vehicle *v)
 void Vehicle::UpdatePosition()
 {
 	UpdateVehicleTileHash(this, false);
+	UpdateDelayTextEffect(this);
 }
 
 /**

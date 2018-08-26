@@ -291,6 +291,7 @@ public:
 	EngineID engine_type;               ///< The type of engine used for this vehicle.
 
 	TextEffectID fill_percent_te_id;    ///< a text-effect id to a loading indicator object
+	TextEffectID delay_te_id;           ///< a text-effect id to a delay indicator
 	UnitID unitnumber;                  ///< unit number, for display purposes only
 
 	uint16 cur_speed;                   ///< current speed

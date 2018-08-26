@@ -255,7 +255,10 @@ void AfterLoadVehicles(bool part_of_load)
 		if (v->Next() != NULL) v->Next()->previous = v;
 		if (v->NextShared() != NULL) v->NextShared()->previous_shared = v;
 
-		if (part_of_load) v->fill_percent_te_id = INVALID_TE_ID;
+		if (part_of_load) {
+			v->fill_percent_te_id = INVALID_TE_ID;
+			v->delay_te_id = INVALID_TE_ID;
+		}
 		v->first = NULL;
 		if (v->IsGroundVehicle()) v->GetGroundVehicleCache()->first_engine = INVALID_ENGINE;
 	}
