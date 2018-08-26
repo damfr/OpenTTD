@@ -2150,6 +2150,14 @@ static bool CheckTrainStayInDepot(Train *v)
 		return true;
 	}
 
+	if (v->current_order.HasDeparture()) {
+		v->HandleWaiting(false);
+	}
+
+	if (v->current_order.IsType(OT_WAITING)) {
+		return true;
+	}
+
 	SigSegState seg_state;
 
 	if (v->force_proceed == TFP_NONE) {

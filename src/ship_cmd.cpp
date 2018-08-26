@@ -339,6 +339,14 @@ static bool CheckShipLeaveDepot(Ship *v)
 {
 	if (!v->IsChainInDepot()) return false;
 
+	if (v->current_order.HasDeparture()) {
+		v->HandleWaiting(false);
+	}
+
+	if (v->current_order.IsType(OT_WAITING)) {
+		return true;
+	}
+
 	/* If the departure time of the timetable is not yet reached, keep it in the order TODO see train_cmd */
 /*	if (v->current_order.HasDeparture() && AddToDate(v->current_order.GetDeparture(), v->timetable_offset) > _date) {
 		DEBUG(misc, 9, "Keeping ship in depot because of timetable.");

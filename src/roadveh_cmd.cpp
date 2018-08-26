@@ -1014,11 +1014,9 @@ static bool RoadVehLeaveDepot(RoadVehicle *v, bool first)
 		if (u->state != RVSB_IN_DEPOT || u->tile != v->tile) return false;
 	}
 
-	/* If the departure time of the timetable is not yet reached, keep it in the order TODO see train_cmd */
-/*	if (v->current_order.HasDeparture() && AddToDate(v->current_order.GetDeparture(), v->timetable_offset) > _date) {
-		DEBUG(misc, 9, "Keeping train in depot because of timetable.");
+	if (v->current_order.IsType(OT_WAITING)) {
 		return false;
-	}*/
+	}
 
 	DiagDirection dir = GetRoadDepotDirection(v->tile);
 	v->direction = DiagDirToDir(dir);
@@ -1581,6 +1579,14 @@ static bool RoadVehController(RoadVehicle *v)
 		return RoadVehIsCrashed(v);
 	}
 
+	if (v->current_order.HasDeparture()) {
+		v->HandleWaiting(false);
+	}
+
+	if (v->IsInDepot() && !RoadVehLeaveDepot(v, true)) {
+		return true;
+	}
+
 	/* road vehicle has broken down? */
 	if (v->HandleBreakdown()) return true;
 	if (v->vehstatus & VS_STOPPED) {
@@ -1592,8 +1598,6 @@ static bool RoadVehController(RoadVehicle *v)
 	v->HandleLoading();
 
 	if (v->current_order.IsType(OT_LOADING)) return true;
-
-	if (v->IsInDepot() && RoadVehLeaveDepot(v, true)) return true;
 
 	v->ShowVisualEffect();
 
