@@ -1881,6 +1881,16 @@ public:
 				break;
 			}
 
+			case WID_VT_SHIFT_BY_LENGTH_PAST_BUTTON: {
+				DoCommandP(this->vehicle->tile, this->vehicle->index, (uint32)-1, CMD_SHIFT_TIMETABLE | CMD_MSG(STR_ERROR_TIMETABLE_CAN_T_SHIFT_TIMETABLE));
+				break;
+			}
+
+			case WID_VT_SHIFT_BY_LENGTH_FUTURE_BUTTON: {
+				DoCommandP(this->vehicle->tile, this->vehicle->index, (uint32)+1, CMD_SHIFT_TIMETABLE | CMD_MSG(STR_ERROR_TIMETABLE_CAN_T_SHIFT_TIMETABLE));
+				break;
+			}
+
 			case WID_VT_RENAME_BUTTON: {
 				ShowRenameTimetableWindow();
 				break;

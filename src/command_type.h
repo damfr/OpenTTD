@@ -328,6 +328,7 @@ enum Commands {
 	CMD_SET_TIMETABLE_START,          ///< set the date that a timetable should start
 	CMD_SET_TIMETABLE_OFFSET,         ///< set the offset of a vehicles timetable relative to the timetable start date
 	CMD_SET_TIMETABLE_LENGTH,         ///< set the length of a timetable
+	CMD_SHIFT_TIMETABLE,              ///< shift the timetable by its length
 	CMD_RENAME_TIMETABLE,             ///< rename a timetable
 	CMD_SET_ORDER_DEPARTURE,          ///< Set the departure time timetabled in an order
 	CMD_SET_ORDER_SPEED_LIMIT,        ///< Set the speedlimit defined in an order
