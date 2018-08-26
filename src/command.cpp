@@ -201,6 +201,7 @@ CommandProc CmdAutofillTimetable;
 CommandProc CmdSetTimetableStart;
 CommandProc CmdSetTimetableOffset;
 CommandProc CmdSetTimetableLength;
+CommandProc CmdShiftTimetable;
 CommandProc CmdRenameTimetable;
 CommandProc CmdSetOrderDeparture;
 CommandProc CmdSetOrderSpeedLimit;
@@ -370,6 +371,7 @@ static const Command _command_proc_table[] = {
 	DEF_CMD(CmdSetTimetableStart,                              0, CMDT_ROUTE_MANAGEMENT      ), // CMD_SET_TIMETABLE_START
 	DEF_CMD(CmdSetTimetableOffset,                             0, CMDT_ROUTE_MANAGEMENT      ), // CMD_SET_TIMETABLE_OFFSET
 	DEF_CMD(CmdSetTimetableLength,                             0, CMDT_ROUTE_MANAGEMENT      ), // CMD_SET_TIMETABLE_LENGTH
+	DEF_CMD(CmdShiftTimetable,                                 0, CMDT_ROUTE_MANAGEMENT      ), // CMD_SHIFT_TIMETABLE
 	DEF_CMD(CmdRenameTimetable,                                0, CMDT_ROUTE_MANAGEMENT      ), // CMD_RENAME_TIMETABLE
 	DEF_CMD(CmdSetOrderDeparture,                              0, CMDT_ROUTE_MANAGEMENT      ), // CMD_SET_ORDER_DEPARTURE
 	DEF_CMD(CmdSetOrderSpeedLimit,                             0, CMDT_ROUTE_MANAGEMENT      ), // CMD_SET_ORDER_SPEED_LIMIT 

@@ -173,6 +173,36 @@ void UpdateVehicleStartTimes(Vehicle *vehicle)
 	vehicle->timetable_end = AddToDate(vehicle->timetable_start, timetable_length);
 }
 
+/**
+ * Shifts the timetable of a vehicle by the specified amout in terms of its length.
+ * @param tile Not used.
+ * @param flags Operation to perform.
+ * @param p1 Vehicle id
+ * @param p2 Amount in terms of timetable length, at present -1 or +1 (could be made more flexible easily if needed)
+ * @param text Not used.
+ * @return The error or cost of the operation.
+ */
+CommandCost CmdShiftTimetable(TileIndex tile, DoCommandFlag flags, uint32 p1, uint32 p2, const char *text)
+{
+	VehicleID vehicle_id = (VehicleID)p1;
+	Vehicle *v = Vehicle::GetIfValid(vehicle_id);
+	if (v == NULL || !v->IsPrimaryVehicle()) {
+		return CMD_ERROR;
+	}
+
+	int offset = (int)p2;
+	if (offset != 1 && offset != -1) {
+		return CMD_ERROR;
+	}
+
+	if (flags & DC_EXEC) {
+		v->ShiftTimetableOffset(offset);
+
+		SetWindowDirty(WC_VEHICLE_TIMETABLE, v->index);
+	}
+	return CommandCost();
+}
+
 static bool IsUniqueTimetableName(const char *name)
 {
 	for (const OrderList *order_list : OrderList::Iterate()) {
