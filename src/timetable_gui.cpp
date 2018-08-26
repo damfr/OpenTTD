@@ -11,6 +11,7 @@
 
 #include "stdafx.h"
 #include "command_func.h"
+#include "engine_base.h"
 #include "gui.h"
 #include "window_gui.h"
 #include "window_func.h"
@@ -69,11 +70,33 @@ private:
 
 	VehicleOrderID order_over;         ///< Order over which another order is dragged, \c INVALID_VEH_ORDER_ID if none.
 
+	bool can_do_autorefit; ///< Vehicle chain can be auto-refitted.
+
   	/** Under what reason are we using the PlaceObject functionality? */
 	enum TimetablePlaceObjectState {
 		TIMETABLE_POS_GOTO,
 		TIMETABLE_POS_CONDITIONAL,
 		TIMETABLE_POS_SHARE,
+	};
+
+	enum DisplayPlane {
+			// WID_VT_SELECTION_TOP
+			DP_PROPERTY_LINE = 0,
+			DP_VEHICLE_INTERVAL_LINE = 1,
+			DP_DEST_COND_LINE = 2,
+			DP_DEST_STATION_LINE = 3,
+			DP_DEST_WAYPOINT_LINE = 4,
+			DP_DEST_DEPOT_LINE = 5,
+			DP_TIMETABLE_LINE = 6,
+			DP_EMPTY_LINE = 7,
+
+			// WID_VT_AUTOFILL_SELECTION
+			DP_AUTOFILL_START_DROPDOWN = 0,
+			DP_AUTOFILL_STOP_BUTTON = 1,
+
+			// WID_VT_SELECTION_BOTTOM_2
+	        DP_DELETE_ORDER_BUTTON = 0,
+	        DP_STOP_SHARING_BUTTON = 1,
 	};
 
 	TimetablePlaceObjectState place_object_type;
@@ -315,6 +338,24 @@ private:
 	/****************************************** Keeping track of widget state *********************************************/
 	/**********************************************************************************************************************/
 
+	/** Sets the displayed plane of the corresponding widget.
+	 */
+	void SetDisplayedPlane(uint widget_id, DisplayPlane plane)
+	{
+		NWidgetStacked *widget = this->GetWidget<NWidgetStacked>(widget_id);
+		widget->SetDisplayedPlane(plane);
+	}
+
+	/** Sets the displayed plane of the corresponding widget, and at the same time updates the enabled state of the corresponding button, dropdown, etc.
+	 *  Useful, to keep the code in UpdateButtonState below short.
+	 */
+	void SetDisplayedPlane(uint selection_widget_id, uint widget_id, DisplayPlane plane, bool enabled)
+	{
+		NWidgetStacked *selection_widget = this->GetWidget<NWidgetStacked>(selection_widget_id);
+		selection_widget->SetDisplayedPlane(plane);
+		this->SetWidgetDisabledState(widget_id, !enabled);
+	}
+
 	/** This function sets visibility and activation state of buttons, dropdowns, etc. according to the current widget state.
 	 *  E.g. if the very first line at the top is selected, it makes the buttons for setting timetable start, offset, length
 	 *  and name visible, and other buttons that are displayed at the same locations under other circumstances invisible.
@@ -322,6 +363,202 @@ private:
 	 */
 	void UpdateButtonState()
 	{
+		if (this->vehicle->owner != _local_company) return; // No buttons are displayed with competitor order windows.
+
+	    bool anything_enabled = true;
+		bool property_line = IsPropertyLineSelected();
+		bool vehicle_interval_line = IsVehicleIntervalLineSelected();
+		bool dest_line = IsDestinationLineSelected();
+		bool time_line = IsTimetableLineSelected();
+		bool end_line = IsEndOfOrdersLineSelected();
+
+		const Order *order = (dest_line || time_line ? this->vehicle->GetOrder(GetSelectedOrderID()) : NULL);
+		bool station_order = order != NULL && order->GetType() == OT_GOTO_STATION;
+		bool waypoint_order = order != NULL && order->GetType() == OT_GOTO_WAYPOINT;
+		bool depot_order = order != NULL && order->GetType() == OT_GOTO_DEPOT;
+		bool cond_order = order != NULL && order->GetType() == OT_CONDITIONAL;
+		bool shared_orders = this->vehicle->IsOrderListShared();
+
+		bool train = (this->vehicle->type == VEH_TRAIN);
+		bool road = (this->vehicle->type == VEH_ROAD);
+
+		if (property_line) {
+			SetDisplayedPlane(WID_VT_TOP_SELECTION, DP_PROPERTY_LINE);
+		} else if (vehicle_interval_line) {
+			SetDisplayedPlane(WID_VT_TOP_SELECTION, DP_VEHICLE_INTERVAL_LINE);
+		} else if (dest_line) {
+			if (cond_order) {
+				SetDisplayedPlane(WID_VT_TOP_SELECTION, DP_DEST_COND_LINE);
+			} else if (station_order) {
+				SetDisplayedPlane(WID_VT_TOP_SELECTION, DP_DEST_STATION_LINE);
+			} else if (waypoint_order) {
+				SetDisplayedPlane(WID_VT_TOP_SELECTION, DP_DEST_WAYPOINT_LINE);
+			} else if (depot_order) {
+				SetDisplayedPlane(WID_VT_TOP_SELECTION, DP_DEST_DEPOT_LINE);
+			} else {
+			  SetDisplayedPlane(WID_VT_TOP_SELECTION, DP_EMPTY_LINE);
+			}
+		} else if (time_line) {
+			if (cond_order) {
+				SetDisplayedPlane(WID_VT_TOP_SELECTION, DP_EMPTY_LINE);
+			} else {
+				SetDisplayedPlane(WID_VT_TOP_SELECTION, DP_TIMETABLE_LINE);
+			}
+ 		} else {
+			SetDisplayedPlane(WID_VT_TOP_SELECTION, DP_EMPTY_LINE);
+		}
+
+		if (vehicle_interval_line) {
+			if (HasBit(this->vehicle->vehicle_flags, VF_AUTOFILL_TIMETABLE)) {
+				SetDisplayedPlane(WID_VT_AUTOFILL_SELECTION, WID_VT_STOP_AUTOFILL_BUTTON, DP_AUTOFILL_STOP_BUTTON, anything_enabled);
+			} else {
+				SetDisplayedPlane(WID_VT_AUTOFILL_SELECTION, WID_VT_START_AUTOFILL_DROPDOWN, DP_AUTOFILL_START_DROPDOWN, anything_enabled);
+			}
+		}
+
+		if (dest_line && cond_order) {
+			OrderConditionVariable ocv = order->GetConditionVariable();
+			this->GetWidget<NWidgetCore>(WID_VT_COND_VARIABLE_DROPDOWN)->widget_data   = STR_ORDER_CONDITIONAL_LOAD_PERCENTAGE + (order == NULL ? 0 : ocv);
+			this->GetWidget<NWidgetCore>(WID_VT_COND_COMPARATOR_DROPDOWN)->widget_data = _order_conditional_condition[order == NULL ? 0 : order->GetConditionComparator()];
+
+			this->SetWidgetDisabledState(WID_VT_COND_COMPARATOR_DROPDOWN, ocv == OCV_UNCONDITIONALLY);
+			this->SetWidgetDisabledState(WID_VT_COND_VALUE_BUTTON, ocv == OCV_REQUIRES_SERVICE || ocv == OCV_UNCONDITIONALLY);
+		}
+
+		if (dest_line && station_order) {
+			bool can_load_unload = (order->GetNonStopType() & ONSF_NO_STOP_AT_DESTINATION_STATION) == 0;
+			this->SetWidgetDisabledState(WID_VT_NON_STOP_DROPDOWN, !train && !road);
+			this->SetWidgetDisabledState(WID_VT_FULL_LOAD_DROPDOWN, !can_load_unload);
+			this->SetWidgetDisabledState(WID_VT_UNLOAD_DROPDOWN, !can_load_unload);
+
+			bool can_do_autorefit = this->can_do_autorefit && order->GetLoadType() != OLFB_NO_LOAD
+				&& !(order->GetNonStopType() & ONSF_NO_STOP_AT_DESTINATION_STATION);
+			this->SetWidgetDisabledState(WID_VT_REFIT_AUTO_DROPDOWN, !can_do_autorefit);
+		}
+
+		if (dest_line && depot_order) {
+		    bool may_refit = !((order->GetDepotOrderType() & ODTFB_SERVICE) || (order->GetDepotActionType() & ODATFB_HALT));
+			this->SetWidgetDisabledState(WID_VT_REFIT_BUTTON, !may_refit);
+		}
+
+		if (time_line) {
+			bool timetable_meta_data_entered = this->vehicle->orders.list->GetStartTime() != INVALID_DATE
+											&& !this->vehicle->orders.list->GetTimetableDuration().IsInvalid()
+											&& !this->vehicle->timetable_offset.IsInvalid();
+			this->SetWidgetDisabledState(WID_VT_ARRIVAL_BUTTON, !timetable_meta_data_entered);
+			this->SetWidgetDisabledState(WID_VT_DEPARTURE_BUTTON, !timetable_meta_data_entered);
+		}
+
+
+/*
+		if (property_line) {
+			SetDisplayedPlane(WID_VT_SELECTION_TOP_1, WID_VT_START_BUTTON, DP_START_BUTTON, true);
+			SetDisplayedPlane(WID_VT_SELECTION_TOP_2, WID_VT_OFFSET_BUTTON, DP_OFFSET_BUTTON, true);
+			SetDisplayedPlane(WID_VT_SELECTION_TOP_3, WID_VT_LENGTH_BUTTON, DP_LENGTH_BUTTON, true);
+			SetDisplayedPlane(WID_VT_SELECTION_TOP_4, DP_SHIFT_BUTTONS);
+			this->SetWidgetDisabledState(WID_VT_SHIFT_ORDERS_PAST_BUTTON, false);     ///< Doing this not using the above helper function, as here one plane controls two buttons
+			this->SetWidgetDisabledState(WID_VT_SHIFT_ORDERS_FUTURE_BUTTON, false);
+		} else if (vehicle_interval_line) {
+			SetDisplayedPlane(WID_VT_SELECTION_TOP_1, WID_VT_RENAME_BUTTON, DP_RENAME_BUTTON, true);
+			if (HasBit(this->vehicle->vehicle_flags, VF_AUTOFILL_TIMETABLE)) {
+				SetDisplayedPlane(WID_VT_SELECTION_TOP_2, WID_VT_STOP_AUTOFILL_BUTTON, DP_STOP_AUTOFILL_BUTTON, anything_enabled);
+			} else {
+				SetDisplayedPlane(WID_VT_SELECTION_TOP_2, WID_VT_START_AUTOFILL_DROPDOWN, DP_START_AUTOFILL_DROPDOWN, anything_enabled);
+			}
+			SetDisplayedPlane(WID_VT_SELECTION_TOP_3, DP_NO_TOP3);
+			SetDisplayedPlane(WID_VT_SELECTION_TOP_4, DP_NO_TOP4);
+		} else if (dest_line) {
+			bool canLoadUnload = (order->GetNonStopType() & ONSF_NO_STOP_AT_DESTINATION_STATION) == 0;
+
+			if (cond_order) {
+				OrderConditionVariable ocv = order->GetConditionVariable();
+				this->GetWidget<NWidgetCore>(WID_VT_COND_VARIABLE_DROPDOWN)->widget_data   = STR_ORDER_CONDITIONAL_LOAD_PERCENTAGE + (order == NULL ? 0 : ocv);
+				this->GetWidget<NWidgetCore>(WID_VT_COND_COMPARATOR_DROPDOWN)->widget_data = _order_conditional_condition[order == NULL ? 0 : order->GetConditionComparator()];
+			}
+
+			if (cond_order) {
+				SetDisplayedPlane(WID_VT_SELECTION_TOP_1, WID_VT_COND_VARIABLE_DROPDOWN, DP_COND_VARIABLE_DROPDOWN, true);
+			} else {
+				SetDisplayedPlane(WID_VT_SELECTION_TOP_1, WID_VT_NON_STOP_DROPDOWN, DP_NON_STOP_DROPDOWN, train || road);
+			}
+
+			if (station_order) {
+				SetDisplayedPlane(WID_VT_SELECTION_TOP_2, WID_VT_FULL_LOAD_DROPDOWN, DP_FULL_LOAD_DROPDOWN, canLoadUnload);
+			} else if (waypoint_order) {
+				SetDisplayedPlane(WID_VT_SELECTION_TOP_2, WID_VT_FULL_LOAD_DROPDOWN, DP_FULL_LOAD_DROPDOWN, false);
+			} else if (depot_order) {
+			    bool mayRefit = !((order->GetDepotOrderType() & ODTFB_SERVICE) || (order->GetDepotActionType() & ODATFB_HALT));
+				SetDisplayedPlane(WID_VT_SELECTION_TOP_2, WID_VT_REFIT_BUTTON, DP_REFIT_BUTTON_TOP2, mayRefit);
+			} else if (cond_order) {
+				OrderConditionVariable ocv = order->GetConditionVariable();
+				SetDisplayedPlane(WID_VT_SELECTION_TOP_2, WID_VT_COND_COMPARATOR_DROPDOWN, DP_COND_COMPARATOR_DROPDOWN, ocv != OCV_UNCONDITIONALLY);
+			} else {
+				SetDisplayedPlane(WID_VT_SELECTION_TOP_2, DP_NO_TOP2);
+			}
+
+			if (station_order) {
+				SetDisplayedPlane(WID_VT_SELECTION_TOP_3, WID_VT_UNLOAD_DROPDOWN, DP_UNLOAD_DROPDOWN, canLoadUnload);
+			} else if (waypoint_order) {
+				SetDisplayedPlane(WID_VT_SELECTION_TOP_3, WID_VT_UNLOAD_DROPDOWN, DP_UNLOAD_DROPDOWN, false);
+			} else if (depot_order) {
+				SetDisplayedPlane(WID_VT_SELECTION_TOP_3, WID_VT_SERVICE_DROPDOWN, DP_SERVICE_DROPDOWN, true);
+			} else if (cond_order) {
+				OrderConditionVariable ocv = order->GetConditionVariable();
+				SetDisplayedPlane(WID_VT_SELECTION_TOP_3, WID_VT_COND_VALUE_BUTTON, DP_COND_VALUE_BUTTON, ocv != OCV_REQUIRES_SERVICE && ocv != OCV_UNCONDITIONALLY);
+			} else {
+				SetDisplayedPlane(WID_VT_SELECTION_TOP_3, DP_NO_TOP3);
+			}
+
+			if (station_order) {
+				bool can_do_autorefit = this->can_do_autorefit && order->GetLoadType() != OLFB_NO_LOAD && !(order->GetNonStopType() & ONSF_NO_STOP_AT_DESTINATION_STATION);
+				SetDisplayedPlane(WID_VT_SELECTION_TOP_4, WID_VT_REFIT_AUTO_DROPDOWN, DP_REFIT_AUTO_DROPDOWN, can_do_autorefit);
+			} else if (waypoint_order) {
+				SetDisplayedPlane(WID_VT_SELECTION_TOP_4, WID_VT_REFIT_AUTO_DROPDOWN, DP_REFIT_AUTO_DROPDOWN, false);
+			} else if (depot_order) {
+				SetDisplayedPlane(WID_VT_SELECTION_TOP_4, DP_NO_TOP4);
+			} else if (cond_order) {
+				SetDisplayedPlane(WID_VT_SELECTION_TOP_4, DP_NO_TOP4);
+			} else {
+				SetDisplayedPlane(WID_VT_SELECTION_TOP_4, DP_NO_TOP4);
+			}
+		} else if (time_line) {
+			bool timetable_meta_data_entered = this->vehicle->orders.list->GetStartTime() != INVALID_DATE
+											&& !this->vehicle->orders.list->GetTimetableDuration().IsInvalid()
+											&& !this->vehicle->timetable_offset.IsInvalid();
+			SetDisplayedPlane(WID_VT_SELECTION_TOP_1, WID_VT_ARRIVAL_BUTTON, DP_ARRIVAL_BUTTON, timetable_meta_data_entered);
+			SetDisplayedPlane(WID_VT_SELECTION_TOP_2, DP_NO_TOP2);
+			SetDisplayedPlane(WID_VT_SELECTION_TOP_3, WID_VT_SPEEDLIMIT_BUTTON, DP_SPEEDLIMIT_BUTTON, true);
+			SetDisplayedPlane(WID_VT_SELECTION_TOP_4, WID_VT_DEPARTURE_BUTTON, DP_DEPARTURE_BUTTON, timetable_meta_data_entered);
+		} else if (end_line) {
+			SetDisplayedPlane(WID_VT_SELECTION_TOP_1, WID_VT_NON_STOP_DROPDOWN, DP_NON_STOP_DROPDOWN, false);
+			SetDisplayedPlane(WID_VT_SELECTION_TOP_2, WID_VT_FULL_LOAD_DROPDOWN, DP_FULL_LOAD_DROPDOWN, false);
+			SetDisplayedPlane(WID_VT_SELECTION_TOP_3, WID_VT_UNLOAD_DROPDOWN, DP_UNLOAD_DROPDOWN, false);
+			SetDisplayedPlane(WID_VT_SELECTION_TOP_4, WID_VT_REFIT_BUTTON_4, DP_REFIT_BUTTON_TOP4, false);
+		} else {
+			// Nothing selected
+			SetDisplayedPlane(WID_VT_SELECTION_TOP_1, WID_VT_NON_STOP_DROPDOWN, DP_NON_STOP_DROPDOWN, false);
+			SetDisplayedPlane(WID_VT_SELECTION_TOP_2, WID_VT_FULL_LOAD_DROPDOWN, DP_FULL_LOAD_DROPDOWN, false);
+			SetDisplayedPlane(WID_VT_SELECTION_TOP_3, WID_VT_UNLOAD_DROPDOWN, DP_UNLOAD_DROPDOWN, false);
+			SetDisplayedPlane(WID_VT_SELECTION_TOP_4, WID_VT_REFIT_BUTTON_4, DP_REFIT_BUTTON_TOP4, false);
+		}
+*/
+		if (end_line) {
+			SetDisplayedPlane(WID_VT_SELECTION_BOTTOM_2, WID_VT_STOP_SHARING_BUTTON, DP_STOP_SHARING_BUTTON, true);
+		} else {
+			SetDisplayedPlane(WID_VT_SELECTION_BOTTOM_2, WID_VT_DELETE_ORDER_BUTTON, DP_DELETE_ORDER_BUTTON, (dest_line || time_line || end_line) && vehicle->GetNumOrders() > 0);
+		}
+
+		this->SetWidgetDisabledState(WID_VT_STOP_SHARING_BUTTON, !shared_orders);
+		this->SetWidgetDisabledState(WID_VT_SKIP_ORDER_BUTTON , vehicle->GetNumOrders() == 0);
+	}
+
+	/** Cache auto-refittability of the vehicle chain. */
+	void UpdateAutoRefitState()
+	{
+		this->can_do_autorefit = false;
+		for (const Vehicle *w = this->vehicle; w != NULL; w = w->Next()) {
+			if (HasBit(Engine::Get(w->engine_type)->info.misc_flags, EF_AUTO_REFIT)) this->can_do_autorefit = true;
+		}
 	}
 
 	/**********************************************************************************************************************/
@@ -656,6 +893,11 @@ public:
 
 		this->owner = this->vehicle->owner;
 		this->order_over = INVALID_VEH_ORDER_ID;
+
+		this->UpdateAutoRefitState();
+
+		// Trigger certain refresh activities e.g. regarding button state
+		this->OnInvalidateData(-2);
 	}
 
 	virtual void UpdateWidgetSize(int widget, Dimension *size, const Dimension &padding, Dimension *fill, Dimension *resize)
@@ -717,6 +959,7 @@ public:
 			case VIWD_AUTOREPLACE:
 				/* Autoreplace replaced the vehicle */
 				this->vehicle = Vehicle::Get(this->window_number);
+				this->UpdateAutoRefitState();
 				break;
 
 			case VIWD_REMOVE_ALL_ORDERS:
@@ -914,7 +1157,7 @@ public:
 
 			case WID_VT_NON_STOP_STATION_DROPDOWN:
 			case WID_VT_NON_STOP_WAYPOINT_DROPDOWN:
-			case WID_VT_NON_STOP_DEPOT_DROPDOWN:
+			case WID_VT_NON_STOP_DEPOT_DROPDOWN: {
 				if (this->GetWidget<NWidgetLeaf>(widget)->ButtonHit(pt)) {
 					this->ProcessNonStopClick(-1);
 				} else {
