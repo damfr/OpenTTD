@@ -15,6 +15,7 @@
 #include "order_type.h"
 #include "vehicle_type.h"
 #include "company_type.h"
+#include "core/geometry_type.hpp"
 
 /* Functions */
 void RemoveOrderFromAllVehicles(OrderType type, DestinationID destination);
@@ -35,5 +36,12 @@ void DrawOrderString(const Vehicle *v, const Order *order, int order_index, int 
 #define MAX_SERVINT_DAYS   800
 
 uint16 GetServiceIntervalClamped(uint interval, bool ispercent);
+
+void PrepareShortOrderText(const Vehicle *vehicle, const Order *order);
+Dimension GetOrderStringBoundingBox(const Vehicle *vehicle, const Order *order);
+Dimension GetMaxOrderStringBoundingBox(const Vehicle *vehicle);
+
+Dimension GetShortOrderStringBoundingBox(const Vehicle *vehicle, const Order *order);
+Dimension GetMaxShortOrderStringBoundingBox(const Vehicle *vehicle);
 
 #endif /* ORDER_FUNC_H */

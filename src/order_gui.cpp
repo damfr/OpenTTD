@@ -136,6 +136,146 @@ void DrawOrderMarker(const Vehicle *v, int order_index, int y, int left, int rig
 	}
 }
 
+/** Prepares the DParams for a short order text, i.e. one where only the via information
+ *  and the destination is printed.
+ */
+void PrepareShortOrderText(const Vehicle *vehicle, const Order *order)
+{
+	switch (order->GetType()) {
+		case OT_DUMMY:
+			SetDParam(0, STR_INVALID_ORDER);
+			SetDParam(1, order->GetDestination());
+			break;
+
+		case OT_IMPLICIT:
+			SetDParam(0, STR_ORDER_GO_TO_STATION);
+			SetDParam(1, STR_ORDER_GO_TO);
+			SetDParam(2, order->GetDestination());
+			break;
+
+		case OT_GOTO_STATION: {
+			SetDParam(0, STR_ORDER_GO_TO_STATION);
+			SetDParam(1, STR_ORDER_GO_TO + (vehicle->IsGroundVehicle() ? order->GetNonStopType() : 0));
+			SetDParam(2, order->GetDestination());
+			break;
+		}
+
+		case OT_GOTO_DEPOT:
+			if (order->GetDepotActionType() & ODATFB_NEAREST_DEPOT) {
+				SetDParam(0, STR_ORDER_GO_TO_NEAREST_DEPOT_FORMAT);
+				if (vehicle->type == VEH_AIRCRAFT) {
+					SetDParam(2, STR_ORDER_NEAREST_HANGAR);
+				} else {
+					SetDParam(2, STR_ORDER_NEAREST_DEPOT);
+//					SetDParam(3, STR_ORDER_TRAIN_DEPOT + v->type);
+				}
+			} else {
+				SetDParam(0, STR_ORDER_GO_TO_DEPOT_FORMAT);
+				SetDParam(2, vehicle->type);
+//				SetDParam(3, order->GetDestination());
+			}
+
+			if (order->GetDepotOrderType() & ODTFB_SERVICE) {
+				SetDParam(1, (order->GetNonStopType() & ONSF_NO_STOP_AT_INTERMEDIATE_STATIONS) ? STR_ORDER_SERVICE_NON_STOP_AT : STR_ORDER_SERVICE_AT);
+			} else {
+				SetDParam(1, (order->GetNonStopType() & ONSF_NO_STOP_AT_INTERMEDIATE_STATIONS) ? STR_ORDER_GO_NON_STOP_TO : STR_ORDER_GO_TO);
+			}
+			break;
+
+		case OT_GOTO_WAYPOINT:
+			SetDParam(0, (order->GetNonStopType() & ONSF_NO_STOP_AT_INTERMEDIATE_STATIONS) ? STR_ORDER_GO_NON_STOP_TO_WAYPOINT : STR_ORDER_GO_TO_WAYPOINT);
+			SetDParam(1, order->GetDestination());
+			break;
+
+		case OT_CONDITIONAL:
+			SetDParam(1, order->GetConditionSkipToOrder() + 1);
+			if (order->GetConditionVariable() == OCV_UNCONDITIONALLY) {
+				SetDParam(0, STR_ORDER_CONDITIONAL_UNCONDITIONAL);
+			} else {
+				OrderConditionComparator occ = order->GetConditionComparator();
+				SetDParam(0, (occ == OCC_IS_TRUE || occ == OCC_IS_FALSE) ? STR_ORDER_CONDITIONAL_TRUE_FALSE : STR_ORDER_CONDITIONAL_NUM);
+//				SetDParam(2, STR_ORDER_CONDITIONAL_LOAD_PERCENTAGE + order->GetConditionVariable());
+//				SetDParam(3, STR_ORDER_CONDITIONAL_COMPARATOR_EQUALS + occ);
+			}
+			break;
+
+		default: NOT_REACHED();
+	}
+}
+
+/** Returns a string bounding box for a short order text, i.e. one where only the via information
+ *  and the destination are printed.
+ */
+Dimension GetShortOrderStringBoundingBox(const Vehicle *vehicle, const Order *order)
+{
+	PrepareShortOrderText(vehicle, order);
+	return GetStringBoundingBox(STR_SHORT_ORDER_TEXT);
+}
+
+/** Returns the biggest string bounding box for any short order text in the orderlist of the given vehicle.
+ */
+Dimension GetMaxShortOrderStringBoundingBox(const Vehicle *vehicle)
+{
+	Dimension d;
+	d.width = 0;
+	d.height = 0;
+
+	Order *order;
+	FOR_VEHICLE_ORDERS(vehicle, order) {
+		Dimension current_bounding_box = GetShortOrderStringBoundingBox(vehicle, order);
+		if (d.width < current_bounding_box.width) {
+			d.width = current_bounding_box.width;
+		}
+		if (d.height < current_bounding_box.height) {
+			d.height = current_bounding_box.height;
+		}
+	}
+
+	return d;
+}
+
+/** Calculates the bounding box for the usual way to print the destination of the given order.
+ */
+Dimension GetOrderStringBoundingBox(const Vehicle *vehicle, const Order *order)
+{
+   if (order->IsWaypointOrder()) {
+		SetDParam(0, order->GetDestination());
+		return GetStringBoundingBox(STR_WAYPOINT_NAME);
+	} else if (order->IsDepotOrder()) {
+		SetDParam(0, vehicle->type);
+		SetDParam(1, order->GetDestination());
+		return GetStringBoundingBox(STR_DEPOT_NAME);
+	} else if (order->IsStationOrder()) {
+		SetDParam(0, order->GetDestination());
+		return GetStringBoundingBox(STR_STATION_NAME);
+	} else {
+		Dimension d;
+		d.width = 0;
+		d.height = 0;
+		return d;
+	}
+}
+
+Dimension GetMaxOrderStringBoundingBox(const Vehicle *vehicle)
+{
+	Dimension d;
+	d.width = 0;
+	d.height = 0;
+
+	const Order *order;
+	FOR_VEHICLE_ORDERS(vehicle, order) {
+		Dimension current_bounding_box = GetOrderStringBoundingBox(vehicle, order);
+		if (d.width < current_bounding_box.width) {
+			d.width = current_bounding_box.width;
+		}
+		if (d.height < current_bounding_box.height) {
+			d.height = current_bounding_box.height;
+		}
+	}
+
+	return d;
+}
+
 /**
  * Draws an order in order or timetable GUI
  * @param v Vehicle the order belongs to
