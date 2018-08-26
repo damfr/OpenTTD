@@ -5171,6 +5171,7 @@ STR_VEHICLE_NAME_AIRCRAFT_POWERNAUT_HELICOPTER                  :Powernaut Helic
 STR_FORMAT_DATE_TINY                                            :{RAW_STRING}-{RAW_STRING}-{NUM}
 STR_FORMAT_DATE_SHORT                                           :{STRING} {NUM}
 STR_FORMAT_DATE_LONG                                            :{STRING} {STRING} {NUM}
+STR_FORMAT_INVALID_DATE_LONG                                    :--.--.----
 STR_FORMAT_DATE_ISO                                             :{2:NUM}-{1:RAW_STRING}-{0:RAW_STRING}
 
 STR_FORMAT_BUOY_NAME                                            :{TOWN} Buoy

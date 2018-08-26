@@ -442,12 +442,18 @@ static char *FormatBytes(char *buff, int64 number, const char *last)
 
 static char *FormatYmdString(char *buff, Date date, const char *last, uint case_index)
 {
-	YearMonthDay ymd;
-	ConvertDateToYMD(date, &ymd);
+	if (date != INVALID_DATE) {
+		YearMonthDay ymd;
+		ConvertDateToYMD(date, &ymd);
 
-	int64 args[] = {ymd.day + STR_DAY_NUMBER_1ST - 1, STR_MONTH_ABBREV_JAN + ymd.month, ymd.year};
-	StringParameters tmp_params(args);
-	return FormatString(buff, GetStringPtr(STR_FORMAT_DATE_LONG), &tmp_params, last, case_index);
+		int64 args[] = {ymd.day + STR_DAY_NUMBER_1ST - 1, STR_MONTH_ABBREV_JAN + ymd.month, ymd.year};
+		StringParameters tmp_params(args);
+		return FormatString(buff, GetStringPtr(STR_FORMAT_DATE_LONG), &tmp_params, last, case_index);
+	} else {
+		int64 args[] = {1, 2, 3};
+		StringParameters tmp_params(args);
+		return FormatString(buff, GetStringPtr(STR_FORMAT_INVALID_DATE_LONG), &tmp_params, last, case_index);
+	}
 }
 
 static char *FormatMonthAndYear(char *buff, Date date, const char *last, uint case_index)
