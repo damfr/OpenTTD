@@ -1650,6 +1650,7 @@ static SettingsContainer &GetSettingsTree()
 			interface->Add(new SettingEntry("gui.advanced_vehicle_list"));
 			interface->Add(new SettingEntry("gui.timetable_in_ticks"));
 			interface->Add(new SettingEntry("gui.timetable_arrival_departure"));
+			interface->Add(new SettingEntry("gui.open_timetable_by_default"));
 			interface->Add(new SettingEntry("gui.expenses_layout"));
 			interface->Add(new SettingEntry("gui.show_newgrf_name"));
 		}
