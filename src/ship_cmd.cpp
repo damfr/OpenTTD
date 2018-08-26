@@ -548,7 +548,7 @@ static void ShipController(Ship *v)
 							DistanceManhattan(v->dest_tile, gp.new_tile) <= 3) {
 						/* We got within 3 tiles of our target buoy, so let's skip to our
 						 * next order */
-						UpdateVehicleTimetable(v, true);
+						v->current_order_time = 0;
 						v->IncrementRealOrderIndex();
 						v->current_order.MakeDummy();
 					} else {
