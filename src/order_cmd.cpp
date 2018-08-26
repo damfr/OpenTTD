@@ -1372,11 +1372,15 @@ CommandCost CmdModifyOrder(TileIndex tile, DoCommandFlag flags, uint32 p1, uint3
 
 			case MOF_UNLOAD:
 				order->SetUnloadType((OrderUnloadFlags)data);
+				/* Station timetables discard stations with "no load, no unload", thus they must get notified of changes of the load/unload status. */
+				InvalidateWindowClassesData(WC_NODETIMETABLE_WINDOW);
 				break;
 
 			case MOF_LOAD:
 				order->SetLoadType((OrderLoadFlags)data);
 				if (data & OLFB_NO_LOAD) order->SetRefit(CT_NO_REFIT);
+				/* Station timetables discard stations with "no load, no unload", thus they must get notified of changes of the load/unload status. */
+				InvalidateWindowClassesData(WC_NODETIMETABLE_WINDOW);
 				break;
 
 			case MOF_DEPOT_ACTION: {
