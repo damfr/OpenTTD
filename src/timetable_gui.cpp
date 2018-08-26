@@ -521,6 +521,28 @@ private:
 		return buffer;
 	}
 
+	/** This function calculates the width needed for the delay information painted into the timetable window.
+     */
+	int GetDelayInfoWidth() const
+	{
+		Dimension d_upper;
+		Dimension d_lower;
+		int32 lateness_counter = this->vehicle->lateness_counter;
+		if (lateness_counter < 0) {
+			SetDParam(0, (lateness_counter < 0 ? -lateness_counter : lateness_counter));
+			d_upper = GetStringBoundingBox(STR_TIMETABLE_DAYS);
+			d_lower = GetStringBoundingBox(STR_TIMETABLE_TOO_EARLY);
+		} else if (lateness_counter == 0) {
+			d_upper = GetStringBoundingBox(STR_TIMETABLE_ON_TIME_UPPER);
+			d_lower = GetStringBoundingBox(STR_TIMETABLE_ON_TIME_LOWER);
+		} else {
+			SetDParam(0, (lateness_counter < 0 ? -lateness_counter : lateness_counter));
+			d_upper = GetStringBoundingBox(STR_TIMETABLE_DAYS);
+			d_lower = GetStringBoundingBox(STR_TIMETABLE_DELAY);
+		}
+		return max(d_upper.width, d_lower.width);
+	}
+
 	/**********************************************************************************************************************/
 	/****************************************** Keeping track of widget state *********************************************/
 	/**********************************************************************************************************************/
@@ -1607,16 +1629,36 @@ public:
 
 			case WID_VT_SUMMARY_PANEL: {
 				int y = r.top + WD_FRAMERECT_TOP;
+				
+				const OrderList *order_list = this->vehicle->orders.list;
+				int delay_info_width = this->GetDelayInfoWidth();
 
 				this->PrepareForPropertyLine();
 				TextColour offset_color = IsPropertyLineSelected() ? TC_WHITE : TC_BLACK;
 				DrawString(r.left + WD_FRAMERECT_LEFT, r.right - WD_FRAMERECT_RIGHT, y, STR_TIMETABLE_PROPERTY_LINE, offset_color);
 
+				int32 lateness_counter = this->vehicle->lateness_counter;
+				if (lateness_counter != 0) {
+					SetDParam(0, (lateness_counter < 0 ? -lateness_counter : lateness_counter));
+					DrawString(r.right - WD_FRAMERECT_RIGHT - delay_info_width, r.right - WD_FRAMERECT_RIGHT, y, STR_TIMETABLE_DAYS, TC_BLACK, SA_HOR_CENTER);
+				} else {
+					DrawString(r.right - WD_FRAMERECT_RIGHT - delay_info_width, r.right - WD_FRAMERECT_RIGHT, y, STR_TIMETABLE_ON_TIME_UPPER, TC_BLACK, SA_HOR_CENTER);
+				}
+
 				y += FONT_HEIGHT_NORMAL;
 
 				this->PrepareForVehicleIntervalLine();
 				TextColour status_color = IsVehicleIntervalLineSelected() ? TC_WHITE : TC_BLACK;
-				DrawString(r.left + WD_FRAMERECT_LEFT, r.right - WD_FRAMERECT_RIGHT, y, STR_TIMETABLE_VEHICLE_INTERVAL_LINE, status_color);
+				DrawString(r.left + WD_FRAMERECT_LEFT, r.right - WD_FRAMERECT_RIGHT - delay_info_width, y, STR_TIMETABLE_VEHICLE_INTERVAL_LINE, status_color);
+
+				if (lateness_counter < 0) {
+					DrawString(r.right - WD_FRAMERECT_RIGHT - delay_info_width, r.right - WD_FRAMERECT_RIGHT, y, STR_TIMETABLE_TOO_EARLY, TC_BLACK, SA_HOR_CENTER);
+				} else if (lateness_counter == 0) {
+					DrawString(r.right - WD_FRAMERECT_RIGHT - delay_info_width, r.right - WD_FRAMERECT_RIGHT, y, STR_TIMETABLE_ON_TIME_LOWER, TC_BLACK, SA_HOR_CENTER);
+				} else {
+					DrawString(r.right - WD_FRAMERECT_RIGHT - delay_info_width, r.right - WD_FRAMERECT_RIGHT, y, STR_TIMETABLE_DELAY, TC_BLACK, SA_HOR_CENTER);
+				}
+
 				break;
 			}
 		}
