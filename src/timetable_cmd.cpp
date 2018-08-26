@@ -57,6 +57,7 @@ CommandCost CmdSetTimetableStart(TileIndex tile, DoCommandFlag flags, uint32 p1,
 		v->orders.list->SetStartTime(start_date);
 
 		SetWindowClassesDirty(WC_VEHICLE_TIMETABLE);
+		InvalidateWindowClassesData(WC_NODETIMETABLE_WINDOW);
 	}
 
 	return CommandCost();
@@ -99,6 +100,7 @@ CommandCost CmdSetTimetableOffset(TileIndex tile, DoCommandFlag flags, uint32 p1
 		v->SetTimetableOffset(Duration(offset, duration_unit));
 
 		SetWindowDirty(WC_VEHICLE_TIMETABLE, v->index);
+		InvalidateWindowClassesData(WC_NODETIMETABLE_WINDOW);
 	}
 
 	return CommandCost();
@@ -146,6 +148,7 @@ CommandCost CmdSetTimetableLength(TileIndex tile, DoCommandFlag flags, uint32 p1
 		order_list->SetTimetableDuration(new_length);
 
 		SetWindowClassesDirty(WC_VEHICLE_TIMETABLE);
+		InvalidateWindowClassesData(WC_NODETIMETABLE_WINDOW);
 	}
 
 	return CommandCost();
@@ -202,6 +205,7 @@ CommandCost CmdShiftTimetable(TileIndex tile, DoCommandFlag flags, uint32 p1, ui
 		v->ShiftTimetableOffset(offset);
 
 		SetWindowDirty(WC_VEHICLE_TIMETABLE, v->index);
+		InvalidateWindowClassesData(WC_NODETIMETABLE_WINDOW);
 	}
 	return CommandCost();
 }
@@ -256,6 +260,8 @@ CommandCost CmdRenameTimetable(TileIndex tile, DoCommandFlag flags, uint32 p1, u
 		free(vehicle->orders.list->GetName());
 		/* Assign the new one */
 		vehicle->orders.list->SetName(reset ? NULL : stredup(text));
+
+		InvalidateWindowClassesData(WC_NODETIMETABLE_WINDOW);
 	}
 
 	return CommandCost();
@@ -306,6 +312,7 @@ CommandCost CmdSetOrderDeparture(TileIndex tile, DoCommandFlag flags, uint32 p1,
 		order->SetDeparture(new_departure_date);
 
 		SetWindowDirty(WC_VEHICLE_TIMETABLE, vehicle->index);
+		InvalidateWindowClassesData(WC_NODETIMETABLE_WINDOW);
 	}
 
 	return CommandCost();
@@ -388,6 +395,7 @@ CommandCost CmdSetOrderArrival(TileIndex tile, DoCommandFlag flags, uint32 p1, u
 		order->SetArrival(new_arrival_date);
 
 		SetWindowDirty(WC_VEHICLE_TIMETABLE, vehicle->index);
+		InvalidateWindowClassesData(WC_NODETIMETABLE_WINDOW);
 	}
 
 	return CommandCost();
@@ -459,6 +467,8 @@ CommandCost CmdAutofillTimetable(TileIndex tile, DoCommandFlag flags, uint32 p1,
 			InvalidateWindowData(WC_VEHICLE_TIMETABLE, v2->index);
 			SetWindowDirty(WC_VEHICLE_TIMETABLE, v2->index);
 		}
+
+		InvalidateWindowClassesData(WC_NODETIMETABLE_WINDOW);
 	}
 
 	return CommandCost();

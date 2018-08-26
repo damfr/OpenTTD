@@ -1699,6 +1699,7 @@ void ProcessAutofillEnterStation(Vehicle *v, bool non_stop)
 		v->lateness_counter = 0;
 
 		InvalidateWindowClassesData(WC_VEHICLE_TIMETABLE, false);
+		InvalidateWindowClassesData(WC_NODETIMETABLE_WINDOW);
 	}
 }
 

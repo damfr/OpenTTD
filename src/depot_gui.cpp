@@ -806,7 +806,7 @@ struct DepotWindow : Window {
 
 			case WID_D_TIMETABLE: {
 				TileIndex tile = this->window_number;
-				ShowDepotTimetableWindow(GetDepotIndex(tile), !_ctrl_pressed, _ctrl_pressed);
+				ShowDepotTimetableWindow(GetDepotIndex(tile), !_ctrl_pressed, _ctrl_pressed, this->type);
 				break;
 			}
 

@@ -14,10 +14,11 @@
 
 #include "depot_type.h"
 #include "station_type.h"
+#include "vehicle_type.h"
 #include "window_type.h"
 
 void ShowStationTimetableWindow(StationID station_id, bool departure, bool arrival);
 void ShowWaypointTimetableWindow(StationID station_id, bool departure, bool arrival);
-void ShowDepotTimetableWindow(DepotID depot_id, bool departure, bool arrival);
+void ShowDepotTimetableWindow(DepotID depot_id, bool departure, bool arrival, VehicleType vehicle_type);
 
 #endif /* TIMETABLE_FUNC_H */

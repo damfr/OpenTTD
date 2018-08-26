@@ -4129,6 +4129,14 @@ STR_NODETIMETABLE_ARRIVAL_BUTTON_TOOLTIP                        :{BLACK}Show the
 STR_NODETIMETABLE_DEPARTURE_BUTTON_CAPTION                      :{BLACK}Departures
 STR_NODETIMETABLE_DEPARTURE_BUTTON_TOOLTIP                      :{BLACK}Show the corresponding departure timetable.
 
+STR_NODETIMETABLE_HEADER_DATE                                   :{BIG_FONT}{DATE_DM}
+STR_NODETIMETABLE_HEADER_VEHICLE                                :{BIG_FONT}{VEHICLE}
+STR_NODETIMETABLE_HEADER_TIMETABLE_NAME                         :{BIG_FONT}{RAW_STRING}
+
+STR_NODETIMETABLE_STATION_DEST_DATE                             :{DATE_DM} {STATION}
+STR_NODETIMETABLE_DEPOT_DEST_DATE                               :{DATE_DM} {DEPOT}
+STR_NODETIMETABLE_WAYPOINT_DEST_DATE                            :{DATE_DM} {WAYPOINT}
+
 # Date window (for timetable)
 STR_DATE_CAPTION                                                :{WHITE}Set date
 STR_DATE_SET_DATE                                               :{BLACK}Set date
@@ -5135,6 +5143,10 @@ STR_STATION_NAME                                                :{STATION}
 STR_TOWN_NAME                                                   :{TOWN}
 STR_VEHICLE_NAME                                                :{VEHICLE}
 STR_WAYPOINT_NAME                                               :{WAYPOINT}
+
+STR_BIG_DEPOT_NAME                                              :{BIG_FONT}{DEPOT}
+STR_BIG_STATION_NAME                                            :{BIG_FONT}{STATION}
+STR_BIG_WAYPOINT_NAME                                           :{BIG_FONT}{WAYPOINT}
 
 STR_JUST_CARGO                                                  :{CARGO_LONG}
 STR_JUST_CHECKMARK                                              :{CHECKMARK}
