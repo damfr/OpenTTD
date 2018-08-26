@@ -14,6 +14,5 @@
 #include "vehicle_type.h"
 
 void ShowTimetableWindow(const Vehicle *v);
-void UpdateVehicleTimetable(Vehicle *v, bool travelling);
 
 #endif /* TIMETABLE_H */

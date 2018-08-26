@@ -1996,7 +1996,7 @@ bool UpdateOrderDest(Vehicle *v, const Order *order, int conditional_depth, bool
 		case OT_GOTO_DEPOT:
 			if ((order->GetDepotOrderType() & ODTFB_SERVICE) && !v->NeedsServicing()) {
 				assert(!pbs_look_ahead);
-				UpdateVehicleTimetable(v, true);
+				v->current_order_time = 0;
 				v->IncrementRealOrderIndex();
 				break;
 			}
@@ -2031,7 +2031,7 @@ bool UpdateOrderDest(Vehicle *v, const Order *order, int conditional_depth, bool
 				/* If there is no depot, we cannot help PBS either. */
 				if (pbs_look_ahead) return false;
 
-				UpdateVehicleTimetable(v, true);
+				v->current_order_time = 0;
 				v->IncrementRealOrderIndex();
 			} else {
 				if (v->type != VEH_AIRCRAFT) {
@@ -2058,7 +2058,7 @@ bool UpdateOrderDest(Vehicle *v, const Order *order, int conditional_depth, bool
 			if (next_order != INVALID_VEH_ORDER_ID) {
 				/* Jump to next_order. cur_implicit_order_index becomes exactly that order,
 				 * cur_real_order_index might come after next_order. */
-				UpdateVehicleTimetable(v, false);
+				v->current_order_time = 0;
 				v->cur_implicit_order_index = v->cur_real_order_index = next_order;
 				v->UpdateRealOrderIndex();
 				v->current_order_time += v->GetOrder(v->cur_real_order_index)->GetTimetabledTravel();
@@ -2070,7 +2070,7 @@ bool UpdateOrderDest(Vehicle *v, const Order *order, int conditional_depth, bool
 					SetBit(gv_flags, GVF_SUPPRESS_IMPLICIT_ORDERS);
 				}
 			} else {
-				UpdateVehicleTimetable(v, true);
+				v->current_order_time = 0;
 				v->IncrementRealOrderIndex();
 			}
 			break;
@@ -2145,7 +2145,7 @@ bool ProcessOrders(Vehicle *v)
 		 * is a no-non-stop order; in that case not setting the last
 		 * visited station will cause the vehicle to still stop. */
 		v->last_station_visited = v->current_order.GetDestination();
-		UpdateVehicleTimetable(v, true);
+		v->current_order_time = 0;
 		v->IncrementImplicitOrderIndex();
 	}
 
