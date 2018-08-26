@@ -352,6 +352,7 @@ Vehicle::Vehicle(VehicleType type)
 	this->first              = this;
 	this->colourmap          = PAL_NONE;
 	this->cargo_age_counter  = 1;
+	this->timetable_offset   = Duration();
 	this->last_station_visited = INVALID_STATION;
 	this->last_loading_station = INVALID_STATION;
 }

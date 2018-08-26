@@ -35,6 +35,8 @@ void BaseConsist::CopyConsistPropertiesFrom(const BaseConsist *src)
 	this->current_order_time = src->current_order_time;
 	this->lateness_counter = src->lateness_counter;
 	this->timetable_start = src->timetable_start;
+	this->timetable_end = src->timetable_end;
+	this->timetable_offset = src->timetable_offset;
 
 	this->service_interval = src->service_interval;
 

@@ -3021,11 +3021,30 @@ bool AfterLoadGame()
 		FOR_ALL_STATIONS(st) UpdateStationAcceptance(st, false);
 	}
 
+	/* Don´t try to convert the old timetables into the new world, just zero them.
+	 * At least for now.
+	 * (remember, we reuse the space for the old wait_time / travel_time attributes
+	 */
+	if (IsSavegameVersionBefore(TIP_SAVEGAME_VERSION)) {
+		Order *o;
+		FOR_ALL_ORDERS(o) {
+			o->SetDeparture(INVALID_DATE);
+			o->SetArrival(INVALID_DATE);
+		}
+		Vehicle *v;
+		FOR_ALL_VEHICLES(v) {
+			v->current_order.SetDeparture(INVALID_DATE);
+			v->current_order.SetArrival(INVALID_DATE);
+		}
+	}
+
 	/* Road stops is 'only' updating some caches */
 	AfterLoadRoadStops();
 	AfterLoadLabelMaps();
 	AfterLoadCompanyStats();
 	AfterLoadStoryBook();
+
+	AfterLoadTimetables();
 
 	GamelogPrintDebug(1);
 

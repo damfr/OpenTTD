@@ -34,6 +34,7 @@ void AfterLoadLabelMaps();
 void AfterLoadStoryBook();
 void AfterLoadLinkGraphs();
 void AfterLoadCompanyStats();
+void AfterLoadTimetables();
 void UpdateHousesAndTowns();
 
 void UpdateOldAircraft();

@@ -41,6 +41,9 @@ private:
 	uint8 flags;          ///< Load/unload types, depot order/action types.
 	DestinationID dest;   ///< The destination of the order.
 
+	Date arrival;         ///< The scheduled arrival time at this station
+	Date departure;       ///< The scheduled departure time at this station
+
 	CargoID refit_cargo;  ///< Refit CargoID
 
 	uint16 wait_time;    ///< How long in ticks to wait at the destination.
@@ -50,7 +53,7 @@ private:
 public:
 	Order *next;          ///< Pointer to next order. If NULL, end of list
 
-	Order() : refit_cargo(CT_NO_REFIT), max_speed(UINT16_MAX) {}
+	Order() : arrival(INVALID_DATE), departure(INVALID_DATE), refit_cargo(CT_NO_REFIT), max_speed(UINT16_MAX) {}
 	~Order();
 
 	Order(uint32 packed);
@@ -101,6 +104,18 @@ public:
 	 * @pre IsType(OT_GOTO_WAYPOINT) || IsType(OT_GOTO_DEPOT) || IsType(OT_GOTO_STATION).
 	 */
 	inline void SetDestination(DestinationID destination) { this->dest = destination; }
+
+	inline void SetDeparture(Date departure) { this->departure = departure; }
+
+	inline bool HasDeparture() const { return this->departure != INVALID_DATE; }
+
+	inline Date GetDeparture() const { assert(HasDeparture()); return this->departure; }
+
+	inline void SetArrival(Date arrival) { this->arrival = arrival; }
+
+	inline bool HasArrival() const { return this->arrival != INVALID_DATE; }
+
+	inline Date GetArrival() const { assert(HasArrival()); return this->arrival; }
 
 	/**
 	 * Is this order a refit order.
@@ -262,21 +277,24 @@ private:
 	uint num_vehicles;                ///< NOSAVE: Number of vehicles that share this order list.
 	Vehicle *first_shared;            ///< NOSAVE: pointer to the first vehicle in the shared order chain.
 
-	Ticks timetable_duration;         ///< NOSAVE: Total timetabled duration of the order list.
+//	Ticks timetable_duration;         ///< NOSAVE: Total timetabled duration of the order list.
 	Ticks total_duration;             ///< NOSAVE: Total (timetabled or not) duration of the order list.
+	char *name;                       ///< Name of the timetable
+	Duration timetable_duration;      ///< Total duration of the timetable
+	Date start_time;                  ///< The start time of the timetable
 
 public:
 	/** Default constructor producing an invalid order list. */
 	OrderList(VehicleOrderID num_orders = INVALID_VEH_ORDER_ID)
 		: first(NULL), num_orders(num_orders), num_manual_orders(0), num_vehicles(0), first_shared(NULL),
-		  timetable_duration(0), total_duration(0) { }
+		  timetable_duration(0, DU_INVALID), start_time(INVALID_DATE) { }
 
 	/**
 	 * Create an order list with the given order chain for the given vehicle.
 	 *  @param chain pointer to the first order of the order chain
 	 *  @param v any vehicle using this orderlist
 	 */
-	OrderList(Order *chain, Vehicle *v) { this->Initialize(chain, v); }
+	OrderList(Order *chain, Vehicle *v) { start_time = INVALID_DATE; this->Initialize(chain, v); }
 
 	/** Destructor. Invalidates OrderList for re-usage by the pool. */
 	~OrderList() {}
@@ -357,17 +375,25 @@ public:
 
 	bool IsCompleteTimetable() const;
 
+	inline Ticks GetTimetableTotalDuration() const { return 0; }
+
+	inline void SetTimetableDuration(Duration duration) { this->timetable_duration = duration; }
+
 	/**
 	 * Gets the total duration of the vehicles timetable or INVALID_TICKS is the timetable is not complete.
 	 * @return total timetable duration or INVALID_TICKS for incomplete timetables
 	 */
-	inline Ticks GetTimetableTotalDuration() const { return this->IsCompleteTimetable() ? this->timetable_duration : INVALID_TICKS; }
+	inline Duration GetTimetableDuration() const { return this->timetable_duration; }
+
+	inline void SetStartTime(Date start_time) { this->start_time = start_time; }
+
+	inline Date GetStartTime() const { return this->start_time; }
 
 	/**
 	 * Gets the known duration of the vehicles timetable even if the timetable is not complete.
 	 * @return known timetable duration
 	 */
-	inline Ticks GetTimetableDurationIncomplete() const { return this->timetable_duration; }
+	inline Ticks GetTimetableDurationIncomplete() const { return 0; }
 
 	/**
 	 * Gets the known duration of the vehicles orders, timetabled or not.
@@ -379,13 +405,17 @@ public:
 	 * Must be called if an order's timetable is changed to update internal book keeping.
 	 * @param delta By how many ticks has the timetable duration changed
 	 */
-	void UpdateTimetableDuration(Ticks delta) { this->timetable_duration += delta; }
+	void UpdateTimetableDuration(Ticks delta) { }
 
 	/**
 	 * Must be called if an order's timetable is changed to update internal book keeping.
 	 * @param delta By how many ticks has the total duration changed
 	 */
 	void UpdateTotalDuration(Ticks delta) { this->total_duration += delta; }
+
+	inline void SetName(char *name) { this->name = name;}
+
+	inline char* GetName() const {return this->name; }
 
 	void FreeChain(bool keep_orderlist = false);
 
