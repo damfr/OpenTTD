@@ -2695,10 +2695,10 @@ public:
 				ShowVehicleRefitWindow(v, INVALID_VEH_ORDER_ID, this);
 				break;
 			case WID_VV_SHOW_ORDERS: // show orders
-				if (_ctrl_pressed) {
-					ShowTimetableWindow(v);
-				} else {
+				if ((_ctrl_pressed && _settings_client.gui.open_timetable_by_default) || (!_ctrl_pressed && !_settings_client.gui.open_timetable_by_default)) {
 					ShowOrdersWindow(v);
+				} else {
+					ShowTimetableWindow(v);
 				}
 				break;
 			case WID_VV_SHOW_DETAILS: // show details
