@@ -225,16 +225,20 @@ void LinkRefresher::RefreshStats(const Order *cur, const Order *next)
 			 * order list is supposed to take, though. If that is the case the total duration is
 			 * probably far off and we'd greatly overestimate the capacity by increasing.*/
 			if (this->is_full_loading && this->vehicle->orders.list != nullptr &&
-					st->index == vehicle->last_station_visited &&
-					this->vehicle->orders.list->GetTotalDuration() >
-					(Ticks)this->vehicle->current_order_time) {
-				uint effective_capacity = cargo_quantity * this->vehicle->load_unload_ticks;
-				if (effective_capacity > (uint)this->vehicle->orders.list->GetTotalDuration()) {
-					IncreaseStats(st, c, next_station, effective_capacity /
-							this->vehicle->orders.list->GetTotalDuration(), 0,
-							EUM_INCREASE | restricted_mode);
-				} else if (RandomRange(this->vehicle->orders.list->GetTotalDuration()) < effective_capacity) {
-					IncreaseStats(st, c, next_station, 1, 0, EUM_INCREASE | restricted_mode);
+					st->index == vehicle->last_station_visited) {
+
+				Duration timetable_length = this->vehicle->orders.list->GetTimetableDuration();
+				int32 timetable_length_in_ticks = timetable_length.GetLengthInTicks();
+
+				if (timetable_length_in_ticks > (Ticks)this->vehicle->current_order_time) {
+					uint effective_capacity = cargo_quantity * this->vehicle->load_unload_ticks;
+					if (effective_capacity > (uint)timetable_length_in_ticks) {
+						IncreaseStats(st, c, next_station, effective_capacity / timetable_length_in_ticks, 0, EUM_INCREASE | restricted_mode);
+					} else if (RandomRange(timetable_length_in_ticks) < effective_capacity) {
+						IncreaseStats(st, c, next_station, 1, 0, EUM_INCREASE | restricted_mode);
+					} else {
+						IncreaseStats(st, c, next_station, cargo_quantity, 0, EUM_REFRESH | restricted_mode);
+					}
 				} else {
 					IncreaseStats(st, c, next_station, cargo_quantity, 0, EUM_REFRESH | restricted_mode);
 				}
