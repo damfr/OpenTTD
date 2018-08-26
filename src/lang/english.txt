@@ -3985,6 +3985,9 @@ STR_TIMETABLE_STAY_FOR                                          :and stay for {S
 STR_TIMETABLE_AND_TRAVEL_FOR                                    :and travel for {STRING1}
 STR_TIMETABLE_DAYS                                              :{COMMA}{NBSP}day{P "" s}
 STR_TIMETABLE_TICKS                                             :{COMMA}{NBSP}tick{P "" s}
+STR_TIMETABLE_MONTHS                                            :{COMMA}{NBSP}month{P "" s}
+STR_TIMETABLE_YEARS                                             :{COMMA}{NBSP}year{P "" s}
+STR_TIMETABLE_INVALID_DURATION                                  :----
 
 STR_TIMETABLE_TOTAL_TIME                                        :{BLACK}This timetable will take {STRING1} to complete
 STR_TIMETABLE_TOTAL_TIME_INCOMPLETE                             :{BLACK}This timetable will take at least {STRING1} to complete (not all timetabled)

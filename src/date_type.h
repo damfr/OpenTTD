@@ -54,6 +54,73 @@ static const Year ORIGINAL_END_YEAR  = 2051;
 /** The maximum year of the original TTD */
 static const Year ORIGINAL_MAX_YEAR  = 2090;
 
+/** The unit of a Duration, e.g. 4 Days. */
+typedef uint8 DurationUnit;
+static const uint8 DU_TICKS = 0;
+static const uint8 DU_DAYS = 1;
+static const uint8 DU_MONTHS = 2;
+static const uint8 DU_YEARS = 3;
+static const uint8 DU_INVALID = 255;
+
+/* TODO (Issue 7069): Originally the above typedef was an enum.  Unfortunately, I didn´t succeeded in making the Saveload consistency check work with that enum.
+
+enum DurationUnit {
+	DU_TICKS = 0,
+	DU_DAYS = 1,
+	DU_MONTHS = 2,
+	DU_YEARS = 3,
+	DU_INVALID = 255,
+};
+*/
+
+/** A Duration, i.e. a time interval given with some unit.
+ *  Examples: 751 Ticks, 48 Days, 4 Months, 2 Years.
+ *  The idea behind Durations is that they enable calculating with Dates and time intervals without
+ *  introducing precision errors due to variable length months.  E.g. 23rd February + 1 Month = 23rd March.
+ */
+struct Duration {
+
+private:
+	int32 GetLengthInOurUnit(Duration &d);
+
+public:
+	static const int DAYS_PER_MONTH = 30;
+	static const int DAYS_PER_YEAR = 365;
+	static const int MONTHS_PER_YEAR = 12;
+
+	/* The saveload code expects these fields public. */
+	int32 length;       ///< Length of the Duration, measured in unit
+	DurationUnit unit;  ///< Unit of the Duration
+
+	Duration() { this->length = 0; this->unit = DU_INVALID; }
+	Duration(int32 length, DurationUnit unit) { this->length = length;	this->unit = unit; }
+
+	bool operator< (Duration &d) { return length < GetLengthInOurUnit(d); }
+	bool operator<= (Duration &d) {return length <= GetLengthInOurUnit(d); }
+	bool operator== (Duration &d) { return length == GetLengthInOurUnit(d); }
+	bool operator>= (Duration &d) {return length >= GetLengthInOurUnit(d); }
+	bool operator> (Duration &d) { return length > GetLengthInOurUnit(d); }
+	Duration operator- () { return Duration(-length, unit); }
+
+	int32 GetLengthInTicks();
+
+	inline void Add(Duration d) { this->length += GetLengthInOurUnit(d); }
+	inline void AddLength(int32 length) { this->length += length; }
+
+	inline void SetLength(int32 length) { this->length = length; }
+	inline int32 GetLength() const { return this->length; }
+	inline void SetUnit(DurationUnit unit) { this->unit = unit; }
+	inline DurationUnit GetUnit() const { return this->unit; }
+
+	inline bool IsInTicks() const { return this->unit == DU_TICKS; }
+	inline bool IsInDays() const { return this->unit == DU_DAYS; }
+	inline bool IsInMonths() const { return this->unit == DU_MONTHS; }
+	inline bool IsInYears() const { return this->unit == DU_YEARS; }
+	inline bool IsInvalid() const { return this->unit == DU_INVALID; }
+
+	void PrintToDebug(int level, const char *prefix, const char *postfix = "");
+};
+
 /**
  * Calculate the number of leap years till a given year.
  *
