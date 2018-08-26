@@ -60,6 +60,12 @@ const StringID _timetable_setdate_strings[] = {
 	STR_TIMETABLE_DATE_PLUS_THREE
 };
 
+enum TimetableFilterMode {
+	TFM_SHOW_ALL = 0,
+	TFM_SHOW_DESTINATION_LINES = 1,
+	TFM_SHOW_TIMETABLE_LINES = 2,
+};
+
 /**
  * Callback for when a time has been chosen to start the time table
  * @param window the window related to the setting of the date
@@ -140,6 +146,10 @@ private:
 	/** Constant for marking the fact that currently, no timetable line is selected (e.g. since one of the meta data lines on top are selected) */
 	static const int INVALID_SELECTION = -1;
 
+	/** Indicates, which filter mode is currently active.  Options are show destination information plus timetable information,
+	 *  show only destination information (as in the traditional order view), or show only timetable information in a tabular manner. */
+	TimetableFilterMode filter_mode;
+
 	/** The default value assumed for staying in a station (when setting arrivals / departures using Choose & Next in the datefast_gui) */
 	static const int DEFAULT_STATION_TIME = 5;
 
@@ -215,7 +225,7 @@ private:
 
 		/* Only consider the destination/timetable lines corresponding to the orders, and the destination line; not potentially
 		 * left free space below */
-		if (selected_line_before_list_bounds < this->vehicle->GetNumOrders() * 2 + 1 && selected_line_before_list_bounds >= 0) {
+		if (selected_line_before_list_bounds < this->vehicle->GetNumOrders() * GetLineMultiplier() + 1 && selected_line_before_list_bounds >= 0) {
 			return selected_line_before_list_bounds;
 		} else {
 			return INVALID_SELECTION;
@@ -285,7 +295,7 @@ private:
 	/** Returns wether the given line is a destination line. */
 	bool IsDestinationLine(int line) const
 	{
-		return IsContentLine(line) && vehicle->GetNumOrders() != INVALID_VEH_ORDER_ID && line < vehicle->GetNumOrders() * 2 && (line % 2 == 0);
+		return IsContentLine(line) && vehicle->GetNumOrders() != INVALID_VEH_ORDER_ID && line < vehicle->GetNumOrders() * GetLineMultiplier() && (IsInShowDestinationsMode() || (IsInShowAllMode() && (line % 2 == 0)));
 	}
 
 	/** Returns wether any timetable line (i.e. a line containing Arrival, Departure, Speed Limit) is currently selected. */
@@ -297,7 +307,7 @@ private:
 	/** Returns wether the given line is a timetable line. */
 	bool IsTimetableLine(int line) const
 	{
-		return IsContentLine(line) && vehicle->GetNumOrders() != INVALID_VEH_ORDER_ID && line < vehicle->GetNumOrders() * 2 && (line % 2 == 1);
+		return IsContentLine(line) && vehicle->GetNumOrders() != INVALID_VEH_ORDER_ID && line < vehicle->GetNumOrders() * 2 && (IsInShowTimetableMode() || (IsInShowAllMode() &&  (line % 2 == 1)));
 	}
 
 	/** Returns wether the end of orders line is selected. */
@@ -309,7 +319,7 @@ private:
 	/** Returns the index of the "End of orders" line. */
 	int GetEndOfOrdersIndex() const
 	{
-		return vehicle->GetNumOrders() * 2;
+		return vehicle->GetNumOrders() * GetLineMultiplier();
 	}
 
 	/** Returns the VehicleOrderID corresponding to the currently selected line, or INVALID_VEH_ORDER_ID if that line doesn´t correspond to an Order. */
@@ -321,13 +331,69 @@ private:
 	/** Returns the VehicleOrderId corresponding to the given line, or INVALID_VEH_ORDER_ID if that line doesn´t correspond to an Order. */
 	VehicleOrderID GetOrderID(int line) const
 	{
-		return (IsDestinationLine(line) || IsTimetableLine(line)) ? line / 2 : INVALID_VEH_ORDER_ID;
+		return (IsDestinationLine(line) || IsTimetableLine(line)) ? line / GetLineMultiplier() : INVALID_VEH_ORDER_ID;
  	}
 
 	void AdjustSelectionByNumberOfOrders(int n)
 	{
 		assert (selected_timetable_line != INVALID_SELECTION);
-		selected_timetable_line += n * 2;
+		selected_timetable_line += n * GetLineMultiplier();
+	}
+
+	/** Returns the next destination line relative to the currently selected line, or INVALID_SELECTION if no such line exists. */
+	int GetNextDestinationLine() const
+	{
+		assert (IsDestinationLineSelected() || IsTimetableLineSelected());
+		if (IsDestinationLineSelected()) {
+			return selected_timetable_line + (IsInShowAllMode() ? 2 : 1);
+		} else if (IsTimetableLineSelected()) {
+			return selected_timetable_line + 1;
+		} else {
+			return INVALID_SELECTION;
+		}
+	}
+
+	/** Returns the number of lines a order currently occupies in the list. */
+	int GetLineMultiplier() const { return (this->IsInShowAllMode() ? 2 : 1); }
+
+	/**********************************************************************************************************************/
+	/********************************* Keeping track about which information is shown *************************************/
+	/**********************************************************************************************************************/
+
+	bool IsInShowAllMode() const { return this->filter_mode == TFM_SHOW_ALL; }
+
+	bool IsInShowDestinationsMode() const { return this->filter_mode == TFM_SHOW_DESTINATION_LINES; }
+
+	bool IsInShowTimetableMode() const { return this->filter_mode == TFM_SHOW_TIMETABLE_LINES; }
+
+	/** This method adjusts the selected line, if the player changes the filter setting.
+     *  E.g. if previously all lines were shown, and now only the timetable lines are
+	 *  to be shown, one has to divide the selected line index by two (if a line was selected).
+	 */
+	void AdjustShowModeAfterFilterChange(TimetableFilterMode old_mode, TimetableFilterMode new_mode)
+	{
+		if (!IsEndOfOrdersLineSelected()) {
+			bool line_selected = IsTimetableLineSelected() || IsDestinationLineSelected();
+			if (old_mode == TFM_SHOW_ALL) {
+				if (new_mode != TFM_SHOW_ALL) {
+					this->selected_timetable_line = (line_selected ? this->selected_timetable_line / 2 : INVALID_SELECTION);
+				}
+			} else if (old_mode == TFM_SHOW_DESTINATION_LINES) {
+				if (new_mode == TFM_SHOW_ALL) {
+					this->selected_timetable_line = (line_selected ? this->selected_timetable_line * 2 : INVALID_SELECTION);
+				}
+			} else if (old_mode == TFM_SHOW_TIMETABLE_LINES) {
+				if (new_mode == TFM_SHOW_ALL) {
+					this->selected_timetable_line = (line_selected ? this->selected_timetable_line * 2 + 1 : INVALID_SELECTION);
+				}
+			}
+		} else {
+			if (new_mode == TFM_SHOW_ALL) {
+				this->selected_timetable_line = vehicle->GetNumOrders() * 2;
+			} else {
+				this->selected_timetable_line = vehicle->GetNumOrders();
+			}
+		}
 	}
 
 	/** This function calculates the space needed for the largest of the given dropdown items,
@@ -1158,6 +1224,9 @@ public:
 
 		this->UpdateAutoRefitState();
 
+		this->filter_mode = TFM_SHOW_ALL;
+		this->SetWidgetLoweredState(WID_VT_FULL_FILTER_BUTTON, true);
+
 		// Trigger certain refresh activities e.g. regarding button state
 		this->OnInvalidateData(-2);
 	}
@@ -1167,7 +1236,7 @@ public:
 	 */
 	void SelectTimetableLineForOrder(VehicleOrderID order_id)
 	{
-		this->selected_timetable_line = (2 * order_id) + 1;
+		this->selected_timetable_line = (IsInShowAllMode() ? (2 * order_id) + 1 : order_id);
 	}
 
 	virtual void UpdateWidgetSize(int widget, Dimension *size, const Dimension &padding, Dimension *fill, Dimension *resize) override
@@ -1328,7 +1397,7 @@ public:
 		this->DrawWidgets();
 
  		const Vehicle *v = this->vehicle;
-		this->vscroll->SetCount(v->GetNumOrders() * 2 + 1);
+		this->vscroll->SetCount(v->GetNumOrders() * GetLineMultiplier() + 1);
 	}
 
 	void SetStringParameters(int widget) const override
@@ -1372,7 +1441,7 @@ public:
 			case WID_VT_TIMETABLE_PANEL: {
 				int y = r.top + WD_FRAMERECT_TOP;
 				int i = this->vscroll->GetPosition();
-				VehicleOrderID order_id = (i + 1) / 2;
+				VehicleOrderID order_id = (IsInShowAllMode() ? (i + 1) / GetLineMultiplier() : i);
 
 				bool rtl = _current_text_dir == TD_RTL;
 				SetDParamMaxValue(0, v->GetNumOrders(), 2);
@@ -1385,23 +1454,40 @@ public:
 					/* Don't draw anything if it extends past the end of the window. */
 					if (!this->vscroll->IsVisible(i)) break;
 
-					if (i % 2 == 0) {
+					if ((IsInShowAllMode() && i % 2 == 0) || IsInShowDestinationsMode()) {
 						DrawOrderString(v, order, order_id, y, i == selected, r.left + WD_FRAMERECT_LEFT, middle, r.right - WD_FRAMERECT_RIGHT);
+						if (IsInShowDestinationsMode()) {
+							order_id++;
+							if (order_id >= v->GetNumOrders()) {
+								break;
+							} else {
+								order = order->next;
+							}
+						}
 					} else {
 						StringID string;
 						TextColour colour = (i == selected) ? TC_WHITE : TC_BLACK;
 						if (order->IsType(OT_CONDITIONAL)) {
 							string = STR_TIMETABLE_NO_TRAVEL;
+							if (IsInShowTimetableMode()) {
+								DrawOrderMarker(this->vehicle, order_id, y, r.left + WD_FRAMERECT_LEFT, r.right - WD_FRAMERECT_RIGHT);
+							}
 							DrawString(rtl ? r.left + WD_FRAMERECT_LEFT : middle, rtl ? middle : r.right - WD_FRAMERECT_LEFT, y, string, colour);
 						} else if (order->IsType(OT_IMPLICIT)) {
 							string = STR_TIMETABLE_NOT_TIMETABLEABLE;
 							colour = ((i == selected) ? TC_SILVER : TC_GREY) | TC_NO_SHADE;
+							if (IsInShowTimetableMode()) {
+								DrawOrderMarker(this->vehicle, order_id, y, r.left + WD_FRAMERECT_LEFT, r.right - WD_FRAMERECT_RIGHT);
+							}
 						} else {
 							char buffer[2048] = "";
 							const char* timetable_string = this->GetTimetableLineString(buffer, lastof(buffer), order, order_id);
 							/* Mark orders which violate the time order, e.g. because arrival is later than departure. */
 							if (!IsOrderTimetableValid(v, order)) {
 								colour = TC_RED;
+							}
+							if (IsInShowTimetableMode()) {
+								DrawOrderMarker(this->vehicle, order_id, y, r.left + WD_FRAMERECT_LEFT, r.right - WD_FRAMERECT_RIGHT);
 							}
 							DrawString(rtl ? r.left + WD_FRAMERECT_LEFT : middle, rtl ? middle : r.right - WD_FRAMERECT_LEFT, y, timetable_string, colour);
 						}
@@ -1536,6 +1622,33 @@ public:
 		const Vehicle *v = this->vehicle;
 
 		switch (widget) {
+			case WID_VT_FULL_FILTER_BUTTON:
+				AdjustShowModeAfterFilterChange(this->filter_mode, TFM_SHOW_ALL);
+				this->filter_mode = TFM_SHOW_ALL;
+				this->SetWidgetLoweredState(WID_VT_FULL_FILTER_BUTTON, true);
+				this->SetWidgetLoweredState(WID_VT_DESTINATION_FILTER_BUTTON, false);
+				this->SetWidgetLoweredState(WID_VT_TIMETABLE_FILTER_BUTTON, false);
+				this->InvalidateData();
+				break;
+
+			case WID_VT_DESTINATION_FILTER_BUTTON:
+				AdjustShowModeAfterFilterChange(this->filter_mode, TFM_SHOW_DESTINATION_LINES);
+				this->filter_mode = TFM_SHOW_DESTINATION_LINES;
+				this->SetWidgetLoweredState(WID_VT_FULL_FILTER_BUTTON, false);
+				this->SetWidgetLoweredState(WID_VT_DESTINATION_FILTER_BUTTON, true);
+				this->SetWidgetLoweredState(WID_VT_TIMETABLE_FILTER_BUTTON, false);
+				this->InvalidateData();
+				break;
+
+			case WID_VT_TIMETABLE_FILTER_BUTTON:
+				AdjustShowModeAfterFilterChange(this->filter_mode, TFM_SHOW_TIMETABLE_LINES);
+				this->filter_mode = TFM_SHOW_TIMETABLE_LINES;
+				this->SetWidgetLoweredState(WID_VT_FULL_FILTER_BUTTON, false);
+				this->SetWidgetLoweredState(WID_VT_DESTINATION_FILTER_BUTTON, false);
+				this->SetWidgetLoweredState(WID_VT_TIMETABLE_FILTER_BUTTON, true);
+				this->InvalidateData();
+				break;
+
 			case WID_VT_ORDER_VIEW: // Order view button
 				ShowOrdersWindow(v);
 				break;

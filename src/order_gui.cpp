@@ -122,6 +122,20 @@ int DepotActionStringIndex(const Order *order)
 	}
 }
 
+void DrawOrderMarker(const Vehicle *v, int order_index, int y, int left, int right)
+{
+	bool rtl = _current_text_dir == TD_RTL;
+
+	SpriteID sprite = rtl ? SPR_ARROW_LEFT : SPR_ARROW_RIGHT;
+	Dimension sprite_size = GetSpriteSize(sprite);
+	if (v->cur_real_order_index == order_index) {
+		DrawSprite(sprite, PAL_NONE, rtl ? right -     sprite_size.width : left,                     y + ((int)FONT_HEIGHT_NORMAL - (int)sprite_size.height) / 2);
+		DrawSprite(sprite, PAL_NONE, rtl ? right - 2 * sprite_size.width : left + sprite_size.width, y + ((int)FONT_HEIGHT_NORMAL - (int)sprite_size.height) / 2);
+	} else if (v->cur_implicit_order_index == order_index) {
+		DrawSprite(sprite, PAL_NONE, rtl ? right -     sprite_size.width : left,                     y + ((int)FONT_HEIGHT_NORMAL - (int)sprite_size.height) / 2);
+	}
+}
+
 /**
  * Draws an order in order or timetable GUI
  * @param v Vehicle the order belongs to
@@ -136,16 +150,7 @@ int DepotActionStringIndex(const Order *order)
  */
 void DrawOrderString(const Vehicle *v, const Order *order, int order_index, int y, bool selected, int left, int middle, int right)
 {
-	bool rtl = _current_text_dir == TD_RTL;
-
-	SpriteID sprite = rtl ? SPR_ARROW_LEFT : SPR_ARROW_RIGHT;
-	Dimension sprite_size = GetSpriteSize(sprite);
-	if (v->cur_real_order_index == order_index) {
-		DrawSprite(sprite, PAL_NONE, rtl ? right -     sprite_size.width : left,                     y + ((int)FONT_HEIGHT_NORMAL - (int)sprite_size.height) / 2);
-		DrawSprite(sprite, PAL_NONE, rtl ? right - 2 * sprite_size.width : left + sprite_size.width, y + ((int)FONT_HEIGHT_NORMAL - (int)sprite_size.height) / 2);
-	} else if (v->cur_implicit_order_index == order_index) {
-		DrawSprite(sprite, PAL_NONE, rtl ? right -     sprite_size.width : left,                     y + ((int)FONT_HEIGHT_NORMAL - (int)sprite_size.height) / 2);
-	}
+	DrawOrderMarker(v, order_index, y, left, right);
 
 	TextColour colour = TC_BLACK;
 	if (order->IsType(OT_IMPLICIT)) {
@@ -153,6 +158,10 @@ void DrawOrderString(const Vehicle *v, const Order *order, int order_index, int 
 	} else if (selected) {
 		colour = TC_WHITE;
 	}
+
+	bool rtl = _current_text_dir == TD_RTL;
+	SpriteID sprite = rtl ? SPR_ARROW_LEFT : SPR_ARROW_RIGHT;
+	Dimension sprite_size = GetSpriteSize(sprite);
 
 	SetDParam(0, order_index + 1);
 	DrawString(left, rtl ? right - 2 * sprite_size.width - 3 : middle, y, STR_ORDER_INDEX, colour, SA_RIGHT | SA_FORCE);
