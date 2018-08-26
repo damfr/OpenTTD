@@ -222,8 +222,7 @@ Dimension GetMaxShortOrderStringBoundingBox(const Vehicle *vehicle)
 	d.width = 0;
 	d.height = 0;
 
-	Order *order;
-	FOR_VEHICLE_ORDERS(vehicle, order) {
+	for (Order *order : vehicle->Orders()) {
 		Dimension current_bounding_box = GetShortOrderStringBoundingBox(vehicle, order);
 		if (d.width < current_bounding_box.width) {
 			d.width = current_bounding_box.width;
@@ -264,8 +263,7 @@ Dimension GetMaxOrderStringBoundingBox(const Vehicle *vehicle)
 	d.width = 0;
 	d.height = 0;
 
-	const Order *order;
-	FOR_VEHICLE_ORDERS(vehicle, order) {
+	for (const Order *order : vehicle->Orders()) {
 		Dimension current_bounding_box = GetOrderStringBoundingBox(vehicle, order);
 		if (d.width < current_bounding_box.width) {
 			d.width = current_bounding_box.width;

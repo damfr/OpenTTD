@@ -1572,6 +1572,7 @@ void VehicleEnterDepot(Vehicle *v)
 			/* Part of orders */
 			v->DeleteUnreachedImplicitOrders();
 			v->current_order_time = 0;
+			v->lateness_counter = (v->current_order.HasArrival() ? _date - AddToDate(v->current_order.GetArrival(), v->timetable_offset) : 0);
 			v->IncrementImplicitOrderIndex();
 		}
 		if (v->current_order.GetDepotActionType() & ODATFB_HALT) {
@@ -2254,7 +2255,10 @@ void Vehicle::LeaveStation()
 	assert(this->cargo_payment == nullptr); // cleared by ~CargoPayment
 
 	/* Only update the timetable if the vehicle was supposed to stop here. */
-	if (this->current_order.GetNonStopType() != ONSF_STOP_EVERYWHERE) this->current_order_time = 0;
+	if (this->current_order.GetNonStopType() != ONSF_STOP_EVERYWHERE) {
+		this->current_order_time = 0;
+		this->lateness_counter = (this->current_order.HasDeparture() ? _date - AddToDate(this->current_order.GetDeparture(), this->timetable_offset) : 0);
+	}
 
 	if ((this->current_order.GetLoadType() & OLFB_NO_LOAD) == 0 ||
 			(this->current_order.GetUnloadType() & OUFB_NO_UNLOAD) == 0) {
@@ -2312,10 +2316,9 @@ void Vehicle::HandleLoading(bool mode)
 {
 	switch (this->current_order.GetType()) {
 		case OT_LOADING: {
-			uint wait_time = 0; // TODO: This code will be transferred into the new concept in the 480 patch
-
 			/* Not the first call for this tick, or still loading */
-			if (mode || !HasBit(this->vehicle_flags, VF_LOADING_FINISHED) || this->current_order_time < wait_time) return;
+			if (mode || !HasBit(this->vehicle_flags, VF_LOADING_FINISHED)
+				|| (this->current_order.HasDeparture() && AddToDate(this->current_order.GetDeparture(), this->timetable_offset) > _date)) return;
 
 			this->PlayLeaveStationSound();
 
@@ -2942,6 +2945,128 @@ const uint16 &Vehicle::GetGroundVehicleFlags() const
 		return Train::From(this)->gv_flags;
 	} else {
 		return RoadVehicle::From(this)->gv_flags;
+	}
+}
+
+void Vehicle::CorrectTimetableOffset()
+{
+	Duration timetable_length = this->orders.list->GetTimetableDuration();
+	Duration min_offset;
+
+	/* length == 0 triggers an endless loop below.  As length == 0 is senseless anyway, 
+     * the GUI should prevent entering it at all.  But for safety, check again here. */
+	assert(timetable_length.GetLength() > 0);
+
+	timetable_length.PrintToDebug(9, "Correcting with timetable length");
+
+	do {
+		min_offset = this->timetable_offset;
+
+		/* First find the smallest offset among all shared vehicles.  Note that the comparisons take the 
+		 * possibly different units of the offsets into account.  */
+		for (const Vehicle *v_shared = this->orders.list->GetFirstSharedVehicle(); v_shared != NULL; v_shared = v_shared->NextShared()) {
+			Duration curr_offset = v_shared->timetable_offset;
+			curr_offset.PrintToDebug(9, "==> Inspecting vehicle offset");
+			if (!curr_offset.IsInvalid()) {
+				if (min_offset.IsInvalid() || curr_offset < min_offset) {
+					min_offset = curr_offset;
+				}
+			}
+		}
+
+		min_offset.PrintToDebug(9, "Calculated minimum vehicle offset");
+
+		/* Now shift the timetable, until the smallest offset is within 0..length.
+		 * Note that the decrementing incrementing code (the first if) never produces
+		 * offsets < 0, thus termination is guaranteed.
+	     */
+		if (min_offset >= timetable_length) {
+			DEBUG(misc, 9, "Shifting by timetable_length");
+			ShiftTimetable(timetable_length);
+		}
+		if (min_offset.GetLength() < 0) {
+			DEBUG(misc, 9, "Shifting by -timetable_length");
+			ShiftTimetable(-timetable_length);
+		}
+	} while (min_offset.GetLength() < 0 || min_offset > timetable_length);
+}
+
+/* Shifts the whole timetable of this vehicle by the given offset.  The offset is *added* to the 
+ * start of the timetable, and thus subtracted from the offsets of the vehicles. */
+void Vehicle::ShiftTimetable(Duration offset)
+{
+	/* A start time of the timetable is essential, do nothing if it is missing */
+	if (this->orders.list->HasStartTime()) {
+		Date old_start_time = this->orders.list->GetStartTime();
+		this->orders.list->SetStartTime(AddToDate(old_start_time, offset));
+
+		offset.PrintToDebug(9, "ShiftTimetable adds offset");
+		DEBUG(misc, 9, "==> ... to timetable of vehicle %i, starting %i", this->index, old_start_time);
+
+		for (Order *order : this->Orders()) {
+			if (order->HasArrival()) {
+				Date old_arrival = order->GetArrival();
+				order->SetArrival(AddToDate(old_arrival, offset));
+				DEBUG(misc, 9, "====> Order %i: Correcting arrival %i to %i", order->index, old_arrival, order->GetArrival());
+			}
+			if (order->HasDeparture()) {
+				Date old_departure = order->GetDeparture();
+				order->SetDeparture(AddToDate(old_departure, offset));
+				DEBUG(misc, 9, "====> Order %i: Correcting departure %i to %i", order->index, old_departure, order->GetDeparture());
+			}
+		}
+
+		for (Vehicle *v_shared = this->orders.list->GetFirstSharedVehicle(); v_shared != NULL; v_shared = v_shared->NextShared()) {
+			Duration curr_offset = v_shared->timetable_offset;
+			if (!curr_offset.IsInvalid()) {
+				DEBUG(misc, 9, "==> Correcting offset of vehicle %i...", v_shared->index);
+				v_shared->timetable_offset.PrintToDebug(9, "====> old value");
+
+				v_shared->timetable_offset.Add(-offset);
+
+				v_shared->timetable_offset.PrintToDebug(9, "====> new value");
+
+				if (v_shared->timetable_offset.GetLength() < 0) {
+					DEBUG(misc, 9, "====> Correcting length %i to zero.", v_shared->timetable_offset.GetLength());
+					v_shared->timetable_offset.SetLength(0);
+				}
+
+				UpdateVehicleStartTimes(v_shared);
+
+				/* TODO Check also upper range, take different units into account correctly */
+			}
+		}
+	}
+}
+
+/** This function shifts the timetable of a vehicle by multiples of its length.
+ *
+ *  Especially, it is meant to be called each time a vehicle switches from the last order
+ *  to the first order.  This means, that the length of the timetable has to be added to
+ *  the vehicles offset.
+ *
+ *  If afterwards, all vehicles sharing the timetable have an offset
+ *  greater than the length of the timetable, the timetable is shifted to the future,
+ *  i.e. its start date and departures/arrivals are increased, and the offsets of the
+ *  vehicles are decreased accordingly.
+ *
+ *  This has the sense of keeping the offsets of a timetable small.
+ *  @param offset offset in terms of the timetable length, -1 or +1
+ */
+void Vehicle::ShiftTimetableOffset(int offset)
+{
+	if (!this->timetable_offset.IsInvalid() && !this->orders.list->GetTimetableDuration().IsInvalid()) {
+		this->timetable_offset.PrintToDebug(9, "Incrementing timetable offset ");
+		this->orders.list->GetTimetableDuration().PrintToDebug(9, "==> ... adding / subtracting Duration ");
+
+	    if (offset == 1) {
+			this->timetable_offset.Add(this->orders.list->GetTimetableDuration());
+		} else if (offset == -1) {
+			this->timetable_offset.Subtract(this->orders.list->GetTimetableDuration());
+		}
+
+		UpdateVehicleStartTimes(this);
+		CorrectTimetableOffset();
 	}
 }
 

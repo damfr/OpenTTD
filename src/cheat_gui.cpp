@@ -110,8 +110,7 @@ static int32 ClickChangeDateCheat(int32 p1, int32 p2)
 
 	Duration offset = Duration(p1 - _cur_year, DU_YEARS);
 
-	Order *order;
-	FOR_ALL_ORDERS(order) {
+	for (Order *order : Order::Iterate()) {
 		if (order->HasDeparture()) {
 			order->SetDeparture(AddToDate(order->GetDeparture(), offset));
 		}
@@ -120,8 +119,7 @@ static int32 ClickChangeDateCheat(int32 p1, int32 p2)
 		}
 	}
 
-	OrderList *order_list;
-	FOR_ALL_ORDER_LISTS(order_list) {
+	for (OrderList *order_list : OrderList::Iterate()) {
 		if (order_list->HasStartTime()) {
 			Date new_start_time = AddToDate(order_list->GetStartTime(), offset);
 			order_list->SetStartTime(new_start_time);
@@ -129,8 +127,7 @@ static int32 ClickChangeDateCheat(int32 p1, int32 p2)
 		}
 	}
 
-	Vehicle *vehicle;
-	FOR_ALL_VEHICLES(vehicle) {
+	for (Vehicle *vehicle : Vehicle::Iterate()) {
 		SetWindowDirty(WC_VEHICLE_TIMETABLE, vehicle->index);
 	}
 

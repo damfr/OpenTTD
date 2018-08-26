@@ -35,6 +35,8 @@
 #include "newgrf_debug.h"
 #include "framerate_type.h"
 
+#include "debug.h"
+
 #include "table/strings.h"
 #include "table/train_cmd.h"
 
@@ -2124,9 +2126,22 @@ static void CheckNextTrainTile(Train *v)
 static bool CheckTrainStayInDepot(Train *v)
 {
 	/* bail out if not all wagons are in the same depot or not in a depot at all */
-	for (const Train *u = v; u != nullptr; u = u->Next()) {
+	for (const Train *u = v; u != nullptr; u = u->Next())
 		if (u->track != TRACK_BIT_DEPOT || u->tile != v->tile) return false;
+
+/* TODO: Making this (trains staying in depot until time has come) work is more complicate than I thought first.
+         The problem is that the train goes to the next order right at the beginning, i.e. here we get the
+         departure time of the order after leaving the depot. */
+
+/*	DEBUG(misc, 0, "%i %i %i", (v->current_order.HasDeparture() ? v->current_order.GetDeparture() : -1), 
+				  AddToDate(v->current_order.GetDeparture(), v->timetable_offset), _date);*/
+
+	/* If the departure time of the timetable is not yet reached, keep it in the order */
+/*	if (v->current_order.HasDeparture() && AddToDate(v->current_order.GetDeparture(), v->timetable_offset) > _date) {
+		DEBUG(misc, 9, "Keeping train in depot because of timetable.");
+		return true;
 	}
+*/
 
 	/* if the train got no power, then keep it in the depot */
 	if (v->gcache.cached_power == 0) {
@@ -2822,6 +2837,11 @@ int Train::UpdateSpeed()
  */
 static void TrainEnterStation(Train *v, StationID station)
 {
+	if (v->current_order.IsStationOrder() && v->current_order.GetDestination() == station) {
+		v->lateness_counter = (v->current_order.HasArrival() ? _date - AddToDate(v->current_order.GetArrival(), v->timetable_offset) : 0);
+		DEBUG(misc, 9, "TrainEnterStation updates lateness counter to %i", v->lateness_counter);
+	}
+
 	v->last_station_visited = station;
 
 	/* check if a train ever visited this station before */
