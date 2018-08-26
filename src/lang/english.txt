@@ -3960,6 +3960,17 @@ STR_TIMETABLE_ORDER_VIEW_TOOLTIP                                :{BLACK}Switch t
 
 STR_TIMETABLE_TOOLTIP                                           :{BLACK}Timetable - click on an order to highlight it
 
+STR_TIMETABLE_SHIFT_BY_LENGTH_PAST_BUTTON                       :{BLACK}<
+STR_TIMETABLE_SHIFT_BY_LENGTH_PAST_TOOLTIP                      :{BLACK}Shift the timetable of *this* vehicle to the past by its length
+STR_TIMETABLE_SHIFT_BY_LENGTH_FUTURE_BUTTON                     :{BLACK}>
+STR_TIMETABLE_SHIFT_BY_LENGTH_FUTURE_TOOLTIP                    :{BLACK}Shift the timetable of *this* vehicle to the future by its length
+STR_TIMETABLE_FULL_FILTER_BUTTON                                :{BLACK}Full
+STR_TIMETABLE_FULL_FILTER_TOOLTIP                               :{BLACK}If pressed, both order and timetable information is shown.
+STR_TIMETABLE_DEST_FILTER_BUTTON                                :{BLACK}Dest
+STR_TIMETABLE_DEST_FILTER_TOOLTIP                               :{BLACK}If pressed, the go-to destination lines are shown.
+STR_TIMETABLE_TIMETABLE_FILTER_BUTTON                           :{BLACK}Time
+STR_TIMETABLE_TIMETABLE_FILTER_TOOLTIP                          :{BLACK}If pressed, the timetable lines are shown in a tabular form.
+
 STR_TIMETABLE_NO_TRAVEL                                         :No travel
 STR_TIMETABLE_NOT_TIMETABLEABLE                                 :Travel (automatic; timetabled by next manual order)
 STR_TIMETABLE_TRAVEL_NOT_TIMETABLED                             :Travel (not timetabled)
@@ -3983,6 +3994,30 @@ STR_TIMETABLE_STATUS_LATE                                       :{BLACK}This veh
 STR_TIMETABLE_STATUS_EARLY                                      :{BLACK}This vehicle is currently running {STRING1} early
 STR_TIMETABLE_STATUS_NOT_STARTED                                :{BLACK}This timetable has not yet started
 STR_TIMETABLE_STATUS_START_AT                                   :{BLACK}This timetable will start at {STRING1}
+
+STR_TIMETABLE_DEPARTURE_BUTTON_CAPTION                          :{BLACK}Departure
+STR_TIMETABLE_DEPARTURE_BUTTON_TOOLTIP                          :{BLACK}Set the departure date of the vehicle at the station of the previous line
+STR_TIMETABLE_START_BUTTON_CAPTION                              :{BLACK}Timetable Start
+STR_TIMETABLE_START_BUTTON_TOOLTIP                              :{BLACK}Set the start date of the timetable.
+STR_TIMETABLE_OFFSET_BUTTON_CAPTION                             :{BLACK}Offset
+STR_TIMETABLE_OFFSET_BUTTON_TOOLTIP                             :{BLACK}Set the offset of this vehicle relative to the timetable
+STR_TIMETABLE_SPEEDLIMIT_BUTTON_CAPTION                         :{BLACK}Speed Limit
+STR_TIMETABLE_SPEEDLIMIT_BUTTON_TOOLTIP                         :{BLACK}Set the speedlimit for the order
+STR_TIMETABLE_LENGTH_BUTTON_CAPTION                             :{BLACK}Length
+STR_TIMETABLE_LENGTH_BUTTON_TOOLTIP                             :{BLACK}Set the length of the timetable
+STR_TIMETABLE_ARRIVAL_BUTTON_CAPTION                            :{BLACK}Arrival
+STR_TIMETABLE_ARRIVAL_BUTTON_TOOLTIP                            :{BLACK}Set the arrival date of the vehicle at the station of the previous line
+STR_TIMETABLE_RENAME_BUTTON_CAPTION                             :{BLACK}Rename
+STR_TIMETABLE_RENAME_BUTTON_TOOLTIP                             :{BLACK}Rename the timetable
+STR_TIMETABLE_SHIFT_ORDERS_PAST_BUTTON_CAPTION                  :{BLACK}<<
+STR_TIMETABLE_SHIFT_ORDERS_PAST_BUTTON_TOOLTIP                  :{BLACK}Shift (parts of) the timetable into the past by a specified amount of time.  Choose first departure / last arrival by mouse click (Ctrl + click for first arrival / last departure)
+STR_TIMETABLE_SHIFT_ORDERS_FUTURE_BUTTON_CAPTION                :{BLACK}>>
+STR_TIMETABLE_SHIFT_ORDERS_FUTURE_BUTTON_TOOLTIP                :{BLACK}Shift (parts of) the timetable into the future by a specified amount of time. Choose first departure / last arrival by mouse click (Ctrl + click for first arrival / last departure)
+STR_TIMETABLE_START_AUTOFILL_DROPDOWN_CAPTION                   :Autofill Orders
+STR_TIMETABLE_START_AUTOFILL_WITH_METADATA                      :Autofill Start, Length and Orders
+STR_TIMETABLE_START_AUTOFILL_DROPDOWN_TOOLTIP                   :{BLACK}Start autofilling the timetable.  Either just autofill arrivals and departures of the orders, or additionally also set start and length of the timetable.
+STR_TIMETABLE_STOP_AUTOFILL_BUTTON_CAPTION                      :{BLACK}Stop Autofill
+STR_TIMETABLE_STOP_AUTOFILL_BUTTON_TOOLTIP                      :{BLACK}Stop autofilling the timetable.
 
 STR_TIMETABLE_STARTING_DATE                                     :{BLACK}Start date
 STR_TIMETABLE_STARTING_DATE_TOOLTIP                             :{BLACK}Select a date as starting point of this timetable. Ctrl+Click sets the starting point of this timetable and distributes all vehicles sharing this order evenly based on their relative order, if the order is completely timetabled

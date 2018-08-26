@@ -136,18 +136,6 @@ static void FillTimetableArrivalDepartureTable(const Vehicle *v, VehicleOrderID 
 	}
 }
 
-
-/**
- * Callback for when a time has been chosen to start the time table
- * @param window the window related to the setting of the date
- * @param date the actually chosen date
- */
-static void ChangeTimetableStartCallback(const Window *w, Date date)
-{
-	DoCommandP(0, w->window_number, date, CMD_SET_TIMETABLE_START | CMD_MSG(STR_ERROR_CAN_T_TIMETABLE_VEHICLE));
-}
-
-
 struct TimetableWindow : Window {
 	int sel_index;
 	const Vehicle *vehicle; ///< Vehicle monitored by the window.
@@ -165,7 +153,6 @@ struct TimetableWindow : Window {
 	{
 		this->CreateNestedTree();
 		this->vscroll = this->GetScrollbar(WID_VT_SCROLLBAR);
-		this->UpdateSelectionStates();
 		this->FinishInitNested(window_number);
 
 		this->owner = this->vehicle->owner;
@@ -192,14 +179,6 @@ struct TimetableWindow : Window {
 	virtual void UpdateWidgetSize(int widget, Dimension *size, const Dimension &padding, Dimension *fill, Dimension *resize)
 	{
 		switch (widget) {
-			case WID_VT_ARRIVAL_DEPARTURE_PANEL:
-				SetDParamMaxValue(0, MAX_YEAR * DAYS_IN_YEAR, 0, FS_SMALL);
-				this->deparr_time_width = GetStringBoundingBox(STR_JUST_DATE_TINY).width;
-				this->deparr_abbr_width = max(GetStringBoundingBox(STR_TIMETABLE_ARRIVAL_ABBREVIATION).width, GetStringBoundingBox(STR_TIMETABLE_DEPARTURE_ABBREVIATION).width);
-				size->width = WD_FRAMERECT_LEFT + this->deparr_abbr_width + 10 + this->deparr_time_width + WD_FRAMERECT_RIGHT;
-				FALLTHROUGH;
-
-			case WID_VT_ARRIVAL_DEPARTURE_SELECTION:
 			case WID_VT_TIMETABLE_PANEL:
 				resize->height = FONT_HEIGHT_NORMAL;
 				size->height = WD_FRAMERECT_TOP + 8 * resize->height + WD_FRAMERECT_BOTTOM;
@@ -245,7 +224,6 @@ struct TimetableWindow : Window {
 
 			case VIWD_MODIFY_ORDERS:
 				if (!gui_scope) break;
-				this->UpdateSelectionStates();
 				this->ReInit();
 				break;
 
@@ -314,29 +292,10 @@ struct TimetableWindow : Window {
 					disable = order == NULL || ((!order->IsType(OT_GOTO_STATION) || (order->GetNonStopType() & ONSF_NO_STOP_AT_DESTINATION_STATION)) && !order->IsType(OT_CONDITIONAL));
 				}
 			}
-			bool disable_speed = disable || selected % 2 != 1 || v->type == VEH_AIRCRAFT;
-
-			this->SetWidgetDisabledState(WID_VT_CHANGE_TIME, disable);
-			this->SetWidgetDisabledState(WID_VT_CLEAR_TIME, disable);
-			this->SetWidgetDisabledState(WID_VT_CHANGE_SPEED, disable_speed);
-			this->SetWidgetDisabledState(WID_VT_CLEAR_SPEED, disable_speed);
 			this->SetWidgetDisabledState(WID_VT_SHARED_ORDER_LIST, !v->IsOrderListShared());
-
-			this->SetWidgetDisabledState(WID_VT_START_DATE, v->orders.list == NULL);
-			this->SetWidgetDisabledState(WID_VT_RESET_LATENESS, v->orders.list == NULL);
-			this->SetWidgetDisabledState(WID_VT_AUTOFILL, v->orders.list == NULL);
 		} else {
-			this->DisableWidget(WID_VT_START_DATE);
-			this->DisableWidget(WID_VT_CHANGE_TIME);
-			this->DisableWidget(WID_VT_CLEAR_TIME);
-			this->DisableWidget(WID_VT_CHANGE_SPEED);
-			this->DisableWidget(WID_VT_CLEAR_SPEED);
-			this->DisableWidget(WID_VT_RESET_LATENESS);
-			this->DisableWidget(WID_VT_AUTOFILL);
 			this->DisableWidget(WID_VT_SHARED_ORDER_LIST);
 		}
-
-		this->SetWidgetLoweredState(WID_VT_AUTOFILL, HasBit(v->vehicle_flags, VF_AUTOFILL_TIMETABLE));
 
 		this->DrawWidgets();
 	}
@@ -345,7 +304,6 @@ struct TimetableWindow : Window {
 	{
 		switch (widget) {
 			case WID_VT_CAPTION: SetDParam(0, this->vehicle->index); break;
-			case WID_VT_EXPECTED: SetDParam(0, this->show_expected ? STR_TIMETABLE_EXPECTED : STR_TIMETABLE_SCHEDULED); break;
 		}
 	}
 
@@ -419,59 +377,6 @@ struct TimetableWindow : Window {
 				break;
 			}
 
-			case WID_VT_ARRIVAL_DEPARTURE_PANEL: {
-				/* Arrival and departure times are handled in an all-or-nothing approach,
-				 * i.e. are only shown if we can calculate all times.
-				 * Excluding order lists with only one order makes some things easier.
-				 */
-				Ticks total_time = v->orders.list != NULL ? v->orders.list->GetTimetableDurationIncomplete() : 0;
-				if (total_time <= 0 || v->GetNumOrders() <= 1 || !HasBit(v->vehicle_flags, VF_TIMETABLE_STARTED)) break;
-
-				TimetableArrivalDeparture *arr_dep = AllocaM(TimetableArrivalDeparture, v->GetNumOrders());
-				const VehicleOrderID cur_order = v->cur_real_order_index % v->GetNumOrders();
-
-				VehicleOrderID earlyID = BuildArrivalDepartureList(v, arr_dep) ? cur_order : (VehicleOrderID)INVALID_VEH_ORDER_ID;
-
-				int y = r.top + WD_FRAMERECT_TOP;
-
-				bool show_late = this->show_expected && v->lateness_counter > DAY_TICKS;
-				Ticks offset = show_late ? 0 : -v->lateness_counter;
-
-				bool rtl = _current_text_dir == TD_RTL;
-				int abbr_left  = rtl ? r.right - WD_FRAMERECT_RIGHT - this->deparr_abbr_width : r.left + WD_FRAMERECT_LEFT;
-				int abbr_right = rtl ? r.right - WD_FRAMERECT_RIGHT : r.left + WD_FRAMERECT_LEFT + this->deparr_abbr_width;
-				int time_left  = rtl ? r.left + WD_FRAMERECT_LEFT : r.right - WD_FRAMERECT_RIGHT - this->deparr_time_width;
-				int time_right = rtl ? r.left + WD_FRAMERECT_LEFT + this->deparr_time_width : r.right - WD_FRAMERECT_RIGHT;
-
-				for (int i = this->vscroll->GetPosition(); i / 2 < v->GetNumOrders(); ++i) { // note: i is also incremented in the loop
-					/* Don't draw anything if it extends past the end of the window. */
-					if (!this->vscroll->IsVisible(i)) break;
-
-					if (i % 2 == 0) {
-						if (arr_dep[i / 2].arrival != INVALID_TICKS) {
-							DrawString(abbr_left, abbr_right, y, STR_TIMETABLE_ARRIVAL_ABBREVIATION, i == selected ? TC_WHITE : TC_BLACK);
-							if (this->show_expected && i / 2 == earlyID) {
-								SetDParam(0, _date + arr_dep[i / 2].arrival / DAY_TICKS);
-								DrawString(time_left, time_right, y, STR_JUST_DATE_TINY, TC_GREEN);
-							} else {
-								SetDParam(0, _date + (arr_dep[i / 2].arrival + offset) / DAY_TICKS);
-								DrawString(time_left, time_right, y, STR_JUST_DATE_TINY,
-										show_late ? TC_RED : i == selected ? TC_WHITE : TC_BLACK);
-							}
-						}
-					} else {
-						if (arr_dep[i / 2].departure != INVALID_TICKS) {
-							DrawString(abbr_left, abbr_right, y, STR_TIMETABLE_DEPARTURE_ABBREVIATION, i == selected ? TC_WHITE : TC_BLACK);
-							SetDParam(0, _date + (arr_dep[i/2].departure + offset) / DAY_TICKS);
-							DrawString(time_left, time_right, y, STR_JUST_DATE_TINY,
-									show_late ? TC_RED : i == selected ? TC_WHITE : TC_BLACK);
-						}
-					}
-					y += FONT_HEIGHT_NORMAL;
-				}
-				break;
-			}
-
 			case WID_VT_SUMMARY_PANEL: {
 				int y = r.top + WD_FRAMERECT_TOP;
 
@@ -530,82 +435,6 @@ struct TimetableWindow : Window {
 				break;
 			}
 
-			case WID_VT_START_DATE: // Change the date that the timetable starts.
-				ShowSetDateWindow(this, v->index | (v->orders.list->IsCompleteTimetable() && _ctrl_pressed ? 1U << 20 : 0), _date, _cur_year, _cur_year + 15, ChangeTimetableStartCallback);
-				break;
-
-			case WID_VT_CHANGE_TIME: { // "Wait For" button.
-				int selected = this->sel_index;
-				VehicleOrderID real = (selected + 1) / 2;
-
-				if (real >= v->GetNumOrders()) real = 0;
-
-				const Order *order = v->GetOrder(real);
-				StringID current = STR_EMPTY;
-
-				if (order != NULL) {
-					uint time = (selected % 2 == 1) ? order->GetTravelTime() : order->GetWaitTime();
-					if (!_settings_client.gui.timetable_in_ticks) time /= DAY_TICKS;
-
-					if (time != 0) {
-						SetDParam(0, time);
-						current = STR_JUST_INT;
-					}
-				}
-
-				this->query_is_speed_query = false;
-				ShowQueryString(current, STR_TIMETABLE_CHANGE_TIME, 31, this, CS_NUMERAL, QSF_ACCEPT_UNCHANGED);
-				break;
-			}
-
-			case WID_VT_CHANGE_SPEED: { // Change max speed button.
-				int selected = this->sel_index;
-				VehicleOrderID real = (selected + 1) / 2;
-
-				if (real >= v->GetNumOrders()) real = 0;
-
-				StringID current = STR_EMPTY;
-				const Order *order = v->GetOrder(real);
-				if (order != NULL) {
-					if (order->GetMaxSpeed() != UINT16_MAX) {
-						SetDParam(0, ConvertKmhishSpeedToDisplaySpeed(order->GetMaxSpeed()));
-						current = STR_JUST_INT;
-					}
-				}
-
-				this->query_is_speed_query = true;
-				ShowQueryString(current, STR_TIMETABLE_CHANGE_SPEED, 31, this, CS_NUMERAL, QSF_NONE);
-				break;
-			}
-
-			case WID_VT_CLEAR_TIME: { // Clear waiting time.
-				uint32 p1 = PackTimetableArgs(v, this->sel_index, false);
-				DoCommandP(0, p1, 0, CMD_CHANGE_TIMETABLE | CMD_MSG(STR_ERROR_CAN_T_TIMETABLE_VEHICLE));
-				break;
-			}
-
-			case WID_VT_CLEAR_SPEED: { // Clear max speed button.
-				uint32 p1 = PackTimetableArgs(v, this->sel_index, true);
-				DoCommandP(0, p1, UINT16_MAX, CMD_CHANGE_TIMETABLE | CMD_MSG(STR_ERROR_CAN_T_TIMETABLE_VEHICLE));
-				break;
-			}
-
-			case WID_VT_RESET_LATENESS: // Reset the vehicle's late counter.
-				DoCommandP(0, v->index, 0, CMD_SET_VEHICLE_ON_TIME | CMD_MSG(STR_ERROR_CAN_T_TIMETABLE_VEHICLE));
-				break;
-
-			case WID_VT_AUTOFILL: { // Autofill the timetable.
-				uint32 p2 = 0;
-				if (!HasBit(v->vehicle_flags, VF_AUTOFILL_TIMETABLE)) SetBit(p2, 0);
-				if (_ctrl_pressed) SetBit(p2, 1);
-				DoCommandP(0, v->index, p2, CMD_AUTOFILL_TIMETABLE | CMD_MSG(STR_ERROR_CAN_T_TIMETABLE_VEHICLE));
-				break;
-			}
-
-			case WID_VT_EXPECTED:
-				this->show_expected = !this->show_expected;
-				break;
-
 			case WID_VT_SHARED_ORDER_LIST:
 				ShowVehicleListWindow(v);
 				break;
@@ -639,15 +468,6 @@ struct TimetableWindow : Window {
 		/* Update the scroll bar */
 		this->vscroll->SetCapacityFromWidget(this, WID_VT_TIMETABLE_PANEL, WD_FRAMERECT_TOP + WD_FRAMERECT_BOTTOM);
 	}
-
-	/**
-	 * Update the selection state of the arrival/departure data
-	 */
-	void UpdateSelectionStates()
-	{
-		this->GetWidget<NWidgetStacked>(WID_VT_ARRIVAL_DEPARTURE_SELECTION)->SetDisplayedPlane(_settings_client.gui.timetable_arrival_departure ? 0 : SZSP_NONE);
-		this->GetWidget<NWidgetStacked>(WID_VT_EXPECTED_SELECTION)->SetDisplayedPlane(_settings_client.gui.timetable_arrival_departure ? 0 : 1);
-	}
 };
 
 static const NWidgetPart _nested_timetable_widgets[] = {
@@ -659,39 +479,119 @@ static const NWidgetPart _nested_timetable_widgets[] = {
 		NWidget(WWT_DEFSIZEBOX, COLOUR_GREY),
 		NWidget(WWT_STICKYBOX, COLOUR_GREY),
 	EndContainer(),
-	NWidget(NWID_HORIZONTAL),
-		NWidget(WWT_PANEL, COLOUR_GREY, WID_VT_TIMETABLE_PANEL), SetMinimalSize(388, 82), SetResize(1, 10), SetDataTip(STR_NULL, STR_TIMETABLE_TOOLTIP), SetScrollbar(WID_VT_SCROLLBAR), EndContainer(),
-		NWidget(NWID_SELECTION, INVALID_COLOUR, WID_VT_ARRIVAL_DEPARTURE_SELECTION),
-			NWidget(WWT_PANEL, COLOUR_GREY, WID_VT_ARRIVAL_DEPARTURE_PANEL), SetMinimalSize(110, 0), SetFill(0, 1), SetDataTip(STR_NULL, STR_TIMETABLE_TOOLTIP), SetScrollbar(WID_VT_SCROLLBAR), EndContainer(),
+	NWidget(NWID_VERTICAL),
+		NWidget(NWID_HORIZONTAL),
+			NWidget(WWT_PANEL, COLOUR_GREY, WID_VT_SUMMARY_PANEL), SetResize(1, 0),
+			EndContainer(),
+			NWidget(NWID_VERTICAL, NC_EQUALSIZE),
+				NWidget(WWT_PUSHTXTBTN, COLOUR_GREY, WID_VT_SHIFT_BY_LENGTH_PAST_BUTTON), SetResize(0, 0), SetMinimalSize(28, 12),
+														SetDataTip(STR_TIMETABLE_SHIFT_BY_LENGTH_PAST_BUTTON, STR_TIMETABLE_SHIFT_BY_LENGTH_PAST_TOOLTIP),
+				NWidget(WWT_PUSHTXTBTN, COLOUR_GREY, WID_VT_SHIFT_BY_LENGTH_FUTURE_BUTTON), SetResize(0, 0), SetMinimalSize(28, 12),
+														SetDataTip(STR_TIMETABLE_SHIFT_BY_LENGTH_FUTURE_BUTTON, STR_TIMETABLE_SHIFT_BY_LENGTH_FUTURE_TOOLTIP),
+			EndContainer(),
+			NWidget(WWT_TEXTBTN, COLOUR_GREY, WID_VT_FULL_FILTER_BUTTON),
+					SetResize(0, 0), SetMinimalSize(28, 24), SetDataTip(STR_TIMETABLE_FULL_FILTER_BUTTON, STR_TIMETABLE_FULL_FILTER_TOOLTIP),
+			NWidget(NWID_VERTICAL, NC_EQUALSIZE),
+				NWidget(WWT_TEXTBTN, COLOUR_GREY, WID_VT_DESTINATION_FILTER_BUTTON),
+						SetResize(0, 0), SetMinimalSize(28, 12), SetDataTip(STR_TIMETABLE_DEST_FILTER_BUTTON, STR_TIMETABLE_DEST_FILTER_TOOLTIP),
+				NWidget(WWT_TEXTBTN, COLOUR_GREY, WID_VT_TIMETABLE_FILTER_BUTTON),
+						SetResize(0, 0), SetMinimalSize(28, 12), SetDataTip(STR_TIMETABLE_TIMETABLE_FILTER_BUTTON, STR_TIMETABLE_TIMETABLE_FILTER_TOOLTIP),
+			EndContainer(),
 		EndContainer(),
-		NWidget(NWID_VSCROLLBAR, COLOUR_GREY, WID_VT_SCROLLBAR),
-	EndContainer(),
-	NWidget(WWT_PANEL, COLOUR_GREY, WID_VT_SUMMARY_PANEL), SetMinimalSize(400, 22), SetResize(1, 0), EndContainer(),
-	NWidget(NWID_HORIZONTAL),
-		NWidget(NWID_HORIZONTAL, NC_EQUALSIZE),
-			NWidget(NWID_VERTICAL, NC_EQUALSIZE),
-				NWidget(WWT_PUSHTXTBTN, COLOUR_GREY, WID_VT_CHANGE_TIME), SetResize(1, 0), SetFill(1, 1), SetDataTip(STR_TIMETABLE_CHANGE_TIME, STR_TIMETABLE_WAIT_TIME_TOOLTIP),
-				NWidget(WWT_PUSHTXTBTN, COLOUR_GREY, WID_VT_CLEAR_TIME), SetResize(1, 0), SetFill(1, 1), SetDataTip(STR_TIMETABLE_CLEAR_TIME, STR_TIMETABLE_CLEAR_TIME_TOOLTIP),
-			EndContainer(),
-			NWidget(NWID_VERTICAL, NC_EQUALSIZE),
-				NWidget(WWT_PUSHTXTBTN, COLOUR_GREY, WID_VT_CHANGE_SPEED), SetResize(1, 0), SetFill(1, 1), SetDataTip(STR_TIMETABLE_CHANGE_SPEED, STR_TIMETABLE_CHANGE_SPEED_TOOLTIP),
-				NWidget(WWT_PUSHTXTBTN, COLOUR_GREY, WID_VT_CLEAR_SPEED), SetResize(1, 0), SetFill(1, 1), SetDataTip(STR_TIMETABLE_CLEAR_SPEED, STR_TIMETABLE_CLEAR_SPEED_TOOLTIP),
-			EndContainer(),
-			NWidget(NWID_VERTICAL, NC_EQUALSIZE),
-				NWidget(WWT_PUSHTXTBTN, COLOUR_GREY, WID_VT_START_DATE), SetResize(1, 0), SetFill(1, 1), SetDataTip(STR_TIMETABLE_STARTING_DATE, STR_TIMETABLE_STARTING_DATE_TOOLTIP),
-				NWidget(WWT_PUSHTXTBTN, COLOUR_GREY, WID_VT_RESET_LATENESS), SetResize(1, 0), SetFill(1, 1), SetDataTip(STR_TIMETABLE_RESET_LATENESS, STR_TIMETABLE_RESET_LATENESS_TOOLTIP),
-			EndContainer(),
-			NWidget(NWID_VERTICAL, NC_EQUALSIZE),
-				NWidget(WWT_PUSHTXTBTN, COLOUR_GREY, WID_VT_AUTOFILL), SetResize(1, 0), SetFill(1, 1), SetDataTip(STR_TIMETABLE_AUTOFILL, STR_TIMETABLE_AUTOFILL_TOOLTIP),
-				NWidget(NWID_SELECTION, INVALID_COLOUR, WID_VT_EXPECTED_SELECTION),
-					NWidget(WWT_PUSHTXTBTN, COLOUR_GREY, WID_VT_EXPECTED), SetResize(1, 0), SetFill(1, 1), SetDataTip(STR_BLACK_STRING, STR_TIMETABLE_EXPECTED_TOOLTIP),
-					NWidget(WWT_PANEL, COLOUR_GREY), SetResize(1, 0), SetFill(1, 1), EndContainer(),
-				EndContainer(),
-			EndContainer(),
+		NWidget(NWID_HORIZONTAL),
+			NWidget(WWT_PANEL, COLOUR_GREY, WID_VT_TIMETABLE_PANEL), SetResize(1, 10), SetDataTip(STR_NULL, STR_TIMETABLE_TOOLTIP), SetScrollbar(WID_VT_SCROLLBAR), EndContainer(),
+			NWidget(NWID_VSCROLLBAR, COLOUR_GREY, WID_VT_SCROLLBAR),
 		EndContainer(),
 		NWidget(NWID_VERTICAL, NC_EQUALSIZE),
-			NWidget(WWT_PUSHIMGBTN, COLOUR_GREY, WID_VT_SHARED_ORDER_LIST), SetFill(0, 1), SetDataTip(SPR_SHARED_ORDERS_ICON, STR_ORDERS_VEH_WITH_SHARED_ORDERS_LIST_TOOLTIP),
-			NWidget(WWT_RESIZEBOX, COLOUR_GREY), SetFill(0, 1),
+			NWidget(NWID_HORIZONTAL),
+				NWidget(NWID_SELECTION, INVALID_COLOUR, WID_VT_TOP_SELECTION),
+					NWidget(NWID_HORIZONTAL), // property line
+						NWidget(WWT_PUSHTXTBTN, COLOUR_GREY, WID_VT_START_BUTTON), SetResize(1, 0), SetFill(1, 1),
+							SetDataTip(STR_TIMETABLE_START_BUTTON_CAPTION, STR_TIMETABLE_START_BUTTON_TOOLTIP),
+						NWidget(WWT_PUSHTXTBTN, COLOUR_GREY, WID_VT_OFFSET_BUTTON), SetFill(1, 0),
+							SetDataTip(STR_TIMETABLE_OFFSET_BUTTON_CAPTION, STR_TIMETABLE_OFFSET_BUTTON_TOOLTIP), SetResize(1, 0),
+						NWidget(WWT_PUSHTXTBTN, COLOUR_GREY, WID_VT_LENGTH_BUTTON), SetResize(1, 0), SetFill(1, 1),
+							SetDataTip(STR_TIMETABLE_LENGTH_BUTTON_CAPTION, STR_TIMETABLE_LENGTH_BUTTON_TOOLTIP),
+						NWidget(WWT_PUSHTXTBTN, COLOUR_GREY, WID_VT_SHIFT_ORDERS_PAST_BUTTON), SetResize(1, 0), SetFill(1, 1),
+							SetDataTip(STR_TIMETABLE_SHIFT_ORDERS_PAST_BUTTON_CAPTION, STR_TIMETABLE_SHIFT_ORDERS_PAST_BUTTON_TOOLTIP),
+						NWidget(WWT_PUSHTXTBTN, COLOUR_GREY, WID_VT_SHIFT_ORDERS_FUTURE_BUTTON), SetFill(1, 0),
+							SetDataTip(STR_TIMETABLE_SHIFT_ORDERS_FUTURE_BUTTON_CAPTION, STR_TIMETABLE_SHIFT_ORDERS_FUTURE_BUTTON_TOOLTIP), SetResize(1, 0),
+						NWidget(WWT_PUSHTXTBTN, COLOUR_GREY, WID_VT_RENAME_BUTTON), SetResize(1, 0), SetFill(1, 1),
+							SetDataTip(STR_TIMETABLE_RENAME_BUTTON_CAPTION, STR_TIMETABLE_RENAME_BUTTON_TOOLTIP),
+					EndContainer(),
+					NWidget(NWID_HORIZONTAL), // vehicle interval line
+						NWidget(NWID_SELECTION, INVALID_COLOUR, WID_VT_AUTOFILL_SELECTION),
+							NWidget(NWID_BUTTON_DROPDOWN, COLOUR_GREY, WID_VT_START_AUTOFILL_DROPDOWN), SetFill(1, 1),
+								SetDataTip(STR_TIMETABLE_START_AUTOFILL_DROPDOWN_CAPTION, STR_TIMETABLE_START_AUTOFILL_DROPDOWN_TOOLTIP), SetResize(1, 0),
+							NWidget(WWT_PUSHTXTBTN, COLOUR_GREY, WID_VT_STOP_AUTOFILL_BUTTON), SetResize(1, 0), SetFill(1, 1),
+								SetDataTip(STR_TIMETABLE_STOP_AUTOFILL_BUTTON_CAPTION, STR_TIMETABLE_STOP_AUTOFILL_BUTTON_TOOLTIP),
+							NWidget(WWT_PANEL, COLOUR_GREY, WID_VT_AUTOFILL_INFO_PANEL), SetResize(1, 0), EndContainer(),
+						EndContainer(),
+					EndContainer(),				
+					NWidget(NWID_HORIZONTAL), // destination line, case conditional order
+						NWidget(WWT_DROPDOWN, COLOUR_GREY, WID_VT_COND_VARIABLE_DROPDOWN), SetFill(1, 0),
+							SetDataTip(STR_NULL, STR_ORDER_CONDITIONAL_VARIABLE_TOOLTIP), SetResize(1, 0),
+						NWidget(WWT_DROPDOWN, COLOUR_GREY, WID_VT_COND_COMPARATOR_DROPDOWN), SetFill(1, 0),
+							SetDataTip(STR_NULL, STR_ORDER_CONDITIONAL_COMPARATOR_TOOLTIP), SetResize(1, 0),
+						NWidget(WWT_PUSHTXTBTN, COLOUR_GREY, WID_VT_COND_VALUE_BUTTON), SetFill(1, 0),
+							SetDataTip(STR_BLACK_COMMA, STR_ORDER_CONDITIONAL_VALUE_TOOLTIP), SetResize(1, 0),
+						NWidget(WWT_PANEL, COLOUR_GREY), SetFill(1, 0), SetResize(1, 0), EndContainer(),
+					EndContainer(),
+					NWidget(NWID_HORIZONTAL), // destination line, case station
+						NWidget(NWID_BUTTON_DROPDOWN, COLOUR_GREY, WID_VT_NON_STOP_STATION_DROPDOWN), SetFill(1, 0),
+							SetDataTip(STR_ORDER_NON_STOP, STR_ORDER_TOOLTIP_NON_STOP), SetResize(1, 0),
+						NWidget(NWID_BUTTON_DROPDOWN, COLOUR_GREY, WID_VT_FULL_LOAD_DROPDOWN), SetFill(1, 0),
+							SetDataTip(STR_ORDER_TOGGLE_FULL_LOAD, STR_ORDER_TOOLTIP_FULL_LOAD), SetResize(1, 0),
+						NWidget(NWID_BUTTON_DROPDOWN, COLOUR_GREY, WID_VT_UNLOAD_DROPDOWN), SetFill(1, 0),
+							SetDataTip(STR_ORDER_TOGGLE_UNLOAD, STR_ORDER_TOOLTIP_UNLOAD), SetResize(1, 0),
+						NWidget(NWID_SELECTION, INVALID_COLOUR, WID_VT_REFIT_SELECTION),
+							NWidget(WWT_PUSHTXTBTN, COLOUR_GREY, WID_VT_REFIT_BUTTON_4), SetFill(1, 0),
+																	SetDataTip(STR_ORDER_REFIT, STR_ORDER_REFIT_TOOLTIP), SetResize(1, 0),
+							NWidget(NWID_BUTTON_DROPDOWN, COLOUR_GREY, WID_VT_REFIT_AUTO_DROPDOWN), SetFill(1, 0),
+																	SetDataTip(STR_ORDER_REFIT_AUTO, STR_ORDER_REFIT_AUTO_TOOLTIP), SetResize(1, 0),
+						EndContainer(),
+					EndContainer(),			
+					NWidget(NWID_HORIZONTAL), // destination line, case waypoint
+						NWidget(NWID_BUTTON_DROPDOWN, COLOUR_GREY, WID_VT_NON_STOP_WAYPOINT_DROPDOWN), SetFill(1, 0),
+							SetDataTip(STR_ORDER_NON_STOP, STR_ORDER_TOOLTIP_NON_STOP), SetResize(1, 0),
+						NWidget(WWT_PANEL, COLOUR_GREY), SetFill(1, 0), SetResize(1, 0), EndContainer(),
+					EndContainer(),				
+					NWidget(NWID_HORIZONTAL), // destination line, case depot
+						NWidget(NWID_BUTTON_DROPDOWN, COLOUR_GREY, WID_VT_NON_STOP_DEPOT_DROPDOWN), SetFill(1, 0),
+							SetDataTip(STR_ORDER_NON_STOP, STR_ORDER_TOOLTIP_NON_STOP), SetResize(1, 0),
+						NWidget(WWT_PUSHTXTBTN, COLOUR_GREY, WID_VT_REFIT_BUTTON), SetFill(1, 0),
+							SetDataTip(STR_ORDER_REFIT, STR_ORDER_REFIT_TOOLTIP), SetResize(1, 0),
+						NWidget(NWID_BUTTON_DROPDOWN, COLOUR_GREY, WID_VT_SERVICE_DROPDOWN), SetFill(1, 0),
+							SetDataTip(STR_ORDER_SERVICE, STR_ORDER_SERVICE_TOOLTIP), SetResize(1, 0),
+					EndContainer(),				
+					NWidget(NWID_HORIZONTAL), // timetable line
+						NWidget(WWT_PUSHTXTBTN, COLOUR_GREY, WID_VT_ARRIVAL_BUTTON), SetResize(1, 0), SetFill(1, 1),
+							SetDataTip(STR_TIMETABLE_ARRIVAL_BUTTON_CAPTION, STR_TIMETABLE_ARRIVAL_BUTTON_TOOLTIP),
+						NWidget(WWT_PUSHTXTBTN, COLOUR_GREY, WID_VT_DEPARTURE_BUTTON), SetResize(1, 0), SetFill(1, 1),
+							SetDataTip(STR_TIMETABLE_DEPARTURE_BUTTON_CAPTION, STR_TIMETABLE_DEPARTURE_BUTTON_TOOLTIP),
+						NWidget(WWT_PUSHTXTBTN, COLOUR_GREY, WID_VT_SPEEDLIMIT_BUTTON), SetResize(1, 0), SetFill(1, 1),
+							SetDataTip(STR_TIMETABLE_SPEEDLIMIT_BUTTON_CAPTION, STR_TIMETABLE_SPEEDLIMIT_BUTTON_TOOLTIP),
+					EndContainer(),				
+					NWidget(NWID_HORIZONTAL), // default line (nothing or end-of-orders selected)
+						NWidget(WWT_PANEL, COLOUR_GREY), SetFill(1, 0), SetResize(1, 0), EndContainer(),
+					EndContainer(),
+				EndContainer(),
+				NWidget(WWT_PUSHIMGBTN, COLOUR_GREY, WID_VT_SHARED_ORDER_LIST), SetFill(0, 1),
+					SetDataTip(SPR_SHARED_ORDERS_ICON, STR_ORDERS_VEH_WITH_SHARED_ORDERS_LIST_TOOLTIP),
+			EndContainer(),
+			NWidget(NWID_HORIZONTAL),
+				NWidget(WWT_PUSHTXTBTN, COLOUR_GREY, WID_VT_SKIP_ORDER_BUTTON), SetFill(1, 0),
+										SetDataTip(STR_ORDERS_SKIP_BUTTON, STR_ORDERS_SKIP_TOOLTIP), SetResize(1, 0),
+				NWidget(NWID_SELECTION, INVALID_COLOUR, WID_VT_SELECTION_BOTTOM_2),
+					NWidget(WWT_PUSHTXTBTN, COLOUR_GREY, WID_VT_DELETE_ORDER_BUTTON), SetFill(1, 0),
+										SetDataTip(STR_ORDERS_DELETE_BUTTON, STR_ORDERS_DELETE_TOOLTIP), SetResize(1, 0),
+					NWidget(WWT_PUSHTXTBTN, COLOUR_GREY, WID_VT_STOP_SHARING_BUTTON), SetFill(1, 0),
+										SetDataTip(STR_ORDERS_STOP_SHARING_BUTTON, STR_ORDERS_STOP_SHARING_TOOLTIP), SetResize(1, 0),
+				EndContainer(),
+				NWidget(NWID_BUTTON_DROPDOWN, COLOUR_GREY, WID_VT_GOTO_BUTTON), SetFill(1, 0),
+										SetDataTip(STR_ORDERS_GO_TO_BUTTON, STR_ORDERS_GO_TO_TOOLTIP), SetResize(1, 0),
+				NWidget(WWT_RESIZEBOX, COLOUR_GREY),
+			EndContainer(),
 		EndContainer(),
 	EndContainer(),
 };
@@ -713,3 +613,15 @@ void ShowTimetableWindow(const Vehicle *v)
 	DeleteWindowById(WC_VEHICLE_ORDERS, v->index, false);
 	AllocateWindowDescFront<TimetableWindow>(&_timetable_desc, v->index);
 }
+
+/*
+property_line = Start Offset Length Rename Shift_Back Shift_Forward
+vehicle_interval = Autofill 
+destination, cond_order = Cond_Variable Comparator Cond_Value ---
+destination, station = Non_Stop Full_Load Unload Refit
+destination, waypoint = Non_Stop Full_Load Unload Refit
+destination, depot = Non_Stop Refit Service --- 
+time = Arrival --- Speed_Limit Departure
+end = Non_Stop Full_Load Unload Refit
+nothing = Non_Stop Full_Load Unload Refit
+*/
