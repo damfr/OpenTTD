@@ -2224,7 +2224,7 @@ void Vehicle::HandleLoading(bool mode)
 {
 	switch (this->current_order.GetType()) {
 		case OT_LOADING: {
-			uint wait_time = max(this->current_order.GetTimetabledWait() - this->lateness_counter, 0);
+			uint wait_time = 0; // TODO: This code will be transferred into the new concept in the 480 patch
 
 			/* Not the first call for this tick, or still loading */
 			if (mode || !HasBit(this->vehicle_flags, VF_LOADING_FINISHED) || this->current_order_time < wait_time) return;
