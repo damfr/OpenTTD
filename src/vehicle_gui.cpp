@@ -1261,7 +1261,7 @@ static const NWidgetPart _nested_vehicle_list[] = {
 	NWidget(NWID_HORIZONTAL),
 		NWidget(WWT_PUSHTXTBTN, COLOUR_GREY, WID_VL_SORT_ORDER), SetMinimalSize(81, 12), SetFill(0, 1), SetDataTip(STR_BUTTON_SORT_BY, STR_TOOLTIP_SORT_ORDER),
 		NWidget(WWT_DROPDOWN, COLOUR_GREY, WID_VL_SORT_BY_PULLDOWN), SetMinimalSize(167, 12), SetFill(0, 1), SetDataTip(0x0, STR_TOOLTIP_SORT_CRITERIA),
-		NWidget(WWT_PANEL, COLOUR_GREY), SetMinimalSize(12, 12), SetFill(1, 1), SetResize(1, 0),
+		NWidget(WWT_PANEL, COLOUR_GREY, WID_VL_DELAY_PANEL), SetMinimalSize(12, 12), SetFill(1, 1), SetResize(1, 0),
 		EndContainer(),
 	EndContainer(),
 
@@ -1369,12 +1369,16 @@ uint GetVehicleListHeight(VehicleType type, uint divisor)
  */
 void BaseVehicleListWindow::DrawVehicleListItems(VehicleID selected_vehicle, int line_height, const Rect &r) const
 {
+	bool draw_delay_info = true;
+
 	int left = r.left + WD_MATRIX_LEFT;
 	int right = r.right - WD_MATRIX_RIGHT;
 	int width = right - left;
 	bool rtl = _current_text_dir == TD_RTL;
 
-	int text_offset = max<int>(GetSpriteSize(SPR_PROFIT_LOT).width, GetDigitWidth() * this->unitnumber_digits) + WD_FRAMERECT_RIGHT;
+	int digit_width = GetDigitWidth();
+	int delay_offset = (draw_delay_info ? digit_width * 5 : 0);
+	int text_offset = max<int>(GetSpriteSize(SPR_PROFIT_LOT).width, GetDigitWidth() * this->unitnumber_digits + delay_offset + WD_FRAMERECT_RIGHT);
 	int text_left  = left  + (rtl ?           0 : text_offset);
 	int text_right = right - (rtl ? text_offset :           0);
 
@@ -1420,9 +1424,49 @@ void BaseVehicleListWindow::DrawVehicleListItems(VehicleID selected_vehicle, int
 		SetDParam(0, v->unitnumber);
 		DrawString(left, right, y + 2, str);
 
+		if (draw_delay_info && !(v->timetable_offset.IsInvalid() || v->orders.list == NULL || !v->orders.list->HasStartTime() || v->orders.list->GetTimetableDuration().IsInvalid())) {
+			if (v->lateness_counter < 0) {
+				str = STR_DELAY_MARKER_TOO_EARLY;
+			} else if (v->lateness_counter < 5) {
+				str = STR_DELAY_MARKER_ON_TIME;
+			} else {
+				str = STR_DELAY_MARKER_DELAY;
+			}
+			SetDParam(0, v->lateness_counter);
+			DrawString(left + (text_offset - delay_offset), right, y + 2, str);
+		}
+
 		DrawVehicleProfitButton(v, vehicle_button_x, y + FONT_HEIGHT_NORMAL + 3);
 
 		y += line_height;
+	}
+}
+
+void BaseVehicleListWindow::DrawAverageDelay(const Rect &r) const
+{
+	int delay_sum = 0;
+	int number_of_vehicles_with_delay_info = 0;
+	for (unsigned int n = 0; n < this->vehicles.Length(); n++) {
+		const Vehicle *v = this->vehicles[n];
+		if (!(v->timetable_offset.IsInvalid() || v->orders.list == NULL || !v->orders.list->HasStartTime() || v->orders.list->GetTimetableDuration().IsInvalid())) {
+			delay_sum += v->lateness_counter;
+			number_of_vehicles_with_delay_info++;
+		}
+	}
+
+	if (number_of_vehicles_with_delay_info > 0) {
+		int average_delay = delay_sum / number_of_vehicles_with_delay_info;
+
+		StringID str;
+		if (average_delay < 0) {
+			str = STR_VEHICLE_LIST_AVERAGE_DELAY_TOO_EARLY;
+		} else if (average_delay < 5) {
+			str = STR_VEHICLE_LIST_AVERAGE_DELAY_ON_TIME;
+		} else {
+			str = STR_VEHICLE_LIST_AVERAGE_DELAY_DELAY;
+		}
+		SetDParam(0, average_delay);
+		DrawString(r.left + WD_FRAMERECT_LEFT, r.right - WD_FRAMERECT_RIGHT, 15, str);
 	}
 }
 
@@ -1575,6 +1619,9 @@ public:
 
 			case WID_VL_LIST:
 				this->DrawVehicleListItems(INVALID_VEHICLE, this->resize.step_height, r);
+				break;
+			case WID_VL_DELAY_PANEL:
+				this->DrawAverageDelay(r);
 				break;
 		}
 	}

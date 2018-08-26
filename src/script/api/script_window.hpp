@@ -1488,6 +1488,7 @@ public:
 		WID_GL_CAPTION                               = ::WID_GL_CAPTION,                               ///< Caption of the window.
 		WID_GL_SORT_BY_ORDER                         = ::WID_GL_SORT_BY_ORDER,                         ///< Sort order.
 		WID_GL_SORT_BY_DROPDOWN                      = ::WID_GL_SORT_BY_DROPDOWN,                      ///< Sort by dropdown list.
+		WID_GL_DELAY_PANEL                           = ::WID_GL_DELAY_PANEL,                           ///< Average delay information
 		WID_GL_LIST_VEHICLE                          = ::WID_GL_LIST_VEHICLE,                          ///< List of the vehicles.
 		WID_GL_LIST_VEHICLE_SCROLLBAR                = ::WID_GL_LIST_VEHICLE_SCROLLBAR,                ///< Scrollbar for the list.
 		WID_GL_AVAILABLE_VEHICLES                    = ::WID_GL_AVAILABLE_VEHICLES,                    ///< Available vehicles.
@@ -2675,6 +2676,7 @@ public:
 		WID_VL_CAPTION                               = ::WID_VL_CAPTION,                               ///< Caption of window.
 		WID_VL_SORT_ORDER                            = ::WID_VL_SORT_ORDER,                            ///< Sort order.
 		WID_VL_SORT_BY_PULLDOWN                      = ::WID_VL_SORT_BY_PULLDOWN,                      ///< Sort by dropdown list.
+		WID_VL_DELAY_PANEL                           = ::WID_VL_DELAY_PANEL,                           ///< Print delay information
 		WID_VL_LIST                                  = ::WID_VL_LIST,                                  ///< List of the vehicles.
 		WID_VL_SCROLLBAR                             = ::WID_VL_SCROLLBAR,                             ///< Scrollbar for the list.
 		WID_VL_HIDE_BUTTONS                          = ::WID_VL_HIDE_BUTTONS,                          ///< Selection to hide the buttons.
