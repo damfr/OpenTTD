@@ -406,6 +406,10 @@ public:
 		 */
 		WC_SHIPS_LIST                                = ::WC_SHIPS_LIST,
 
+		/** The node timetable window
+         */
+		WC_NODETIMETABLE_WINDOW = ::WC_NODETIMETABLE_WINDOW,
+
 		/**
 		 * Aircraft list; %Window numbers:
 		 *   - Packed value = #GroupListWidgets / #VehicleListWidgets
@@ -1247,6 +1251,7 @@ public:
 		WID_D_LOCATION                               = ::WID_D_LOCATION,                               ///< Location button.
 		WID_D_SHOW_RENAME                            = ::WID_D_SHOW_RENAME,                            ///< Show rename panel.
 		WID_D_RENAME                                 = ::WID_D_RENAME,                                 ///< Rename button.
+		WID_D_TIMETABLE                              = ::WID_D_TIMETABLE,                              ///< Timetable button.
 		WID_D_VEHICLE_LIST                           = ::WID_D_VEHICLE_LIST,                           ///< List of vehicles.
 		WID_D_STOP_ALL                               = ::WID_D_STOP_ALL,                               ///< Stop all button.
 		WID_D_START_ALL                              = ::WID_D_START_ALL,                              ///< Start all button.
@@ -2013,6 +2018,13 @@ public:
 		WID_O_SHARED_ORDER_LIST                      = ::WID_O_SHARED_ORDER_LIST,                      ///< Open list of shared vehicles.
 	};
 
+	/** Widgets of the #NodeTimetableWindow class. */
+	enum NodeTimetableWidgets {
+		WID_NTW_CAPTION                              = ::WID_NTW_CAPTION,                              ///< Caption of the window
+		WID_NTW_TIMETABLE_PANEL                      = ::WID_NTW_TIMETABLE_PANEL,                      ///< The panel where the timetable is displayed
+	};
+
+
 	/* automatically generated from ../../widgets/osk_widget.h */
 	/** Widgets of the #OskWindow class. */
 	enum OnScreenKeyboardWidgets {
@@ -2305,6 +2317,7 @@ public:
 		WID_SV_LOCATION                              = ::WID_SV_LOCATION,                              ///< 'Location' button.
 		WID_SV_ACCEPTS_RATINGS                       = ::WID_SV_ACCEPTS_RATINGS,                       ///< 'Accepts' / 'Ratings' button.
 		WID_SV_RENAME                                = ::WID_SV_RENAME,                                ///< 'Rename' button.
+		WID_SV_TIMETABLE                             = ::WID_SV_TIMETABLE,                             ///< 'Timetable' button.
 		WID_SV_CLOSE_AIRPORT                         = ::WID_SV_CLOSE_AIRPORT,                         ///< 'Close airport' button.
 		WID_SV_TRAINS                                = ::WID_SV_TRAINS,                                ///< List of scheduled trains button.
 		WID_SV_ROADVEHS                              = ::WID_SV_ROADVEHS,                              ///< List of scheduled road vehs button.
@@ -2704,6 +2717,7 @@ public:
 		WID_W_VIEWPORT                               = ::WID_W_VIEWPORT,                               ///< The viewport on this waypoint.
 		WID_W_CENTER_VIEW                            = ::WID_W_CENTER_VIEW,                            ///< Center the main view on this waypoint.
 		WID_W_RENAME                                 = ::WID_W_RENAME,                                 ///< Rename this waypoint.
+		WID_W_TIMETABLE                              = ::WID_W_TIMETABLE,                              ///< Timetable button.
 		WID_W_SHOW_VEHICLES                          = ::WID_W_SHOW_VEHICLES,                          ///< Show the vehicles visiting this waypoint.
 	};
 

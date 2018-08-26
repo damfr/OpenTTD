@@ -29,6 +29,7 @@
 #include "company_base.h"
 #include "sortlist_type.h"
 #include "core/geometry_func.hpp"
+#include "timetable_func.h"
 #include "vehiclelist.h"
 #include "town.h"
 #include "linkgraph/linkgraph.h"
@@ -783,6 +784,8 @@ static const NWidgetPart _nested_station_view_widgets[] = {
 					SetDataTip(STR_STATION_VIEW_RATINGS_BUTTON, STR_STATION_VIEW_RATINGS_TOOLTIP),
 			NWidget(WWT_PUSHTXTBTN, COLOUR_GREY, WID_SV_RENAME), SetMinimalSize(45, 12), SetResize(1, 0), SetFill(1, 1),
 					SetDataTip(STR_BUTTON_RENAME, STR_STATION_VIEW_RENAME_TOOLTIP),
+			NWidget(WWT_PUSHTXTBTN, COLOUR_GREY, WID_SV_TIMETABLE), SetMinimalSize(45, 12), SetResize(1, 0), SetFill(1, 1),
+					SetDataTip(STR_BUTTON_TIMETABLE, STR_STATION_VIEW_TIMETABLE_TOOLTIP),
 		EndContainer(),
 		NWidget(WWT_TEXTBTN, COLOUR_GREY, WID_SV_CLOSE_AIRPORT), SetMinimalSize(45, 12), SetResize(1, 0), SetFill(1, 1),
 				SetDataTip(STR_STATION_VIEW_CLOSE_AIRPORT, STR_STATION_VIEW_CLOSE_AIRPORT_TOOLTIP),
@@ -1913,6 +1916,12 @@ struct StationViewWindow : public Window {
 				ShowQueryString(STR_STATION_NAME, STR_STATION_VIEW_RENAME_STATION_CAPTION, MAX_LENGTH_STATION_NAME_CHARS,
 						this, CS_ALPHANUMERAL, QSF_ENABLE_DEFAULT | QSF_LEN_IN_CHARS);
 				break;
+
+		    case WID_SV_TIMETABLE: {
+				StationID station_id = this->window_number;
+				ShowStationTimetableWindow(station_id, !_ctrl_pressed, _ctrl_pressed);
+				break;
+			}
 
 			case WID_SV_CLOSE_AIRPORT:
 				DoCommandP(0, this->window_number, 0, CMD_OPEN_CLOSE_AIRPORT);

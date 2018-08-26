@@ -7,19 +7,17 @@
  * See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** @file waypoint_widget.h Types related to the waypoint widgets. */
+/** @file timetable_func.h Functions related to the timetable GUIs */
 
-#ifndef WIDGETS_WAYPOINT_WIDGET_H
-#define WIDGETS_WAYPOINT_WIDGET_H
+#ifndef TIMETABLE_FUNC_H
+#define TIMETABLE_FUNC_H
 
-/** Widgets of the #WaypointWindow class. */
-enum WaypointWidgets {
-	WID_W_CAPTION,       ///< Caption of window.
-	WID_W_VIEWPORT,      ///< The viewport on this waypoint.
-	WID_W_CENTER_VIEW,   ///< Center the main view on this waypoint.
-	WID_W_RENAME,        ///< Rename this waypoint.
-	WID_W_TIMETABLE,     ///< Timetable button.
-	WID_W_SHOW_VEHICLES, ///< Show the vehicles visiting this waypoint.
-};
+#include "depot_type.h"
+#include "station_type.h"
+#include "window_type.h"
 
-#endif /* WIDGETS_WAYPOINT_WIDGET_H */
+void ShowStationTimetableWindow(StationID station_id, bool departure, bool arrival);
+void ShowWaypointTimetableWindow(StationID station_id, bool departure, bool arrival);
+void ShowDepotTimetableWindow(DepotID depot_id, bool departure, bool arrival);
+
+#endif /* TIMETABLE_FUNC_H */

@@ -368,6 +368,7 @@ tilehighlight_func.h
 tilehighlight_type.h
 tilematrix_type.hpp
 timetable.h
+timetable_func.h
 toolbar_gui.h
 town.h
 town_type.h
@@ -485,6 +486,7 @@ network/network_gui.cpp
 newgrf_debug_gui.cpp
 newgrf_gui.cpp
 news_gui.cpp
+nodetimetable_gui.cpp
 object_gui.cpp
 order_gui.cpp
 osk_gui.cpp

@@ -75,4 +75,12 @@ enum VehicleTimetableWidgets {
 	WID_VT_GOTO_BUTTON,                 ///< The goto button
 };
 
+/** Widgets of the node timetable window */
+enum NodeTimetableWindowWidgets {
+	WID_NTW_CAPTION,                          ///< Caption of the window
+	WID_NTW_TIMETABLE_PANEL,                  ///< The panel where the timetable is displayed
+	WID_NTW_SCROLLBAR,                        ///< The scrollbar
+	WID_NTW_MODE_BUTTON                       ///< Button for controlling wether the Window is in departure or arrival mode
+};
+
 #endif /* WIDGETS_TIMETABLE_WIDGET_H */
