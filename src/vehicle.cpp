@@ -1538,17 +1538,39 @@ void VehicleEnterDepot(Vehicle *v)
 			}
 		}
 
+		/* Handle the ODTFB_PART_OF_ORDERS case. If there is a departure set, and not yet reached, hold the train in the depot, 
+	     * otherwise skip to the next order.
+		 */
 		if (v->current_order.GetDepotOrderType() & ODTFB_PART_OF_ORDERS) {
-			/* Part of orders */
 			v->DeleteUnreachedImplicitOrders();
+
 			v->current_order_time = 0;
 
-			if (!v->IsAutofilling()) {
-				v->lateness_counter = (v->current_order.HasArrival() ? _date - AddToDate(v->current_order.GetArrival(), v->timetable_offset) : 0);
-			}
-			ProcessAutofillEnterStation(v, true);
+			if (v->IsAutofilling()) {
+				ProcessAutofillEnterStation(v, true);
+			} else {
+				if (v->current_order.HasDeparture() && AddToDate(v->current_order.GetDeparture(), v->timetable_offset) > _date) {
+					/* lateness_counter: vehicle arrived x days too early - record that */
+					v->lateness_counter = (v->current_order.HasArrival() ? _date - AddToDate(v->current_order.GetArrival(), v->timetable_offset) : 0);
 
-			v->IncrementImplicitOrderIndex();
+				    v->current_order.MakeWaiting();
+					v->current_order.SetNonStopType(ONSF_NO_STOP_AT_ANY_STATION);
+					return;
+				} else {
+					/* lateness_counter: Vehicle will (try to) leave immediately, thus calculate lateness based on departure */
+					v->lateness_counter = (v->current_order.HasDeparture() ? _date - AddToDate(v->current_order.GetDeparture(), v->timetable_offset) : 0);
+				}
+			}
+
+			if (v->current_order.HasDeparture() && AddToDate(v->current_order.GetDeparture(), v->timetable_offset) > _date) {
+				v->current_order.MakeWaiting();
+				v->current_order.SetNonStopType(ONSF_NO_STOP_AT_ANY_STATION);
+				return;
+			} else {
+				v->IncrementImplicitOrderIndex();
+			}
+
+
 		}
 		if (v->current_order.GetDepotActionType() & ODATFB_HALT) {
 			/* Vehicles are always stopped on entering depots. Do not restart this one. */
@@ -2470,6 +2492,30 @@ void Vehicle::HandleLoading(bool mode)
 	}
 
 	this->IncrementImplicitOrderIndex();
+}
+
+ /**
+ * Handle the waiting time everywhere else than in stations (in depots, and (if implemented) maybe also elsewhere)
+ * @param stop_waiting should we stop waiting (or definitely avoid) even if there is still time left to wait ?
+ */
+void Vehicle::HandleWaiting(bool stop_waiting)
+{
+	switch (this->current_order.GetType()) {
+		case OT_WAITING: {
+			/* Vehicles holds on until waiting Timetabled time expires. */
+			if (!stop_waiting && this->current_order.HasDeparture() && AddToDate(this->current_order.GetDeparture(), this->timetable_offset) > _date) {
+				return;
+			}
+
+			/* Once the departure isn´t any longer in the future, we move on. */
+			this->lateness_counter = (this->current_order.HasDeparture() ? _date - AddToDate(this->current_order.GetDeparture(), this->timetable_offset) : 0);
+			this->IncrementImplicitOrderIndex();
+			this->current_order.MakeDummy();
+			break;
+		}
+
+		default: return;
+	}
 }
 
 /**

@@ -52,7 +52,7 @@ private:
 public:
 	Order *next;          ///< Pointer to next order. If NULL, end of list
 
-	Order() : arrival(INVALID_DATE), departure(INVALID_DATE), refit_cargo(CT_NO_REFIT), max_speed(UINT16_MAX) {}
+	Order() : refit_cargo(CT_NO_REFIT), max_speed(UINT16_MAX) {}
 	~Order();
 
 	Order(uint32 packed);
@@ -80,6 +80,7 @@ public:
 	void MakeDummy();
 	void MakeConditional(VehicleOrderID order);
 	void MakeImplicit(StationID destination);
+	void MakeWaiting();
 
 	/**
 	 * Is this a 'goto' order with a real destination?
