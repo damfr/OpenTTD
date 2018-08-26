@@ -20,6 +20,7 @@
 #include "string_func.h"
 #include "gfx_func.h"
 #include "company_func.h"
+#include "core/geometry_func.hpp"
 #include "date_func.h"
 #include "date_gui.h"
 #include "vehicle_gui.h"
@@ -32,6 +33,7 @@
 
 #include "widget_type.h"
 #include "widgets/dropdown_func.h"
+#include "widgets/dropdown_type.h"
 #include "widgets/timetable_widget.h"
 
 #include "table/sprites.h"
@@ -41,6 +43,9 @@
 #include "order_gui.h"
 
 #include "safeguards.h"
+
+extern uint ConvertSpeedToDisplaySpeed(uint speed);
+extern uint ConvertDisplaySpeedToSpeed(uint speed);
 
 struct TimetableWindow : Window {
 
@@ -212,6 +217,23 @@ private:
 		selected_timetable_line += n * 2;
 	}
 
+	/** This function calculates the space needed for the largest of the given dropdown items,
+     *  and enlarges the given size to that space if necessary.
+     *  @param dropdown_items pointer to an array of dropdown items, MUST be finished by INVALID_STRING_ID
+     *  @param size initial size
+     *  @param padding padding
+     */
+	void EnlargeSizeForDropdownIfNeeded(const StringID* dropdown_items, Dimension *size, const Dimension &padding)
+	{
+		Dimension d = {0, 0};
+		for (int i = 0; dropdown_items[i] != INVALID_STRING_ID; i++) {
+			d = maxdim(d, GetStringBoundingBox(dropdown_items[i]));
+		}
+		d.width += padding.width;
+		d.height += padding.height;
+		*size = maxdim(*size, d);
+	}
+
 	/**********************************************************************************************************************/
 	/********************************************* Assembling output strings **********************************************/
 	/**********************************************************************************************************************/
@@ -368,6 +390,70 @@ private:
 	}
 
 	/**
+	 * Handle the click on the full load button.
+	 * @param load_type the way to load.
+	 */
+	void ProcessFullLoadClick(int load_type)
+	{
+		VehicleOrderID sel_ord = this->GetSelectedOrderID();
+		const Order *order = this->vehicle->GetOrder(sel_ord);
+
+		if (order == NULL || order->GetLoadType() == load_type) return;
+
+		if (load_type < 0) {
+			load_type = order->GetLoadType() == OLF_LOAD_IF_POSSIBLE ? OLF_FULL_LOAD_ANY : OLF_LOAD_IF_POSSIBLE;
+		}
+		DoCommandP(this->vehicle->tile, this->vehicle->index + (sel_ord << 20), MOF_LOAD | (load_type << 4), CMD_MODIFY_ORDER | CMD_MSG(STR_ERROR_CAN_T_MODIFY_THIS_ORDER));
+	}
+
+	/**
+	 * Handle the click on the unload button.
+	 */
+	void ProcessUnloadClick(int unload_type)
+	{
+		VehicleOrderID sel_ord = this->GetSelectedOrderID();
+		const Order *order = this->vehicle->GetOrder(sel_ord);
+
+		if (order == NULL || order->GetUnloadType() == unload_type) return;
+
+		if (unload_type < 0) {
+			unload_type = order->GetUnloadType() == OUF_UNLOAD_IF_POSSIBLE ? OUFB_UNLOAD : OUF_UNLOAD_IF_POSSIBLE;
+		}
+
+		DoCommandP(this->vehicle->tile, this->vehicle->index + (sel_ord << 20), MOF_UNLOAD | (unload_type << 4), CMD_MODIFY_ORDER | CMD_MSG(STR_ERROR_CAN_T_MODIFY_THIS_ORDER));
+
+		/* Transfer orders with leave empty as default */
+		if (unload_type == OUFB_TRANSFER) {
+			DoCommandP(this->vehicle->tile, this->vehicle->index + (sel_ord << 20), MOF_LOAD | (OLFB_NO_LOAD << 4), CMD_MODIFY_ORDER);
+			this->SetWidgetDirty(WID_VT_FULL_LOAD_DROPDOWN);
+		}
+	}
+
+	/**
+	 * Handle the click on the nonstop button.
+	 * @param non_stop what non-stop type to use; -1 to use the 'next' one.
+	 */
+	void ProcessNonStopClick(int non_stop)
+	{
+		if (!this->vehicle->IsGroundVehicle()) return;
+
+		VehicleOrderID sel_ord = this->GetSelectedOrderID();
+		const Order *order = this->vehicle->GetOrder(sel_ord);
+
+		if (order == NULL || order->GetNonStopType() == non_stop) return;
+
+		/* Keypress if negative, so 'toggle' to the next */
+		if (non_stop < 0) {
+			non_stop = order->GetNonStopType() ^ ONSF_NO_STOP_AT_INTERMEDIATE_STATIONS;
+		}
+
+		this->SetWidgetDirty(WID_VT_NON_STOP_STATION_DROPDOWN);
+		this->SetWidgetDirty(WID_VT_NON_STOP_WAYPOINT_DROPDOWN);
+		this->SetWidgetDirty(WID_VT_NON_STOP_DEPOT_DROPDOWN);
+		DoCommandP(this->vehicle->tile, this->vehicle->index + (sel_ord << 20), MOF_NON_STOP | non_stop << 4,  CMD_MODIFY_ORDER | CMD_MSG(STR_ERROR_CAN_T_MODIFY_THIS_ORDER));
+	}
+
+	/**
 	 * Handle the click on the goto button.
 	 */
 	void ProcessGotoClick()
@@ -396,6 +482,41 @@ private:
 
 		VehicleOrderID order_id = (IsDestinationLineSelected() || IsTimetableLineSelected() ? this->GetSelectedOrderID() : this->vehicle->GetNumOrders());
 		DoCommandP(this->vehicle->tile, this->vehicle->index + (order_id << 20), order.Pack(), CMD_INSERT_ORDER | CMD_MSG(STR_ERROR_CAN_T_INSERT_NEW_ORDER));
+	}
+
+	/**
+	 * Handle the click on the refit button.
+	 * If ctrl is pressed, cancel refitting, else show the refit window.
+	 * @param i Selected refit command.
+	 * @param auto_refit Select refit for auto-refitting.
+	 */
+	void ProcessRefitClick(int i, bool auto_refit)
+	{
+		if (_ctrl_pressed) {
+			/* Cancel refitting */
+			DoCommandP(this->vehicle->tile, this->vehicle->index, (this->GetSelectedOrderID() << 16) | (CT_NO_REFIT << 8) | CT_NO_REFIT, CMD_ORDER_REFIT);
+		} else {
+			if (i == 1) { // Auto-refit to available cargo type.
+				DoCommandP(this->vehicle->tile, this->vehicle->index, (this->GetSelectedOrderID() << 16) | CT_AUTO_REFIT, CMD_ORDER_REFIT);
+			} else {
+				ShowVehicleRefitWindow(this->vehicle, this->GetSelectedOrderID(), this, auto_refit);
+			}
+		}
+	}
+
+	/**
+	 * Handle the click on the service.
+	 */
+	void ProcessServiceClick(int i)
+	{
+		VehicleOrderID sel_ord = this->GetSelectedOrderID();
+
+		if (i < 0) {
+			const Order *order = this->vehicle->GetOrder(sel_ord);
+			if (order == NULL) return;
+			i = (order->GetDepotOrderType() & ODTFB_SERVICE) ? DA_ALWAYS_GO : DA_SERVICE;
+		}
+		DoCommandP(this->vehicle->tile, this->vehicle->index + (sel_ord << 20), MOF_DEPOT_ACTION | (i << 4), CMD_MODIFY_ORDER | CMD_MSG(STR_ERROR_CAN_T_MODIFY_THIS_ORDER));
 	}
 
 	/**
@@ -479,6 +600,36 @@ private:
 	virtual void OnDropdownSelect(int widget, int index)
 	{
 		switch (widget) {
+			case WID_VT_NON_STOP_STATION_DROPDOWN:
+			case WID_VT_NON_STOP_WAYPOINT_DROPDOWN:
+			case WID_VT_NON_STOP_DEPOT_DROPDOWN:
+				this->ProcessNonStopClick(index);
+				break;
+
+			case WID_VT_FULL_LOAD_DROPDOWN:
+				this->ProcessFullLoadClick(index);
+				break;
+
+			case WID_VT_UNLOAD_DROPDOWN:
+				this->ProcessUnloadClick(index);
+				break;
+
+			case WID_VT_COND_VARIABLE_DROPDOWN:
+				DoCommandP(this->vehicle->tile, this->vehicle->index + (this->GetSelectedOrderID() << 20), MOF_COND_VARIABLE | index << 4,  CMD_MODIFY_ORDER | CMD_MSG(STR_ERROR_CAN_T_MODIFY_THIS_ORDER));
+				break;
+
+			case WID_VT_COND_COMPARATOR_DROPDOWN:
+				DoCommandP(this->vehicle->tile, this->vehicle->index + (this->GetSelectedOrderID() << 20), MOF_COND_COMPARATOR | index << 4,  CMD_MODIFY_ORDER | CMD_MSG(STR_ERROR_CAN_T_MODIFY_THIS_ORDER));
+				break;
+
+			case WID_VT_REFIT_AUTO_DROPDOWN:
+				this->ProcessRefitClick(index, true);
+				break;
+
+			case WID_VT_SERVICE_DROPDOWN:
+				this->ProcessServiceClick(index);
+				break;
+
 			case WID_VT_GOTO_BUTTON:
 				switch (index) {
 					case 0: this->ProcessGotoClick(); break;
@@ -515,6 +666,43 @@ public:
 				size->height = WD_FRAMERECT_TOP + 8 * resize->height + WD_FRAMERECT_BOTTOM;
 				break;
 			}
+
+			case WID_VT_COND_VARIABLE_DROPDOWN: {
+				Dimension d = {0, 0};
+				for (uint i = 0; i < lengthof(_order_conditional_variable); i++) {
+					d = maxdim(d, GetStringBoundingBox(STR_ORDER_CONDITIONAL_LOAD_PERCENTAGE + _order_conditional_variable[i]));
+				}
+				d.width += padding.width;
+				d.height += padding.height;
+				*size = maxdim(*size, d);
+				break;
+			}
+
+			case WID_VT_COND_COMPARATOR_DROPDOWN:
+				this->EnlargeSizeForDropdownIfNeeded(_order_conditional_condition, size, padding);
+				break;
+
+			case WID_VT_NON_STOP_STATION_DROPDOWN:
+			case WID_VT_NON_STOP_WAYPOINT_DROPDOWN:
+			case WID_VT_NON_STOP_DEPOT_DROPDOWN:
+				this->EnlargeSizeForDropdownIfNeeded(_order_non_stop_dropdown, size, padding);
+				break;
+
+			case WID_VT_FULL_LOAD_DROPDOWN:
+				this->EnlargeSizeForDropdownIfNeeded(_order_full_load_dropdown, size, padding);
+				break;
+
+			case WID_VT_UNLOAD_DROPDOWN:
+				this->EnlargeSizeForDropdownIfNeeded(_order_unload_dropdown, size, padding);
+				break;
+
+			case WID_VT_REFIT_AUTO_DROPDOWN:
+				this->EnlargeSizeForDropdownIfNeeded(_order_refit_action_dropdown, size, padding);
+				break;
+
+			case WID_VT_SERVICE_DROPDOWN:
+				this->EnlargeSizeForDropdownIfNeeded(_order_depot_action_dropdown, size, padding);
+				break;
 		}
 	}
 
@@ -536,6 +724,7 @@ public:
 				if (this->selected_timetable_line == INVALID_SELECTION) break;
 
 				this->DeleteChildWindows();
+				HideDropDownMenu(this);
 				UpdateSelectedTimetableLine(INVALID_SELECTION);
 				break;
 
@@ -617,6 +806,17 @@ public:
 	virtual void SetStringParameters(int widget) const
 	{
 		switch (widget) {
+			case WID_VT_COND_VALUE_BUTTON: {
+				VehicleOrderID sel = this->GetSelectedOrderID();
+				const Order *order = this->vehicle->GetOrder(sel);
+
+				if (order != NULL && order->IsType(OT_CONDITIONAL)) {
+					uint value = order->GetConditionValue();
+					if (order->GetConditionVariable() == OCV_MAX_SPEED) value = ConvertSpeedToDisplaySpeed(value);
+					SetDParam(0, value);
+				}
+				break;
+			}
 			case WID_VT_CAPTION: SetDParam(0, this->vehicle->index); break;
 		}
 	}
@@ -712,6 +912,89 @@ public:
 				ShowVehicleListWindow(v);
 				break;
 
+			case WID_VT_NON_STOP_STATION_DROPDOWN:
+			case WID_VT_NON_STOP_WAYPOINT_DROPDOWN:
+			case WID_VT_NON_STOP_DEPOT_DROPDOWN:
+				if (this->GetWidget<NWidgetLeaf>(widget)->ButtonHit(pt)) {
+					this->ProcessNonStopClick(-1);
+				} else {
+					const Order *o = this->vehicle->GetOrder(this->GetSelectedOrderID());
+					ShowDropDownMenu(this, _order_non_stop_dropdown, o->GetNonStopType(), widget, 0,
+													o->IsType(OT_GOTO_STATION) ? 0 : (o->IsType(OT_GOTO_WAYPOINT) ? 3 : 12));
+				}
+				break;
+			}
+
+			case WID_VT_COND_VARIABLE_DROPDOWN: {
+				DropDownList *list = new DropDownList();
+				for (uint i = 0; i < lengthof(_order_conditional_variable); i++) {
+					*list->Append() = new DropDownListStringItem(STR_ORDER_CONDITIONAL_LOAD_PERCENTAGE + _order_conditional_variable[i], _order_conditional_variable[i], false);
+				}
+				ShowDropDownList(this, list, this->vehicle->GetOrder(this->GetSelectedOrderID())->GetConditionVariable(), WID_VT_COND_VARIABLE_DROPDOWN);
+				break;
+			}
+
+			case WID_VT_FULL_LOAD_DROPDOWN: {
+				if (this->GetWidget<NWidgetLeaf>(widget)->ButtonHit(pt)) {
+					this->ProcessFullLoadClick(-1);
+				} else {
+					ShowDropDownMenu(this, _order_full_load_dropdown, this->vehicle->GetOrder(this->GetSelectedOrderID())->GetLoadType(), WID_VT_FULL_LOAD_DROPDOWN, 0, 2);
+				}
+				break;
+			}
+
+			case WID_VT_REFIT_BUTTON: {
+				this->ProcessRefitClick(0, false);
+				break;
+			}
+
+			case WID_VT_REFIT_BUTTON_4: {
+				this->ProcessRefitClick(0, false);
+				break;
+			}
+
+			case WID_VT_COND_COMPARATOR_DROPDOWN: {
+				const Order *o = this->vehicle->GetOrder(this->GetSelectedOrderID());
+				ShowDropDownMenu(this, _order_conditional_condition, o->GetConditionComparator(), WID_VT_COND_COMPARATOR_DROPDOWN, 0, (o->GetConditionVariable() == OCV_REQUIRES_SERVICE) ? 0x3F : 0xC0);
+				break;
+			}
+
+			case WID_VT_UNLOAD_DROPDOWN: {
+				if (this->GetWidget<NWidgetLeaf>(widget)->ButtonHit(pt)) {
+					this->ProcessUnloadClick(-1);
+				} else {
+					ShowDropDownMenu(this, _order_unload_dropdown, this->vehicle->GetOrder(this->GetSelectedOrderID())->GetUnloadType(), WID_VT_UNLOAD_DROPDOWN, 0, 8);
+				}
+				break;
+			}
+
+			case WID_VT_SERVICE_DROPDOWN: {
+				if (this->GetWidget<NWidgetLeaf>(widget)->ButtonHit(pt)) {
+					this->ProcessServiceClick(-1);
+				} else {
+					ShowDropDownMenu(this, _order_depot_action_dropdown, DepotActionStringIndex(this->vehicle->GetOrder(this->GetSelectedOrderID())), WID_VT_SERVICE_DROPDOWN, 0, 0);
+				}
+				break;
+			}
+
+			case WID_VT_COND_VALUE_BUTTON: {
+				const Order *order = this->vehicle->GetOrder(this->GetSelectedOrderID());
+				uint value = order->GetConditionValue();
+				if (order->GetConditionVariable() == OCV_MAX_SPEED) value = ConvertSpeedToDisplaySpeed(value);
+				SetDParam(0, value);
+				ShowQueryString(STR_JUST_INT, STR_ORDER_CONDITIONAL_VALUE_CAPT, 5, this, CS_NUMERAL, QSF_NONE);
+				break;
+			}
+
+			case WID_VT_REFIT_AUTO_DROPDOWN: {
+				if (this->GetWidget<NWidgetLeaf>(widget)->ButtonHit(pt)) {
+					this->ProcessRefitClick(0, true);
+				} else {
+					ShowDropDownMenu(this, _order_refit_action_dropdown, 0, WID_VT_REFIT_AUTO_DROPDOWN, 0, 0);
+				}
+				break;
+			}
+
 			case WID_VT_GOTO_BUTTON: {
 				if (this->GetWidget<NWidgetLeaf>(widget)->ButtonHit(pt)) {
 					this->ProcessGotoClick();
@@ -787,6 +1070,25 @@ public:
 
 	virtual void OnQueryTextFinished(char *str)
 	{
+		if (!StrEmpty(str)) {
+			VehicleOrderID sel = this->GetSelectedOrderID();
+			uint value = atoi(str);
+
+			switch (this->vehicle->GetOrder(sel)->GetConditionVariable()) {
+				case OCV_MAX_SPEED:
+					value = ConvertDisplaySpeedToSpeed(value);
+					break;
+
+				case OCV_RELIABILITY:
+				case OCV_LOAD_PERCENTAGE:
+					value = Clamp(value, 0, 100);
+					break;
+
+				default:
+					break;
+			}
+			DoCommandP(this->vehicle->tile, this->vehicle->index + (sel << 20), MOF_COND_VALUE | Clamp(value, 0, 2047) << 4, CMD_MODIFY_ORDER | CMD_MSG(STR_ERROR_CAN_T_MODIFY_THIS_ORDER));
+		}
 	}
 
 	virtual void OnResize()
@@ -852,7 +1154,7 @@ public:
 	{
 		static const int raise_widgets[] = {
 			WID_VT_SHIFT_ORDERS_PAST_BUTTON, WID_VT_SHIFT_ORDERS_FUTURE_BUTTON, WID_VT_DEPARTURE_BUTTON, WID_VT_START_BUTTON, WID_VT_START_AUTOFILL_DROPDOWN, WID_VT_STOP_AUTOFILL_BUTTON,
-			WID_VT_REFIT_BUTTON,
+			WID_VT_REFIT_BUTTON, WID_VT_REFIT_BUTTON_4,
 			WID_VT_OFFSET_BUTTON, WID_VT_SPEEDLIMIT_BUTTON, WID_VT_LENGTH_BUTTON, WID_VT_COND_VALUE_BUTTON, WID_VT_ARRIVAL_BUTTON, WID_VT_RENAME_BUTTON, WID_VT_SKIP_ORDER_BUTTON,
 			WID_VT_DELETE_ORDER_BUTTON, WID_VT_STOP_SHARING_BUTTON, WIDGET_LIST_END
 		};
