@@ -66,6 +66,7 @@ enum VehicleListWidgets {
 	WID_VL_GROUP_BY_PULLDOWN,        ///< Group by dropdown list.
 	WID_VL_SORT_ORDER,               ///< Sort order.
 	WID_VL_SORT_BY_PULLDOWN,         ///< Sort by dropdown list.
+	WID_VL_DELAY_PANEL,              ///< Print delay information
 	WID_VL_LIST,                     ///< List of the vehicles.
 	WID_VL_SCROLLBAR,                ///< Scrollbar for the list.
 	WID_VL_HIDE_BUTTONS,             ///< Selection to hide the buttons.
