@@ -21,6 +21,9 @@
 #include "window_func.h"
 #include "rail_gui.h"
 #include "settings_gui.h"
+#include "order_base.h"
+#include "timetable.h"
+#include "vehicle_base.h"
 #include "company_gui.h"
 #include "linkgraph/linkgraphschedule.h"
 #include "map_func.h"
@@ -104,6 +107,32 @@ static int32 ClickChangeDateCheat(int32 p1, int32 p2)
 
 	p1 = Clamp(p1, MIN_YEAR, MAX_YEAR);
 	if (p1 == _cur_year) return _cur_year;
+
+	Duration offset = Duration(p1 - _cur_year, DU_YEARS);
+
+	Order *order;
+	FOR_ALL_ORDERS(order) {
+		if (order->HasDeparture()) {
+			order->SetDeparture(AddToDate(order->GetDeparture(), offset));
+		}
+		if (order->HasArrival()) {
+			order->SetArrival(AddToDate(order->GetArrival(), offset));
+		}
+	}
+
+	OrderList *order_list;
+	FOR_ALL_ORDER_LISTS(order_list) {
+		if (order_list->HasStartTime()) {
+			Date new_start_time = AddToDate(order_list->GetStartTime(), offset);
+			order_list->SetStartTime(new_start_time);
+			UpdateSharedVehiclesTimetableData(order_list);
+		}
+	}
+
+	Vehicle *vehicle;
+	FOR_ALL_VEHICLES(vehicle) {
+		SetWindowDirty(WC_VEHICLE_TIMETABLE, vehicle->index);
+	}
 
 	Date new_date = ConvertYMDToDate(p1, ymd.month, ymd.day);
 	LinkGraphSchedule::instance.ShiftDates(new_date - _date);
