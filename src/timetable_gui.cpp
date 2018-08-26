@@ -102,6 +102,13 @@ private:
 
 	bool can_do_autorefit; ///< Vehicle chain can be auto-refitted.
 
+	enum TimetableQueryType {
+		TQT_NAME,
+		TQT_COND
+	};
+
+	TimetableQueryType query_type;
+
   	/** Under what reason are we using the PlaceObject functionality? */
 	enum TimetablePlaceObjectState {
 		TIMETABLE_POS_GOTO,
@@ -1329,6 +1336,7 @@ public:
 				const Order *order = this->vehicle->GetOrder(this->GetSelectedOrderID());
 				uint value = order->GetConditionValue();
 				if (order->GetConditionVariable() == OCV_MAX_SPEED) value = ConvertSpeedToDisplaySpeed(value);
+				this->query_type = TQT_COND;
 				SetDParam(0, value);
 				ShowQueryString(STR_JUST_INT, STR_ORDER_CONDITIONAL_VALUE_CAPT, 5, this, CS_NUMERAL, QSF_NONE);
 				break;
@@ -1364,6 +1372,11 @@ public:
 					default_length = this->vehicle->orders.list->GetTimetableDuration();
 				}
 				ShowSetDurationWindow(this, this->vehicle->index, default_length, false, STR_TIMETABLE_LENGTH_CAPTION, SetLengthCallback);
+				break;
+			}
+
+			case WID_VT_RENAME_BUTTON: {
+				ShowRenameTimetableWindow();
 				break;
 			}
 
@@ -1442,24 +1455,32 @@ public:
 
 	virtual void OnQueryTextFinished(char *str)
 	{
-		if (!StrEmpty(str)) {
-			VehicleOrderID sel = this->GetSelectedOrderID();
-			uint value = atoi(str);
-
-			switch (this->vehicle->GetOrder(sel)->GetConditionVariable()) {
-				case OCV_MAX_SPEED:
-					value = ConvertDisplaySpeedToSpeed(value);
-					break;
-
-				case OCV_RELIABILITY:
-				case OCV_LOAD_PERCENTAGE:
-					value = Clamp(value, 0, 100);
-					break;
-
-				default:
-					break;
+		if (this->query_type == TQT_NAME) {
+			if (str != NULL) {
+				DoCommandP(0, this->vehicle->index, 0, CMD_RENAME_TIMETABLE | CMD_MSG(STR_ERROR_TIMETABLE_CAN_T_RENAME), NULL, str);
 			}
-			DoCommandP(this->vehicle->tile, this->vehicle->index + (sel << 20), MOF_COND_VALUE | Clamp(value, 0, 2047) << 4, CMD_MODIFY_ORDER | CMD_MSG(STR_ERROR_CAN_T_MODIFY_THIS_ORDER));
+
+			this->InvalidateData();
+		} else if (this->query_type == TQT_COND) {
+			if (!StrEmpty(str)) {
+				VehicleOrderID sel = this->GetSelectedOrderID();
+				uint value = atoi(str);
+
+				switch (this->vehicle->GetOrder(sel)->GetConditionVariable()) {
+					case OCV_MAX_SPEED:
+						value = ConvertDisplaySpeedToSpeed(value);
+						break;
+
+					case OCV_RELIABILITY:
+					case OCV_LOAD_PERCENTAGE:
+						value = Clamp(value, 0, 100);
+						break;
+
+					default:
+						break;
+				}
+				DoCommandP(this->vehicle->tile, this->vehicle->index + (sel << 20), MOF_COND_VALUE | Clamp(value, 0, 2047) << 4, CMD_MODIFY_ORDER | CMD_MSG(STR_ERROR_CAN_T_MODIFY_THIS_ORDER));
+			}
 		}
 	}
 
@@ -1538,6 +1559,22 @@ public:
 				this->SetWidgetDirty(*widnum);
 			}
 		}
+	}
+
+	void ShowRenameTimetableWindow()
+	{
+		this->query_type = TQT_NAME;
+
+		StringID str;
+		const OrderList *order_list = this->vehicle->orders.list;
+		if (order_list == NULL || order_list->GetName() == NULL) {
+			str = STR_EMPTY;
+		} else {
+			SetDParamStr(0, order_list->GetName());
+			str = STR_JUST_RAW_STRING;
+		}
+
+		ShowQueryString(str, STR_TIMETABLE_RENAME_CAPTION, MAX_LENGTH_TIMETABLE_NAME_CHARS, this, CS_ALPHANUMERAL, QSF_ENABLE_DEFAULT | QSF_LEN_IN_CHARS);
 	}
 };
 
