@@ -15,6 +15,7 @@ add_files(
     dropdown_func.h
     dropdown_type.h
     dropdown_widget.h
+    duration_widget.h
     engine_widget.h
     error_widget.h
     fios_widget.h

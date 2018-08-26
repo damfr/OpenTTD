@@ -961,7 +961,7 @@ public:
 
 				d.width += padding.width + WD_FRAMERECT_LEFT + WD_FRAMERECT_RIGHT;
 
-				size->width = max(size->width, d.width);
+				size->width = std::max(size->width, d.width);
  				size->height = WD_FRAMERECT_TOP + 2 * FONT_HEIGHT_NORMAL + WD_FRAMERECT_BOTTOM;
  				break;
 			}

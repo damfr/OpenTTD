@@ -130,6 +130,8 @@ add_files(
     dock_gui.cpp
     driver.cpp
     driver.h
+    duration_gui.cpp
+    duration_gui.h
     economy.cpp
     economy_base.h
     economy_func.h
