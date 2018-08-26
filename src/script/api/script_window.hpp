@@ -247,6 +247,8 @@ public:
 		 */
 		WC_SET_DATE                                  = ::WC_SET_DATE,
 
+		WC_SET_DATE_FAST = ::WC_SET_DATE_FAST,
+
 		/** Set a duration; Window numbers:
 		 *  // TODO once I understand the synax of that extra line
 		 */
@@ -1202,6 +1204,19 @@ public:
 		WID_SD_YEAR                                  = ::WID_SD_YEAR,                                  ///< Dropdown for the year.
 		WID_SD_SET_DATE                              = ::WID_SD_SET_DATE,                              ///< Actually set the date.
 	};
+
+	enum SetDateFastWidgets {
+		WID_SDF_CAPTION                      = ::WID_SDF_CAPTION,                      ///< Caption of the Window
+		WID_SDF_SMALLER_BUTTON_ONE           = ::WID_SDF_SMALLER_BUTTON_ONE,           ///< Button for decreaing the date in small steps
+		WID_SDF_SMALLER_BUTTON_TWO           = ::WID_SDF_SMALLER_BUTTON_TWO,           ///< Button for decreaing the date in somewhat bigger steps
+		WID_SDF_SMALLER_BUTTON_THREE         = ::WID_SDF_SMALLER_BUTTON_THREE,         ///< Button for decreaing the date in big steps
+		WID_SDF_BIGGER_BUTTON_ONE            = ::WID_SDF_BIGGER_BUTTON_ONE,            ///< Button for increaing the date in small steps
+		WID_SDF_BIGGER_BUTTON_TWO            = ::WID_SDF_BIGGER_BUTTON_TWO,            ///< Button for increaing the date in somewhat bigger steps
+		WID_SDF_BIGGER_BUTTON_THREE          = ::WID_SDF_BIGGER_BUTTON_THREE,          ///< Button for increaing the date in big steps
+		WID_SDF_DATE_PANEL                   = ::WID_SDF_DATE_PANEL,                   ///< Panel for painting the currently selected date
+		WID_SDF_CHOOSE_AND_CLOSE_BUTTON      = ::WID_SDF_CHOOSE_AND_CLOSE_BUTTON,      ///< Button for choosing the current date, and not choosing another one right away
+		WID_SDF_CHOOSE_AND_NEXT_BUTTON       = ::WID_SDF_CHOOSE_AND_NEXT_BUTTON,       ///< Button for choosing the current date, and continuing with choosing the next one right away (if possible)
+};
 
     enum SetDurationWidgets {
 		WID_SDU_CAPTION                      = ::WID_SDU_CAPTION,                      ///< The caption of the window

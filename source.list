@@ -460,6 +460,7 @@ cheat_gui.cpp
 company_gui.cpp
 console_gui.cpp
 date_gui.cpp
+datefast_gui.cpp
 depot_gui.cpp
 dock_gui.cpp
 duration_gui.cpp

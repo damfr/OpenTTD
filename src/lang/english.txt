@@ -4064,6 +4064,12 @@ STR_TIMETABLE_EXPECTED_TOOLTIP                                  :{BLACK}Switch b
 STR_TIMETABLE_ARRIVAL_ABBREVIATION                              :A:
 STR_TIMETABLE_DEPARTURE_ABBREVIATION                            :D:
 
+STR_TIMETABLE_DATE_MINUS_THREE                                  :{BLACK}-10
+STR_TIMETABLE_DATE_MINUS_TWO                                    :{BLACK}-5
+STR_TIMETABLE_DATE_MINUS_ONE                                    :{BLACK}-1
+STR_TIMETABLE_DATE_PLUS_ONE                                     :{BLACK}+1
+STR_TIMETABLE_DATE_PLUS_TWO                                     :{BLACK}+5
+STR_TIMETABLE_DATE_PLUS_THREE                                   :{BLACK}+10
 
 # Date window (for timetable)
 STR_DATE_CAPTION                                                :{WHITE}Set date
@@ -4072,6 +4078,15 @@ STR_DATE_SET_DATE_TOOLTIP                                       :{BLACK}Use the 
 STR_DATE_DAY_TOOLTIP                                            :{BLACK}Select day
 STR_DATE_MONTH_TOOLTIP                                          :{BLACK}Select month
 STR_DATE_YEAR_TOOLTIP                                           :{BLACK}Select year
+
+STR_DATE_DECREASE_TOOLTIP                                       :{BLACK}Decrease the date by some number of days
+STR_DATE_INCREASE_TOOLTIP                                       :{BLACK}Increase the date by some number of days
+STR_DATE_CHOOSE_AND_CLOSE_BUTTON_CAPTION                        :{BLACK}Choose and Close
+STR_DATE_CHOOSE_AND_CLOSE_BUTTON_TOOLTIP                        :{BLACK}Choose the selected date and close the window
+STR_DATE_CHOOSE_AND_NEXT_BUTTON_CAPTION                         :{BLACK}Choose and Next
+STR_DATE_CHOOSE_AND_NEXT_BUTTON_TOOLTIP                         :{BLACK}Choose the selected date, and continue with choosing the next date for the parent window right away
+STR_DATE_POSITIVE_OFFSET                                        :{BLACK}+{NUM}
+STR_DATE_NEGATIVE_OFFSET                                        :{BLACK}-{NUM}
 
 # Duration window
 STR_DURATION_CAPTION                                            :{WHITE}Enter Duration
