@@ -107,67 +107,11 @@ static const StringID _station_load_types[][5][5] = {
 	}
 };
 
-static const StringID _order_non_stop_drowdown[] = {
-	STR_ORDER_GO_TO,
-	STR_ORDER_GO_NON_STOP_TO,
-	STR_ORDER_GO_VIA,
-	STR_ORDER_GO_NON_STOP_VIA,
-	INVALID_STRING_ID
-};
-
-static const StringID _order_full_load_drowdown[] = {
-	STR_ORDER_DROP_LOAD_IF_POSSIBLE,
-	STR_EMPTY,
-	STR_ORDER_DROP_FULL_LOAD_ALL,
-	STR_ORDER_DROP_FULL_LOAD_ANY,
-	STR_ORDER_DROP_NO_LOADING,
-	INVALID_STRING_ID
-};
-
-static const StringID _order_unload_drowdown[] = {
-	STR_ORDER_DROP_UNLOAD_IF_ACCEPTED,
-	STR_ORDER_DROP_UNLOAD,
-	STR_ORDER_DROP_TRANSFER,
-	STR_EMPTY,
-	STR_ORDER_DROP_NO_UNLOADING,
-	INVALID_STRING_ID
-};
-
-/** Variables for conditional orders; this defines the order of appearance in the dropdown box */
-static const OrderConditionVariable _order_conditional_variable[] = {
-	OCV_LOAD_PERCENTAGE,
-	OCV_RELIABILITY,
-	OCV_MAX_RELIABILITY,
-	OCV_MAX_SPEED,
-	OCV_AGE,
-	OCV_REMAINING_LIFETIME,
-	OCV_REQUIRES_SERVICE,
-	OCV_UNCONDITIONALLY,
-};
-
-static const StringID _order_conditional_condition[] = {
-	STR_ORDER_CONDITIONAL_COMPARATOR_EQUALS,
-	STR_ORDER_CONDITIONAL_COMPARATOR_NOT_EQUALS,
-	STR_ORDER_CONDITIONAL_COMPARATOR_LESS_THAN,
-	STR_ORDER_CONDITIONAL_COMPARATOR_LESS_EQUALS,
-	STR_ORDER_CONDITIONAL_COMPARATOR_MORE_THAN,
-	STR_ORDER_CONDITIONAL_COMPARATOR_MORE_EQUALS,
-	STR_ORDER_CONDITIONAL_COMPARATOR_IS_TRUE,
-	STR_ORDER_CONDITIONAL_COMPARATOR_IS_FALSE,
-	INVALID_STRING_ID,
-};
 
 extern uint ConvertSpeedToDisplaySpeed(uint speed);
 extern uint ConvertDisplaySpeedToSpeed(uint speed);
 
-static const StringID _order_depot_action_dropdown[] = {
-	STR_ORDER_DROP_GO_ALWAYS_DEPOT,
-	STR_ORDER_DROP_SERVICE_DEPOT,
-	STR_ORDER_DROP_HALT_DEPOT,
-	INVALID_STRING_ID
-};
-
-static int DepotActionStringIndex(const Order *order)
+int DepotActionStringIndex(const Order *order)
 {
 	if (order->GetDepotActionType() & ODATFB_HALT) {
 		return DA_STOP;
@@ -177,12 +121,6 @@ static int DepotActionStringIndex(const Order *order)
 		return DA_ALWAYS_GO;
 	}
 }
-
-static const StringID _order_refit_action_dropdown[] = {
-	STR_ORDER_DROP_REFIT_AUTO,
-	STR_ORDER_DROP_REFIT_AUTO_ANY,
-	INVALID_STRING_ID
-};
 
 /**
  * Draws an order in order or timetable GUI
@@ -1188,7 +1126,7 @@ public:
 					this->OrderClick_Nonstop(-1);
 				} else {
 					const Order *o = this->vehicle->GetOrder(this->OrderGetSel());
-					ShowDropDownMenu(this, _order_non_stop_drowdown, o->GetNonStopType(), WID_O_NON_STOP, 0,
+					ShowDropDownMenu(this, _order_non_stop_dropdown, o->GetNonStopType(), WID_O_NON_STOP, 0,
 													o->IsType(OT_GOTO_STATION) ? 0 : (o->IsType(OT_GOTO_WAYPOINT) ? 3 : 12));
 				}
 				break;
@@ -1217,7 +1155,7 @@ public:
 				if (this->GetWidget<NWidgetLeaf>(widget)->ButtonHit(pt)) {
 					this->OrderClick_FullLoad(OLF_FULL_LOAD_ANY, true);
 				} else {
-					ShowDropDownMenu(this, _order_full_load_drowdown, this->vehicle->GetOrder(this->OrderGetSel())->GetLoadType(), WID_O_FULL_LOAD, 0, 2);
+					ShowDropDownMenu(this, _order_full_load_dropdown, this->vehicle->GetOrder(this->OrderGetSel())->GetLoadType(), WID_O_FULL_LOAD, 0, 2);
 				}
 				break;
 
@@ -1225,7 +1163,7 @@ public:
 				if (this->GetWidget<NWidgetLeaf>(widget)->ButtonHit(pt)) {
 					this->OrderClick_Unload(OUFB_UNLOAD, true);
 				} else {
-					ShowDropDownMenu(this, _order_unload_drowdown, this->vehicle->GetOrder(this->OrderGetSel())->GetUnloadType(), WID_O_UNLOAD, 0, 8);
+					ShowDropDownMenu(this, _order_unload_dropdown, this->vehicle->GetOrder(this->OrderGetSel())->GetUnloadType(), WID_O_UNLOAD, 0, 8);
 				}
 				break;
 
