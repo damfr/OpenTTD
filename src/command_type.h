@@ -330,6 +330,7 @@ enum Commands {
 	CMD_SET_TIMETABLE_LENGTH,         ///< set the length of a timetable
 	CMD_RENAME_TIMETABLE,             ///< rename a timetable
 	CMD_SET_ORDER_DEPARTURE,          ///< Set the departure time timetabled in an order
+	CMD_SET_ORDER_SPEED_LIMIT,        ///< Set the speedlimit defined in an order
 	CMD_SET_ORDER_ARRIVAL,            ///< Set the arrival time timetabled in an order
 
 	CMD_OPEN_CLOSE_AIRPORT,           ///< open/close an airport to incoming aircraft
