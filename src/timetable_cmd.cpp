@@ -19,10 +19,157 @@
 
 #include "safeguards.h"
 
+/**
+ * Set the start date of the timetable.  This indirectly adjusts the start date
+ * of all corresponding vehicles (as their start date = timetable start date + vehicle offset).
+ * @param tile Not used.
+ * @param flags Operation to perform.
+ * @param p1 vehicle id
+ * @param p2 new start date
+ * @param text Not used.
+ * @return The error or cost of the operation.
+ */
 CommandCost CmdSetTimetableStart(TileIndex tile, DoCommandFlag flags, uint32 p1, uint32 p2, const char *text)
 {
-	/* Command persists, but has a considerable different semantics in the Timetable Improvement Patch */
+	Vehicle *v = Vehicle::GetIfValid(p1);
+	if (v == NULL || !v->IsPrimaryVehicle()) return CMD_ERROR;
+
+	CommandCost ret = CheckOwnership(v->owner);
+	if (ret.Failed()) return ret;
+
+	/* Don't let a timetable start more than 5 years into the future or into the  past. */
+	Date start_date = (Date)p2;
+	if (start_date < 0 || start_date > MAX_DAY) return CMD_ERROR;
+	if (start_date - _date > 5 * DAYS_IN_LEAP_YEAR) return CMD_ERROR;
+	if (_date - start_date > 5 * DAYS_IN_LEAP_YEAR) return CMD_ERROR;
+	if (v->orders.list == NULL && !OrderList::CanAllocateItem()) return CMD_ERROR;
+
+	if (flags & DC_EXEC) {
+		// If there is not yet an orderlist, create it
+		if (v->orders.list == NULL) {
+			v->orders.list = new OrderList(NULL, v);
+		}
+
+		v->orders.list->SetStartTime(start_date);
+
+		SetWindowClassesDirty(WC_VEHICLE_TIMETABLE);
+	}
+
 	return CommandCost();
+}
+
+/**
+ * Set the offset of a vehicle relative to a timetable.
+ * @param tile Not used.
+ * @param flags Operation to perform.
+ * @param p1 Bits 0..15: Vehicle id.
+ *           Bits 16..23: Unit of timetable offset
+ * @param p2 Length of the new timetable offset
+ * @param text Not used.
+ * @return The error or cost of the operation.
+ */
+CommandCost CmdSetTimetableOffset(TileIndex tile, DoCommandFlag flags, uint32 p1, uint32 p2, const char *text)
+{
+	VehicleID vehicle_id = (VehicleID)(p1 & 0x0000FFFF);
+	Vehicle *v = Vehicle::GetIfValid(vehicle_id);
+	if (v == NULL || !v->IsPrimaryVehicle()) return CMD_ERROR;
+
+	DurationUnit duration_unit = (DurationUnit)((p1 >> 16) & 0x000000FF);
+	if (duration_unit != DU_DAYS && duration_unit != DU_MONTHS && duration_unit != DU_YEARS && duration_unit != DU_INVALID) {
+		return CMD_ERROR;
+	}
+
+	int32 offset = (int32)p2;
+
+	CommandCost ret = CheckOwnership(v->owner);
+	if (ret.Failed()) return ret;
+
+	if (v->orders.list == NULL && !OrderList::CanAllocateItem()) return CMD_ERROR;
+
+	if (flags & DC_EXEC) {
+		/* If there is not yet an orderlist, create it */
+		if (v->orders.list == NULL) {
+			v->orders.list = new OrderList(NULL, v);
+		}
+
+		v->SetTimetableOffset(Duration(offset, duration_unit));
+
+		SetWindowDirty(WC_VEHICLE_TIMETABLE, v->index);
+	}
+
+	return CommandCost();
+}
+
+/**
+ * Set the length of a timetable.
+ * @param tile Not used.
+ * @param flags Operation to perform.
+ * @param p1 Bits 0..15: Vehicle id.
+ *           Bits 16..23: Unit of timetable length
+ * @param p2 Length of the new timetable length
+ * @param text Not used.
+ * @return The error or cost of the operation.
+ */
+CommandCost CmdSetTimetableLength(TileIndex tile, DoCommandFlag flags, uint32 p1, uint32 p2, const char *text)
+{
+	VehicleID vehicle_id = (VehicleID)(p1 & 0x0000FFFF);
+	Vehicle *v = Vehicle::GetIfValid(vehicle_id);
+	if (v == NULL || !v->IsPrimaryVehicle()) return CMD_ERROR;
+
+	DurationUnit duration_unit = (DurationUnit)((p1 >> 16) & 0x000000FF);
+	if (duration_unit != DU_DAYS && duration_unit != DU_MONTHS && duration_unit != DU_YEARS && duration_unit != DU_INVALID) {
+		return CMD_ERROR;
+	}
+
+	int32 length = (int32)p2;
+	if (length <= 0) {
+		return CMD_ERROR;
+	}
+
+	CommandCost ret = CheckOwnership(v->owner);
+	if (ret.Failed()) return ret;
+
+	if (v->orders.list == NULL && !OrderList::CanAllocateItem()) return CMD_ERROR;
+
+	if (flags & DC_EXEC) {
+		/* If there is not yet an orderlist, create it */
+		if (v->orders.list == NULL) {
+			v->orders.list = new OrderList(NULL, v);
+		}
+
+		OrderList* order_list = v->orders.list;
+		Duration new_length = Duration(length, duration_unit);
+		order_list->SetTimetableDuration(new_length);
+
+		SetWindowClassesDirty(WC_VEHICLE_TIMETABLE);
+	}
+
+	return CommandCost();
+}
+
+/** Updates the (cached) start times of all vehicles that share the timetable of the given vehicle, including the vehicle itself.
+ *  Has to be called after the start time of the timetable changes.
+ */
+void UpdateSharedVehiclesTimetableData(OrderList *order_list)
+{
+	if (order_list->HasStartTime()) {
+		Date timetable_start_date = order_list->GetStartTime();
+		Duration timetable_length = order_list->GetTimetableDuration();
+		for (Vehicle *u = order_list->GetFirstSharedVehicle(); u != NULL; u = u->NextShared()) {
+			u->timetable_start = AddToDate(timetable_start_date, u->timetable_offset);
+			u->timetable_end = AddToDate(u->timetable_start, timetable_length);
+		}
+	}
+}
+
+void UpdateVehicleStartTimes(Vehicle *vehicle)
+{
+	Duration timetable_length = vehicle->orders.list->GetTimetableDuration();
+
+	/* Update the local timetable start/end time of the vehicle */
+	Date global_timetable_start_date = vehicle->orders.list->GetStartTime();
+	vehicle->timetable_start = AddToDate(global_timetable_start_date, vehicle->timetable_offset);
+	vehicle->timetable_end = AddToDate(vehicle->timetable_start, timetable_length);
 }
 
 /**

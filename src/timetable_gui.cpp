@@ -22,6 +22,7 @@
 #include "core/geometry_func.hpp"
 #include "date_func.h"
 #include "date_gui.h"
+#include "duration_gui.h"
 #include "vehicle_gui.h"
 #include "network/network.h"
 #include "settings_type.h"
@@ -45,6 +46,35 @@
 
 extern uint ConvertSpeedToDisplaySpeed(uint speed);
 extern uint ConvertDisplaySpeedToSpeed(uint speed);
+
+/**
+ * Callback for when a time has been chosen to start the time table
+ * @param window the window related to the setting of the date
+ * @param date the actually chosen date
+ */
+static void ChangeTimetableStartCallback(const Window *w, Date date)
+{
+	VehicleID vehicle_id = w->window_number;
+	DoCommandP(0, vehicle_id, date, CMD_SET_TIMETABLE_START | CMD_MSG(STR_ERROR_CAN_T_TIMETABLE_VEHICLE));
+}
+
+/** Callback for when an offset of the vehicle has been chosen.
+ */
+static void SetOffsetCallback(const Window *w, Duration duration)
+{
+	uint32 p1 = (VehicleID)w->window_number | duration.GetUnit() << 16;
+	uint32 p2 = duration.GetLength();
+	DoCommandP(0, p1, p2, CMD_SET_TIMETABLE_OFFSET | CMD_MSG(STR_ERROR_CAN_T_TIMETABLE_VEHICLE));
+}
+
+/** Callback for when the length of the timetable has been chosen.
+ */
+static void SetLengthCallback(const Window *w, Duration duration)
+{
+	uint32 p1 = (VehicleID)w->window_number | duration.GetUnit() << 16;
+	uint32 p2 = duration.GetLength();
+	DoCommandP(0, p1, p2, CMD_SET_TIMETABLE_LENGTH | CMD_MSG(STR_ERROR_CAN_T_TIMETABLE_VEHICLE));
+}
 
 struct TimetableWindow : Window {
 
@@ -1308,6 +1338,30 @@ public:
 				} else {
 					ShowDropDownMenu(this, _order_refit_action_dropdown, 0, WID_VT_REFIT_AUTO_DROPDOWN, 0, 0);
 				}
+				break;
+			}
+
+			case WID_VT_START_BUTTON: {
+				Date default_date = _date;
+				if (this->vehicle->orders.list != NULL && this->vehicle->orders.list->GetStartTime() != INVALID_DATE) {
+					default_date = this->vehicle->orders.list->GetStartTime();
+				}
+				ShowSetDateWindow(this, this->vehicle->index, default_date, _cur_year - 5, _cur_year + 5, ChangeTimetableStartCallback);
+				break;
+			}
+
+			case WID_VT_OFFSET_BUTTON: {
+				Duration default_offset = (this->vehicle->timetable_offset.GetUnit() != DU_INVALID ? this->vehicle->timetable_offset : Duration(1, DU_MONTHS));
+				ShowSetDurationWindow(this, this->vehicle->index, default_offset, true, STR_TIMETABLE_OFFSET_CAPTION, SetOffsetCallback);
+				break;
+			}
+
+			case WID_VT_LENGTH_BUTTON: {
+				Duration default_length = Duration(2, DU_MONTHS);
+				if (this->vehicle->orders.list != NULL && this->vehicle->orders.list->GetTimetableDuration().GetUnit() != DU_INVALID) {
+					default_length = this->vehicle->orders.list->GetTimetableDuration();
+				}
+				ShowSetDurationWindow(this, this->vehicle->index, default_length, false, STR_TIMETABLE_LENGTH_CAPTION, SetLengthCallback);
 				break;
 			}
 

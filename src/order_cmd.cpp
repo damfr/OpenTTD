@@ -25,6 +25,7 @@
 #include "waypoint_base.h"
 #include "company_base.h"
 #include "order_backup.h"
+#include "timetable.h"
 #include "cheat_type.h"
 
 #include "table/strings.h"
@@ -310,6 +311,18 @@ void OrderList::Initialize(Order *chain, Vehicle *v)
 	}
 
 	for (const Vehicle *u = v->NextShared(); u != nullptr; u = u->NextShared()) ++this->num_vehicles;
+}
+
+void OrderList::SetTimetableDuration(Duration duration)
+{
+	this->timetable_duration = duration;
+	UpdateSharedVehiclesTimetableData(this);
+}
+
+void OrderList::SetStartTime(Date start_time)
+{
+	this->start_time = start_time;
+	UpdateSharedVehiclesTimetableData(this);
 }
 
 /**
