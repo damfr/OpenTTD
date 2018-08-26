@@ -70,6 +70,7 @@ enum StringControlCode {
 	SCC_DATE_SHORT,
 	SCC_DATE_LONG,
 	SCC_DATE_ISO,
+	SCC_DATE_DM,
 	SCC_DURATION,
 
 	/* Must be consecutive */

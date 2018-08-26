@@ -444,6 +444,22 @@ static char *FormatTinyOrISODate(char *buff, Date date, StringID str, const char
 	return FormatString(buff, GetStringPtr(str), &tmp_params, last);
 }
 
+/** Format a Date, consisting only of the Day and the Month component.
+ *  @param buff the buffer to write to
+ *  @param date the Date to output
+ *  @param last the last element in the buffer
+ *  @return till where we wrote
+ */
+static char *FormatDMDate(char *buff, Date date, const char *last)
+{
+	YearMonthDay ymd;
+	ConvertDateToYMD(date, &ymd);
+
+	int64 args[] = {ymd.day, ymd.month + 1};
+	StringParameters tmp_params(args);
+	return FormatString(buff, GetStringPtr(STR_FORMAT_DATE_DM), &tmp_params, last);
+}
+
 /** Format a Duration.  In English e.g. "4 months".
  *  @param buff the buffer to write to
  *  @param length length of the Duration, see struct Duration
@@ -1235,6 +1251,10 @@ static char *FormatString(char *buff, const char *str_arg, StringParameters *arg
 
 			case SCC_DATE_ISO: // {DATE_ISO}
 				buff = FormatTinyOrISODate(buff, args->GetInt32(), STR_FORMAT_DATE_ISO, last);
+				break;
+
+			case SCC_DATE_DM: // {DATE_DM}
+				buff = FormatDMDate(buff, args->GetInt32(), last);
 				break;
 
 			case SCC_DURATION: { // {DURATION}
