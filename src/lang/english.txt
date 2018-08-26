@@ -4137,6 +4137,7 @@ STR_INVALID_ORDER                                               :{RED} (Invalid 
 
 # Time table window
 STR_TIMETABLE_TITLE                                             :{WHITE}{VEHICLE} (Timetable)
+STR_TIMETABLE_TITLE_NAMED                                       :{WHITE}{VEHICLE} (Timetable{RAW_STRING}{RAW_STRING})
 STR_TIMETABLE_ORDER_VIEW                                        :{BLACK}Orders
 STR_TIMETABLE_ORDER_VIEW_TOOLTIP                                :{BLACK}Switch to the order view
 

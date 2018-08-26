@@ -1154,7 +1154,21 @@ public:
 				}
 				break;
 			}
-			case WID_VT_CAPTION: SetDParam(0, this->vehicle->index); break;
+			case WID_VT_CAPTION: {
+				SetDParam(0, this->vehicle->index);
+
+				const OrderList *order_list = this->vehicle->orders.list;
+				const char* timetable_name = (order_list != NULL ? order_list->GetName() : NULL);
+				if (timetable_name != NULL) {
+					SetDParamStr(1, " ");
+					SetDParamStr(2, timetable_name);
+				} else {
+					SetDParamStr(1, "");
+					SetDParamStr(2, "");
+				}
+
+				break;
+			}
 		}
 	}
 
@@ -1579,7 +1593,7 @@ public:
 static const NWidgetPart _nested_timetable_widgets[] = {
 	NWidget(NWID_HORIZONTAL),
 		NWidget(WWT_CLOSEBOX, COLOUR_GREY),
-		NWidget(WWT_CAPTION, COLOUR_GREY, WID_VT_CAPTION), SetDataTip(STR_TIMETABLE_TITLE, STR_TOOLTIP_WINDOW_TITLE_DRAG_THIS),
+		NWidget(WWT_CAPTION, COLOUR_GREY, WID_VT_CAPTION), SetDataTip(STR_TIMETABLE_TITLE_NAMED, STR_TOOLTIP_WINDOW_TITLE_DRAG_THIS),
 		NWidget(WWT_PUSHTXTBTN, COLOUR_GREY, WID_VT_ORDER_VIEW), SetMinimalSize(61, 14), SetDataTip( STR_TIMETABLE_ORDER_VIEW, STR_TIMETABLE_ORDER_VIEW_TOOLTIP),
 		NWidget(WWT_SHADEBOX, COLOUR_GREY),
 		NWidget(WWT_DEFSIZEBOX, COLOUR_GREY),
