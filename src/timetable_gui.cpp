@@ -156,6 +156,7 @@ private:
 
 	enum TimetableQueryType {
 		TQT_NAME,
+		TQT_SPEED,
 		TQT_COND
 	};
 
@@ -948,6 +949,20 @@ private:
 		ShowSetDateFastWindow(this, this->vehicle->index, default_date, timetable_start, timetable_end, buffer, _timetable_setdate_offsets, _timetable_setdate_strings, TimetableWindow::SetDepartureCallback);
 	}
 
+	void ProcessSetSpeedLimitClick()
+	{
+		const Order *order = this->vehicle->GetOrder(this->GetSelectedOrderID());
+
+		StringID current = STR_EMPTY;
+		if (order->GetMaxSpeed() != UINT16_MAX) {
+			SetDParam(0, ConvertKmhishSpeedToDisplaySpeed(order->GetMaxSpeed()));
+			current = STR_JUST_INT;
+		}
+
+		this->query_type = TQT_SPEED;
+		ShowQueryString(current, STR_TIMETABLE_CHANGE_SPEED, 31, this, CS_NUMERAL, QSF_NONE);
+	}
+
 	void ProcessSetArrivalClick()
 	{
 		const Order *o = this->vehicle->GetOrder(this->GetSelectedOrderID());
@@ -1575,6 +1590,11 @@ public:
 				break;
 			}
 
+			case WID_VT_SPEEDLIMIT_BUTTON: {
+				this->ProcessSetSpeedLimitClick();
+				break;
+			}
+
 			case WID_VT_ARRIVAL_BUTTON: {
 				this->ProcessSetArrivalClick();
 				break;
@@ -1743,6 +1763,12 @@ public:
 			}
 
 			this->InvalidateData();
+		} else if (this->query_type == TQT_SPEED) {
+			const Order *order = this->vehicle->GetOrder(this->GetSelectedOrderID());
+			uint32 p1 = ((uint32)this->vehicle->index << 16 | (uint32)order->index);
+			uint32 p2 = str == NULL || StrEmpty(str) ? UINT16_MAX : strtoul(str, NULL, 10);
+
+			DoCommandP(0, p1, p2, CMD_SET_ORDER_SPEED_LIMIT | CMD_MSG(STR_ERROR_TIMETABLE_CAN_T_SET_SPEEDLIMIT));
 		} else if (this->query_type == TQT_COND) {
 			if (!StrEmpty(str)) {
 				VehicleOrderID sel = this->GetSelectedOrderID();

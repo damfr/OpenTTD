@@ -277,6 +277,38 @@ CommandCost CmdSetOrderDeparture(TileIndex tile, DoCommandFlag flags, uint32 p1,
 }
 
 /**
+ * Set the speed limit of an order.
+ * @param tile Not used.
+ * @param flags Operation to perform.
+ * @param p1 Bits 0..15: Order ID
+ *           Bits 16..31: ID of the Vehicle the order is for
+ * @param p2 Bits 0..15: New speed limit
+ * @param text Not used.
+ * @return The error or cost of the operation.
+ */
+CommandCost CmdSetOrderSpeedLimit(TileIndex tile, DoCommandFlag flags, uint32 p1, uint32 p2, const char *text)
+{
+	OrderID order_id = (p1 & 0x0000FFFF);
+	VehicleID vehicle_id = (p1 >> 16) & 0x0000FFFF;
+
+	Order* order = Order::GetIfValid(order_id);
+	Vehicle *vehicle = Vehicle::GetIfValid(vehicle_id);
+	if (order == NULL || vehicle == NULL) {
+		return CMD_ERROR;
+	}
+
+	uint16 speed_limit = (p2 & 0x0000FFFF);
+
+	if (flags & DC_EXEC) {
+		order->SetMaxSpeed(speed_limit);
+
+		SetWindowDirty(WC_VEHICLE_TIMETABLE, vehicle->index);
+	}
+
+	return CommandCost();
+}
+
+/**
  * Set the arrival date for an order.  Only arrival dates within the range
  * start date of the vehicles timetable (inclusive) .. start date plus vehicle offset
  * (exclusive) are allowed.
