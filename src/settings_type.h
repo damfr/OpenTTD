@@ -479,6 +479,8 @@ struct VehicleSettings {
 	byte   extend_vehicle_life;              ///< extend vehicle life by this many years
 	byte   road_side;                        ///< the side of the road vehicles drive on
 	uint8  plane_crashes;                    ///< number of plane crashes, 0 = none, 1 = reduced, 2 = normal
+	uint8  autofill_default_station_time;    ///< default time autofill holds vehicles in stations
+	uint8  autofill_relax_factor;            ///< percentage by which autofill increases measured travel times
 };
 
 /** Settings related to the economy. */

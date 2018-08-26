@@ -682,10 +682,11 @@ static RoadVehicle *RoadVehFindCloseTo(RoadVehicle *v, int x, int y, Direction d
  */
 static void RoadVehArrivesAt(RoadVehicle *v, Station *st)
 {
-	if (v->current_order.IsStationOrder() && v->current_order.GetDestination() == st->index) {
+	if (v->current_order.IsStationOrder() && v->current_order.GetDestination() == st->index && !v->IsAutofilling()) {
 		v->lateness_counter = (v->current_order.HasArrival() ? _date - AddToDate(v->current_order.GetArrival(), v->timetable_offset) : 0);
 		DEBUG(misc, 9, "RoadVehArrivesAt updates lateness counter to %i", v->lateness_counter);
 	}
+	ProcessAutofillEnterStation(v, false);
 
 	if (v->IsBus()) {
 		/* Check if station was ever visited before */

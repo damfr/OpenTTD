@@ -2985,6 +2985,22 @@ bool AfterLoadGame()
 			t->grow_counter = TownTicksToGameTicks(t->grow_counter) + t->index % TOWN_GROWTH_TICKS;
 		}
 	}
+	
+	if (IsSavegameVersionBefore(TIP_SAVEGAME_VERSION)) {
+		for (Vehicle *vehicle : Vehicle::Iterate()) {
+			/* This patch doesn´t need the TIMETABLE_STARTED flag any longer, instead it needs a AUTOFILL_UPDATE_METADATA flag.
+			 * Thus, the latter replaces the former.  Disable that flag by default when loading old savegames */
+			ClrBit(vehicle->vehicle_flags, VF_AUTOFILL_UPDATE_METADATA);
+
+			if (vehicle->IsAutofilling()) {
+				vehicle->autofill_start_order_index = 0;
+				/* During autofill, the lateness_counter contains the lateness due to breakdowns not to be considered for autofill */
+				vehicle->lateness_counter = 0;
+			} else {
+				vehicle->autofill_start_order_index = INVALID_VEH_ORDER_ID;
+			}
+		}
+	}
 
 	if (IsSavegameVersionBefore(SLV_EXTEND_INDUSTRY_CARGO_SLOTS)) {
 		/* Make sure added industry cargo slots are cleared */

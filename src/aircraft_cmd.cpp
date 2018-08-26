@@ -1389,10 +1389,11 @@ static void AircraftEntersTerminal(Aircraft *v)
 	Station *st = Station::Get(v->targetairport);
 	v->last_station_visited = v->targetairport;
 
-	if (v->current_order.IsStationOrder() && v->current_order.GetDestination() == st->index) {
+	if (v->current_order.IsStationOrder() && v->current_order.GetDestination() == st->index && !v->IsAutofilling()) {
 		v->lateness_counter = (v->current_order.HasArrival() ? _date - AddToDate(v->current_order.GetArrival(), v->timetable_offset) : 0);
 		DEBUG(misc, 9, "AircraftEntersTerminal updates lateness counter to %i", v->lateness_counter);
 	}
+	ProcessAutofillEnterStation(v, false);
 
 	/* Check if station was ever visited before */
 	if (!(st->had_vehicle_of_type & HVOT_AIRCRAFT)) {

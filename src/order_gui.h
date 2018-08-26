@@ -72,6 +72,12 @@ static const StringID _order_refit_action_dropdown[] = {
 	INVALID_STRING_ID
 };
 
+static const StringID _order_autofill_dropdown[] = {
+	STR_TIMETABLE_START_AUTOFILL_DROPDOWN_CAPTION,
+	STR_TIMETABLE_START_AUTOFILL_WITH_METADATA,
+	INVALID_STRING_ID
+};
+
 /** Variables for conditional orders; this defines the order of appearance in the dropdown box */
 static const OrderConditionVariable _order_conditional_variable[] = {
 	OCV_LOAD_PERCENTAGE,

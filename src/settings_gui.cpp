@@ -1735,6 +1735,12 @@ static SettingsContainer &GetSettingsTree()
 				routing->Add(new SettingEntry("pf.pathfinder_for_ships"));
 			}
 
+			SettingsPage *timetable = vehicles->Add(new SettingsPage(STR_CONFIG_SETTING_VEHICLES_TIMETABLE));
+			{
+				timetable->Add(new SettingEntry("vehicle.autofill_default_station_time"));
+				timetable->Add(new SettingEntry("vehicle.autofill_relax_factor"));
+			}
+
 			vehicles->Add(new SettingEntry("order.no_servicing_if_no_breakdowns"));
 			vehicles->Add(new SettingEntry("order.serviceathelipad"));
 		}

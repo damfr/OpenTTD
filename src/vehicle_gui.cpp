@@ -1571,7 +1571,7 @@ void BaseVehicleListWindow::DrawVehicleListItems(VehicleID selected_vehicle, int
 				SetDParam(0, v->unitnumber);
 				DrawString(left, right, y + 2, str);
 
-				if (draw_delay_info && !(v->timetable_offset.IsInvalid() || v->orders.list == NULL || !v->orders.list->HasStartTime() || v->orders.list->GetTimetableDuration().IsInvalid())) {
+				if (draw_delay_info && !(v->IsAutofilling() || v->timetable_offset.IsInvalid() || v->orders.list == NULL || !v->orders.list->HasStartTime() || v->orders.list->GetTimetableDuration().IsInvalid())) {
 					if (v->lateness_counter < 0) {
 						str = STR_DELAY_MARKER_TOO_EARLY;
 					} else if (v->lateness_counter < 5) {
@@ -1643,7 +1643,7 @@ void BaseVehicleListWindow::DrawAverageDelay(const Rect &r) const
 	int delay_sum = 0;
 	int number_of_vehicles_with_delay_info = 0;
 	for (const Vehicle *v : this->vehicles) {
-		if (!(v->timetable_offset.IsInvalid() || v->orders.list == NULL || !v->orders.list->HasStartTime() || v->orders.list->GetTimetableDuration().IsInvalid())) {
+		if (!(v->IsAutofilling() || v->timetable_offset.IsInvalid() || v->orders.list == NULL || !v->orders.list->HasStartTime() || v->orders.list->GetTimetableDuration().IsInvalid())) {
 			delay_sum += v->lateness_counter;
 			number_of_vehicles_with_delay_info++;
 		}
