@@ -113,6 +113,7 @@ add_files(
     date_gui.cpp
     date_gui.h
     date_type.h
+    datefast_gui.cpp
     debug.cpp
     debug.h
     dedicated.cpp

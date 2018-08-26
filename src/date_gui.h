@@ -20,6 +20,13 @@
  */
 typedef void SetDateCallback(const Window *w, Date date);
 
+typedef void SetDateFastCallback(Window *w, Date date, bool immediately_choose_next);
+
 void ShowSetDateWindow(Window *parent, int window_number, Date initial_date, Year min_year, Year max_year, SetDateCallback *callback);
+
+void ShowSetDateFastWindow(Window *parent, int window_number, Date initial_date, Date min_date, Date max_date, const char* caption_text,
+						   const int step_sizes[], const StringID step_size_labels[], SetDateFastCallback *callback);
+
+void UpdateSetDateFastWindow(Date date, const char *text, SetDateFastCallback *callback);
 
 #endif /* DATE_GUI_H */

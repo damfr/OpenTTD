@@ -27,6 +27,7 @@
 #include "../../widgets/depot_widget.h"
 #include "../../widgets/dock_widget.h"
 #include "../../widgets/dropdown_widget.h"
+#include "../../widgets/duration_widget.h"
 #include "../../widgets/engine_widget.h"
 #include "../../widgets/error_widget.h"
 #include "../../widgets/fios_widget.h"
