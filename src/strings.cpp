@@ -476,6 +476,33 @@ static char *FormatTinyOrISODate(char *buff, Date date, StringID str, const char
 	return FormatString(buff, GetStringPtr(str), &tmp_params, last);
 }
 
+/** Format a Duration.  In English e.g. "4 months".
+ *  @param buff the buffer to write to
+ *  @param length length of the Duration, see struct Duration
+ *  @param unit unit of the Duration, see struct Duration
+ *  @param last the last element in the buffer
+ *  @return till where we wrote
+ */
+static char *FormatDuration(char *buff, int32 length, DurationUnit unit, const char *last)
+{
+	int64 args_array[] = {length};
+	StringParameters tmp_params(args_array);
+
+	StringID str;
+	if (unit == DU_TICKS) {
+		str = STR_TIMETABLE_TICKS;
+	} else if (unit == DU_DAYS) {
+		str = STR_TIMETABLE_DAYS;
+	} else if (unit == DU_MONTHS) {
+		str = STR_TIMETABLE_MONTHS;
+	} else if (unit == DU_YEARS) {
+		str = STR_TIMETABLE_YEARS;
+	} else {
+		str = STR_TIMETABLE_INVALID_DURATION;
+	}
+	return GetStringWithArgs(buff, str, &tmp_params, last);
+}
+
 static char *FormatGenericCurrency(char *buff, const CurrencySpec *spec, Money number, bool compact, const char *last)
 {
 	/* We are going to make number absolute for printing, so
@@ -1246,6 +1273,13 @@ static char *FormatString(char *buff, const char *str_arg, StringParameters *arg
 			case SCC_DATE_ISO: // {DATE_ISO}
 				buff = FormatTinyOrISODate(buff, args->GetInt32(), STR_FORMAT_DATE_ISO, last);
 				break;
+
+			case SCC_DURATION: { // {DURATION}
+				int32 length = args->GetInt32();
+				DurationUnit unit = (DurationUnit)args->GetInt32();
+				buff = FormatDuration(buff, length, unit, last);
+				break;
+			}
 
 			case SCC_FORCE: { // {FORCE}
 				assert(_settings_game.locale.units_force < lengthof(_units_force));

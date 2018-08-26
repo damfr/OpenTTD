@@ -32,4 +32,9 @@ static inline bool IsLeapYear(Year yr)
 	return yr % 4 == 0 && (yr % 100 != 0 || yr % 400 == 0);
 }
 
+Date AddToDate(Date date, Duration duration);
+Date SubtractFromDate(Date date, Duration duration);
+
+Duration AddDurations(Duration d1, Duration d2);
+
 #endif /* DATE_FUNC_H */

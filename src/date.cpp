@@ -20,6 +20,7 @@
 #include "saveload/saveload.h"
 #include "newgrf_profiling.h"
 #include "widgets/statusbar_widget.h"
+#include "debug.h"
 
 #include "safeguards.h"
 
@@ -139,6 +140,8 @@ void ConvertDateToYMD(Date date, YearMonthDay *ymd)
 	ymd->month = x >> 5;
 	ymd->day = x & 0x1F;
 }
+
+Date ConvertYMDToDate(YearMonthDay *ymd) { return ConvertYMDToDate(ymd->year, ymd->month, ymd->day); }
 
 /**
  * Converts a tuple of Year, Month and Day to a Date.
@@ -302,4 +305,211 @@ void IncreaseDate()
 
 	/* yes, call various yearly loops */
 	if (new_year) OnNewYear();
+}
+
+/** Increments the given YearMonthDay instance by the given number of months.
+ *  @param ymd tuple of year, month, day
+ *  @param number_of_months a non-negative number of months
+ */
+void AddMonthsToYMD(YearMonthDay *ymd, int32 number_of_months)
+{
+	assert(number_of_months >= 0);
+
+	if (ymd->month <= 11 - number_of_months) {
+		/* We stay in the same year. */
+		ymd->month += number_of_months;
+	} else {
+		/* We do not stay in the same year. */
+
+		/* First go to the January of the next year. */
+		number_of_months -= (12 - ymd->month);
+		ymd->month = 0;
+		ymd->year++;
+
+		/* Then proceed by the number of full years left. */
+		ymd->year += number_of_months / 12;
+
+		/* Finally proceed by the remaining months.  As less than 12 months remain, and we start in January, we definitely stay in the same year. */
+		ymd->month += number_of_months % 12;
+	}
+}
+
+/** Decrements the given YearMonthDay instance by the given number of months.
+ *  @param ymd tuple of year, month, day
+ *  @param number_of_months a non-negative number of months to subtract
+ */
+void SubtractMonthsFromYMD(YearMonthDay *ymd, int32 number_of_months)
+{
+	assert(number_of_months >= 0);
+
+	if (ymd->month >= number_of_months) {
+		/* We stay in the same year. */
+		ymd->month -= number_of_months;
+	} else {
+		/* We do not stay in the same year. */
+
+		/* First go to the December of the previous year */
+		number_of_months -= (ymd->month + 1);
+		ymd->month = 11;
+		ymd->year--;
+
+		/* Then proceed by the number of full years left. */
+		ymd->year -= number_of_months / 12;
+
+		/* Finally proceed by the remaining months.  As less than 12 months remain, and we start in December, we definitely stay in the same year. */
+		ymd->month -= number_of_months % 12;
+	}
+}
+
+/** Adds the given Duration to the given Date.  If the Duration is DU_INVALID, the given Date is returned.
+ *  @param date any Date
+ *  @param Duration duration any duration
+ */
+Date AddToDate(Date date, Duration duration)
+{
+	if (duration.GetLength() < 0) {
+		return SubtractFromDate(date, -duration);
+	}
+
+	if (date == INVALID_DATE) {
+		return INVALID_DATE;
+	} else if (duration.IsInvalid()) {
+		return date;
+	} else if (duration.IsInTicks()) {
+		return date + (duration.GetLength() / DAY_TICKS);
+	} else if (duration.IsInDays()) {
+		return date + duration.GetLength();
+	} else if (duration.IsInMonths()) {
+		YearMonthDay ymd = YearMonthDay();
+		ConvertDateToYMD(date, &ymd);
+		AddMonthsToYMD(&ymd, duration.GetLength());
+		return ConvertYMDToDate(&ymd);
+	} else if (duration.IsInYears()) {
+		YearMonthDay ymd = YearMonthDay();
+		ConvertDateToYMD(date, &ymd);
+		ymd.year += duration.GetLength();
+		return ConvertYMDToDate(&ymd);
+	} else {
+		assert(false);
+	}
+}
+
+/** Subtracts the given Duration from the given Date.  If the Duration is DU_INVALID, the given Date is returned.
+ *  @param date any Date
+ *  @param Duration duration any duration
+ */
+Date SubtractFromDate(Date date, Duration duration)
+{
+	assert(duration.IsInvalid() || duration.GetLength() >= 0);
+
+	if (date == INVALID_DATE) {
+		return INVALID_DATE;
+	} else if (duration.IsInvalid()) {
+		return date;
+	} else if (duration.IsInTicks()) {
+		return date - (duration.GetLength() / DAY_TICKS);
+	} else if (duration.IsInDays()) {
+		return date - duration.GetLength();
+	} else if (duration.IsInMonths()) {
+		YearMonthDay ymd = YearMonthDay();
+		ConvertDateToYMD(date, &ymd);
+		SubtractMonthsFromYMD(&ymd, duration.GetLength());
+		return ConvertYMDToDate(&ymd);
+	} else if (duration.IsInYears()) {
+		YearMonthDay ymd = YearMonthDay();
+		ConvertDateToYMD(date, &ymd);
+		ymd.year -= duration.GetLength();
+		return ConvertYMDToDate(&ymd);
+	} else {
+		assert(false);
+	}
+}
+
+/** Returns the length of the given duration, transformed into our unit.
+ *  E.g. this represents "33 days", and the parameter "4 months", then
+ *  the return value will be 4 * DAYS_PER_MONTH = 120.
+ *  NOTE: This function cannot account for different month lengths,
+ *  it will just calculate 1 month has 30 days, and nothing else.
+ *  @pre this Duration and the parameter Duration both must have units
+ *       DU_DAYS, DU_MONTHS or DU_YEARS.  Neither invalid nor tick
+ *       durations are supported.
+ *  @param d Duration as described
+ *  @return length in our unit as described
+ */
+int32 Duration::GetLengthInOurUnit(Duration &d)
+{
+	/* Unimplemented cases. */
+	assert(!(this->IsInTicks() || this->IsInvalid() || d.IsInTicks() || d.IsInvalid()));
+
+	if (this->IsInDays()) {
+		if (d.IsInDays()) {
+			return d.GetLength();
+		} else if (d.IsInMonths()) {
+			return d.GetLength() * DAYS_PER_MONTH;
+		} else if (d.IsInYears()) {
+			return d.GetLength() * DAYS_PER_YEAR;
+		}
+	} else if (this->IsInMonths()) {
+		if (d.IsInDays()) {
+			return d.GetLength() / DAYS_PER_MONTH;
+		} else if (d.IsInMonths()) {
+			return d.GetLength();
+		} else if (d.IsInYears()) {
+			return d.GetLength() * MONTHS_PER_YEAR;
+		}
+	} else if (this->IsInYears()) {
+		if (d.IsInDays()) {
+			return d.GetLength() / DAYS_PER_YEAR;
+		} else if (d.IsInMonths()) {
+			return d.GetLength() / MONTHS_PER_YEAR;
+		} else if (d.IsInYears()) {
+			return d.GetLength();
+		}
+	}
+
+	// unreachable due to assert above.
+	return -1;
+}
+
+/** Returns the length of this Duration, transformed into Ticks.
+ *  NOTE: The conversion factors are 1 year = 12 months, 1 month = 30 days,
+ *        i.e. the result will not be exact with respect to calculating
+ *        differences based on a real calendar.
+ *  @return length, transformed into Ticks, as described.
+ */
+int32 Duration::GetLengthInTicks()
+{
+	if (this->IsInTicks()) {
+		return this->length;
+	} else if (this->IsInDays()) {
+		return this->length * DAY_TICKS;
+	} else if (this->IsInMonths()) {
+		return this->length * DAY_TICKS * DAYS_PER_MONTH;
+	} else if (this->IsInYears()) {
+		return this->length * DAY_TICKS * DAYS_PER_YEAR;
+	} else {
+		/* Fallback case if e.g. Duration is Invalid */
+		return 0;
+	}
+}
+
+/** Prints this Duration to DEBUG (misc) in a human readable fashion, e.g.
+ *  <prefix passed> 4 months <postfix passed>
+ *  @param level level passed to DEBUG
+ *  @param prefix prefix
+ *  @param postfix postfix
+ */
+void Duration::PrintToDebug(int level, const char *prefix, const char *postfix)
+{
+	const char* unit_string = "";
+	switch (GetUnit()) {
+		case DU_TICKS: unit_string = "Ticks"; break;
+		case DU_DAYS: unit_string = "Days"; break;
+		case DU_MONTHS: unit_string = "Months"; break;
+		case DU_YEARS: unit_string = "Years"; break;
+		case DU_INVALID: unit_string = "Invalid"; break;
+		default: unit_string = "Unknown unit";
+	}
+
+	DEBUG(misc, level, "%s %i %s %s", prefix, GetLength(), unit_string, postfix);
 }
