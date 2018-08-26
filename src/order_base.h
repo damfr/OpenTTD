@@ -236,7 +236,7 @@ private:
 public:
 	/** Default constructor producing an invalid order list. */
 	OrderList(VehicleOrderID num_orders = INVALID_VEH_ORDER_ID)
-		: first(nullptr), num_orders(num_orders), num_manual_orders(0), num_vehicles(0), first_shared(nullptr),
+		: first(nullptr), num_orders(num_orders), num_manual_orders(0), num_vehicles(0), first_shared(nullptr), name(nullptr),
 		  timetable_duration(0, DU_INVALID), start_time(INVALID_DATE) { }
 
 	/**
@@ -244,7 +244,7 @@ public:
 	 *  @param chain pointer to the first order of the order chain
 	 *  @param v any vehicle using this orderlist
 	 */
-	OrderList(Order *chain, Vehicle *v) { start_time = INVALID_DATE; this->Initialize(chain, v); }
+	OrderList(Order *chain, Vehicle *v) { this->name = NULL; start_time = INVALID_DATE; this->Initialize(chain, v); }
 
 	/** Destructor. Invalidates OrderList for re-usage by the pool. */
 	~OrderList() {}

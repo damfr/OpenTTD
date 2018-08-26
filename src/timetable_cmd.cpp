@@ -12,6 +12,7 @@
 #include "company_func.h"
 #include "date_func.h"
 #include "window_func.h"
+#include "string_func.h"
 #include "vehicle_base.h"
 #include "cmd_helper.h"
 
@@ -170,6 +171,60 @@ void UpdateVehicleStartTimes(Vehicle *vehicle)
 	Date global_timetable_start_date = vehicle->orders.list->GetStartTime();
 	vehicle->timetable_start = AddToDate(global_timetable_start_date, vehicle->timetable_offset);
 	vehicle->timetable_end = AddToDate(vehicle->timetable_start, timetable_length);
+}
+
+static bool IsUniqueTimetableName(const char *name)
+{
+	for (const OrderList *order_list : OrderList::Iterate()) {
+		if (order_list->GetName() != NULL && strcmp(order_list->GetName(), name) == 0) return false;
+	}
+
+	return true;
+}
+
+/**
+ * Rename a timetable.
+ * @param tile unused
+ * @param flags type of operation
+ * @param p1   unused
+ * @param p2   unused
+ * @param text new name of the timetable
+ * @return the cost of this operation or an error
+ */
+CommandCost CmdRenameTimetable(TileIndex tile, DoCommandFlag flags, uint32 p1, uint32 p2, const char *text)
+{
+	Vehicle *vehicle = Vehicle::GetIfValid(p1);
+
+	if (vehicle == NULL) {
+		return CMD_ERROR;
+	}
+
+	if (vehicle->orders.list == NULL && !OrderList::CanAllocateItem()) {
+		return CMD_ERROR;
+	}
+
+
+	bool reset = StrEmpty(text);
+
+	if (!reset) {
+		if (Utf8StringLength(text) >= MAX_LENGTH_TIMETABLE_NAME_CHARS) {
+			return CMD_ERROR;
+		}
+		if (!IsUniqueTimetableName(text)) return_cmd_error(STR_ERROR_NAME_MUST_BE_UNIQUE);
+	}
+
+	if (flags & DC_EXEC) {
+		if (vehicle->orders.list == NULL) {
+			vehicle->orders.list = new OrderList(NULL, vehicle);
+		}
+
+		/* Delete the old name */
+		free(vehicle->orders.list->GetName());
+		/* Assign the new one */
+		vehicle->orders.list->SetName(reset ? NULL : stredup(text));
+	}
+
+	return CommandCost();
 }
 
 /**

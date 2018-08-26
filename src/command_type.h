@@ -332,6 +332,7 @@ enum Commands {
 	CMD_SET_TIMETABLE_START,          ///< set the date that a timetable should start
 	CMD_SET_TIMETABLE_OFFSET,         ///< set the offset of a vehicles timetable relative to the timetable start date
 	CMD_SET_TIMETABLE_LENGTH,         ///< set the length of a timetable
+	CMD_RENAME_TIMETABLE,             ///< rename a timetable
 
 	CMD_OPEN_CLOSE_AIRPORT,           ///< open/close an airport to incoming aircraft
 

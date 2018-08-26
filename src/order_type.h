@@ -172,6 +172,8 @@ enum CloneOptions {
 	CO_UNSHARE = 2
 };
 
+static const uint MAX_LENGTH_TIMETABLE_NAME_CHARS = 32;      ///< The maximum length of a timetable name in characters including '\0'
+
 struct Order;
 struct OrderList;
 
