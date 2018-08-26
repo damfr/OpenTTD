@@ -22,6 +22,7 @@
  * @param duration the duration that has been chosen
  */
 typedef void SetDurationCallback(const Window *w, Duration duration);
+typedef void MoveTimetableCallback(const Window *w, Duration duration, int direction, uint16 first_shift_index, uint16 second_shift_index);
 
 static const uint MAX_LENGTH_LENGTH_INPUT = 7;
 static const int MAX_LENGTH = 1000000;
@@ -29,13 +30,11 @@ static const int SLOW_STEP_SIZE = 1;
 static const int FAST_STEP_SIZE = 20;
 
 /** Window to select a date graphically by using dropdowns */
-struct SetDurationWindow : Window {
+struct AbstractDurationWindow : Window {
 
-private:
+protected:
 	QueryString query_string;
-	StringID caption;
 
-	SetDurationCallback *callback; ///< Callback to call when a duration has been selected
 	Duration duration; ///< The currently selected duration
 	bool min_value; ///< Minimum value this window may select, regardless of the chosen unit.
 
@@ -47,10 +46,10 @@ private:
 
 	void ShowUnitDropDown();
 	void ParseEditBox();
-	void ProcessChoose();
+	virtual void ProcessChoose() = 0;
 
 public:
-	SetDurationWindow(WindowDesc *desc, WindowNumber window_number, Window *parent, Duration initial_duration, bool allow_zero, StringID caption, SetDurationCallback *callback);
+	AbstractDurationWindow(WindowDesc *desc, WindowNumber window_number, Window *parent, Duration initial_duration, bool allow_zero);
 
 	void CopyLengthIntoEditbox();
 	void AdjustUnitDropDown();
@@ -60,9 +59,41 @@ public:
 	virtual EventState OnHotkey(int hotkey);
 	virtual void OnEditboxChanged(int widget);
 	virtual void OnPaint();
+};
+
+struct SetDurationWindow : AbstractDurationWindow {
+
+protected:
+	StringID caption;
+	SetDurationCallback *callback; ///< Callback to call when a duration has been selected
+
+	virtual void ProcessChoose();
+
+public:
+	SetDurationWindow(WindowDesc *desc, WindowNumber window_number, Window *parent, Duration initial_duration, bool allow_zero, StringID caption, SetDurationCallback *callback);
+
+	virtual void UpdateWidgetSize(int widget, Dimension *size, const Dimension &padding, Dimension *fill, Dimension *resize);
+};
+
+struct MoveTimetableWindow : AbstractDurationWindow {
+
+protected:
+	int direction;
+	uint16 first_shift_index;
+	uint16 second_shift_index;
+	MoveTimetableCallback *callback;
+
+	void PrepareForCaptionString() const;
+	virtual void ProcessChoose();
+
+public:
+	MoveTimetableWindow(WindowDesc *desc, WindowNumber window_number, Window *parent, int direction, uint16 first_shift_index, uint16 second_shift_index, MoveTimetableCallback *callback);
+
+	virtual void SetStringParameters(int widget) const;
 	virtual void UpdateWidgetSize(int widget, Dimension *size, const Dimension &padding, Dimension *fill, Dimension *resize);
 };
 
 void ShowSetDurationWindow(Window *parent, int window_number, Duration initial_duration, bool allow_zero, StringID caption, SetDurationCallback *callback);
+void ShowMoveTimetableWindow(Window *parent, int window_number, int direction, uint16 first_shift_index, uint16 second_shift_index, MoveTimetableCallback *callback);
 
 #endif /* DATE_GUI_H */

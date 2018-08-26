@@ -4016,6 +4016,12 @@ STR_TIMETABLE_PROPERTY_LINE                                     :Start {DATE_LON
 STR_TIMETABLE_VEHICLE_INTERVAL_LINE                             :=> Vehicle timetable {DATE_LONG} to {DATE_LONG}
 STR_TIMETABLE_AUTOFILL_RUNS_ORDERS                              : Autofill is setting up orders.
 STR_TIMETABLE_AUTOFILL_RUNS_ORDERS_METADATA                     : Autofill is setting up start and length of timetable, and its orders.
+STR_TIMETABLE_SHIFT_CHOOSE_FIRST                                :{YELLOW}Choose arrivals/departures to shift: Click start order, or again the shift button to shift all orders.
+STR_TIMETABLE_SHIFT_CHOOSE_SECOND                               :{YELLOW}Shift arrivals/departures between {STRING} {COMMA} and: Click end order, or the shift button for the very last order.
+STR_TIMETABLE_SHIFT_ARRIVAL                                     :arrival
+STR_TIMETABLE_SHIFT_DEPARTURE                                   :departure
+STR_TIMETABLE_SHIFT_ORDERS_PAST_CAPTION                         :Shift marked orders to the past
+STR_TIMETABLE_SHIFT_ORDERS_FUTURE_CAPTION                       :Shift marked orders to the future.
 
 STR_TIMETABLE_DELAY                                             :{BLACK}delayed
 STR_TIMETABLE_TOO_EARLY                                         :{BLACK}too early
@@ -4127,6 +4133,7 @@ STR_DATE_NEGATIVE_OFFSET                                        :{BLACK}-{NUM}
 STR_DURATION_CAPTION                                            :{WHITE}Enter Duration
 STR_TIMETABLE_OFFSET_CAPTION                                    :{WHITE}Enter the Offset for the Timetable
 STR_TIMETABLE_LENGTH_CAPTION                                    :{WHITE}Enter the Length of the Timetable
+STR_TIMETABLE_MOVE_ORDERS_CAPTION                               :{WHITE}Specify offset to apply on {STRING} {COMMA} to {STRING} {COMMA}
 STR_DURATION_FAST_SMALLER_BUTTON_CAPTION                        :{BLACK}<<
 STR_DURATION_FAST_SMALLER_BUTTON_TOOLTIP                        :{BLACK}Decrement Length in Steps of 20
 STR_DURATION_SMALLER_BUTTON_CAPTION                             :{BLACK}<

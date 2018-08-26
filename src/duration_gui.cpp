@@ -24,7 +24,7 @@
 #include "widgets/duration_widget.h"
 
 
-void SetDurationWindow::ShowUnitDropDown()
+void AbstractDurationWindow::ShowUnitDropDown()
 {
 	int selected;
 	DropDownList *list = new DropDownList();
@@ -46,7 +46,7 @@ void SetDurationWindow::ShowUnitDropDown()
 	ShowDropDownList(this, list, selected, WID_SDU_UNIT_DROPDOWN);
 }
 
-void SetDurationWindow::ParseEditBox()
+void AbstractDurationWindow::ParseEditBox()
 {
 	const char* edit_str_buf = query_string.GetText();
 	uint64 length = StrEmpty(edit_str_buf) ? this->min_value : strtoul(edit_str_buf, NULL, 10);
@@ -55,15 +55,7 @@ void SetDurationWindow::ParseEditBox()
 	DEBUG(misc, 9, "Parsed length %i", this->duration.GetLength());
 }
 
-void SetDurationWindow::ProcessChoose()
-{
-	ParseEditBox();
-
-	if (this->callback != NULL) this->callback(this->parent, this->duration);
-	delete this;
-}
-
-void SetDurationWindow::CopyLengthIntoEditbox()
+void AbstractDurationWindow::CopyLengthIntoEditbox()
 {
 	/* Initialize the text edit widget */
 	if (this->duration.IsInDays() || this->duration.IsInMonths() || this->duration.IsInYears()) {
@@ -73,7 +65,7 @@ void SetDurationWindow::CopyLengthIntoEditbox()
 	}
 }
 
-void SetDurationWindow::AdjustUnitDropDown()
+void AbstractDurationWindow::AdjustUnitDropDown()
 {
 	NWidgetCore *dropdown_widget = this->GetWidget<NWidgetCore>(WID_SDU_UNIT_DROPDOWN);
 	if (this->duration.IsInDays()) {
@@ -87,13 +79,29 @@ void SetDurationWindow::AdjustUnitDropDown()
 	}
 }
 
+/** Some setup code needed by subclasses of AbstractDurationWindow.  Placed here, 
+ *  since InitNested is expected to call the particular subclass-specific 
+ *  implementation of UpdateWidgetSize, which unfortunately doesn´t work if
+ *  this code is placed in the superclass constructor.  Thus, I moved this code
+ *  to a helper class and call it from the subclass constructors.
+ *  @param window pointer to the window to initialize (i.e., from subclass 
+ *                constructor perspective, the this-pointer)
+ *  @param window_number the window number
+ */
+static void SetupNestedTree(AbstractDurationWindow *window, WindowNumber window_number)
+{
+	window->InitNested(window_number);
 
-SetDurationWindow::SetDurationWindow(WindowDesc *desc, WindowNumber window_number, Window *parent, Duration initial_duration, bool allow_zero, StringID caption, SetDurationCallback *callback)
+	window->CopyLengthIntoEditbox();
+	window->AdjustUnitDropDown();
+	window->SetFocusedWidget(WID_SDU_LENGTH_EDITBOX);
+	window->LowerWidget(WID_SDU_LENGTH_EDITBOX);
+}
+
+AbstractDurationWindow::AbstractDurationWindow(WindowDesc *desc, WindowNumber window_number, Window *parent, Duration initial_duration, bool allow_zero)
 			: Window(desc), query_string(MAX_LENGTH_LENGTH_INPUT * MAX_CHAR_LENGTH, MAX_LENGTH_LENGTH_INPUT)
 {
 	this->parent = parent;
-	this->caption = caption;
-	this->callback = callback;
 	this->duration = initial_duration;
 	this->min_value = allow_zero ? 0 : 1;
 
@@ -101,23 +109,13 @@ SetDurationWindow::SetDurationWindow(WindowDesc *desc, WindowNumber window_numbe
 		this->duration.SetUnit(DU_DAYS);
 	}
 
-	this->InitNested(window_number);
 	this->querystrings[WID_SDU_LENGTH_EDITBOX] = &this->query_string;
 	this->query_string.ok_button = WID_SDU_CHOOSE_BUTTON;
 	this->query_string.cancel_button = QueryString::ACTION_CLEAR;
 	this->query_string.text.afilter = CS_NUMERAL;
-
-	NWidgetCore *caption_widget = this->GetWidget<NWidgetCore>(WID_SDU_CAPTION);
-	caption_widget->SetDataTip(caption, STR_TOOLTIP_WINDOW_TITLE_DRAG_THIS);
-
-	this->CopyLengthIntoEditbox();
-	this->AdjustUnitDropDown();
-
-	this->SetFocusedWidget(WID_SDU_LENGTH_EDITBOX);
-	this->LowerWidget(WID_SDU_LENGTH_EDITBOX);
 }
 
-void SetDurationWindow::OnClick(Point pt, int widget, int click_count)
+void AbstractDurationWindow::OnClick(Point pt, int widget, int click_count)
 {
 	switch (widget) {
 		case WID_SDU_FAST_SMALLER_BUTTON: {
@@ -174,7 +172,8 @@ void SetDurationWindow::OnClick(Point pt, int widget, int click_count)
 			break;
 
 		case WID_SDU_CHOOSE_BUTTON:
-			ProcessChoose();
+			this->ParseEditBox();
+			this->ProcessChoose();
 			break;
 		case WID_SDU_LENGTH_EDITBOX: {
 			this->SetFocusedWidget(WID_SDU_LENGTH_EDITBOX);
@@ -184,7 +183,7 @@ void SetDurationWindow::OnClick(Point pt, int widget, int click_count)
 	}
 }
 
-void SetDurationWindow::OnDropdownSelect(int widget, int index)
+void AbstractDurationWindow::OnDropdownSelect(int widget, int index)
 {
 	switch (widget) {
 		case WID_SDU_UNIT_DROPDOWN:
@@ -206,7 +205,7 @@ void SetDurationWindow::OnDropdownSelect(int widget, int index)
 	this->SetDirty();
 }
 
-EventState SetDurationWindow::OnHotkey(int hotkey)
+EventState AbstractDurationWindow::OnHotkey(int hotkey)
 {
 	switch (hotkey) {
 		default:
@@ -214,16 +213,34 @@ EventState SetDurationWindow::OnHotkey(int hotkey)
 	}
 
 	return ES_HANDLED;
-}
+};
 
-void SetDurationWindow::OnEditboxChanged(int widget)
+void AbstractDurationWindow::OnEditboxChanged(int widget)
 {
 	this->ParseEditBox();
 }
 
-void SetDurationWindow::OnPaint()
+void AbstractDurationWindow::OnPaint()
 {
 	this->DrawWidgets();
+}
+
+void SetDurationWindow::ProcessChoose()
+{
+	if (this->callback != NULL) this->callback(this->parent, this->duration);
+	delete this;
+}
+
+SetDurationWindow::SetDurationWindow(WindowDesc *desc, WindowNumber window_number, Window *parent, Duration initial_duration, bool allow_zero, StringID caption, SetDurationCallback *callback)
+			: AbstractDurationWindow(desc, window_number, parent, initial_duration, allow_zero)
+{
+	this->caption = caption;
+
+	SetupNestedTree(this, window_number);
+	NWidgetCore *caption_widget = this->GetWidget<NWidgetCore>(WID_SDU_CAPTION);
+	caption_widget->SetDataTip(caption, STR_TOOLTIP_WINDOW_TITLE_DRAG_THIS);
+
+	this->callback = callback;
 }
 
 void SetDurationWindow::UpdateWidgetSize(int widget, Dimension *size, const Dimension &padding, Dimension *fill, Dimension *resize)
@@ -241,6 +258,57 @@ void SetDurationWindow::UpdateWidgetSize(int widget, Dimension *size, const Dime
 			d = maxdim(d, GetStringBoundingBox(STR_DURATION_MONTHS_UNIT));
 			d = maxdim(d, GetStringBoundingBox(STR_DURATION_YEARS_UNIT));
 			size->width = d.width + padding.width;
+			break;
+		}
+	}
+}
+
+void MoveTimetableWindow::PrepareForCaptionString() const
+{
+	SetDParam(0, this->first_shift_index % 2 == 0 ? STR_TIMETABLE_SHIFT_ARRIVAL : STR_TIMETABLE_SHIFT_DEPARTURE);
+	SetDParam(1, this->first_shift_index / 2 + 1);
+	SetDParam(2, this->second_shift_index % 2 == 0 ? STR_TIMETABLE_SHIFT_ARRIVAL : STR_TIMETABLE_SHIFT_DEPARTURE);
+	SetDParam(3, this->second_shift_index / 2 + 1);
+}
+
+void MoveTimetableWindow::ProcessChoose()
+{
+	if (this->callback != NULL) this->callback(this->parent, this->duration, this->direction, this->first_shift_index, this->second_shift_index);
+	delete this;
+}
+
+MoveTimetableWindow::MoveTimetableWindow(WindowDesc *desc, WindowNumber window_number, Window *parent, int direction, uint16 first_shift_index, uint16 second_shift_index, MoveTimetableCallback *callback)
+		: AbstractDurationWindow(desc, window_number, parent, Duration(0, DU_DAYS), true)
+{
+	this->direction = direction;
+	this->first_shift_index = first_shift_index;
+	this->second_shift_index = second_shift_index;
+	this->callback = callback;
+
+	SetupNestedTree(this, window_number);
+	NWidgetCore *caption_widget = this->GetWidget<NWidgetCore>(WID_SDU_CAPTION);
+	caption_widget->SetDataTip(STR_TIMETABLE_MOVE_ORDERS_CAPTION, STR_TOOLTIP_WINDOW_TITLE_DRAG_THIS);
+
+	this->ReInit(0, 0);
+}
+
+void MoveTimetableWindow::SetStringParameters(int widget) const
+{
+	switch (widget) {
+		case WID_SDU_CAPTION: {
+			this->PrepareForCaptionString();
+			break;
+		}
+	}
+}
+
+void MoveTimetableWindow::UpdateWidgetSize(int widget, Dimension *size, const Dimension &padding, Dimension *fill, Dimension *resize)
+{
+	switch (widget) {
+		case WID_SDU_CAPTION: {
+			this->PrepareForCaptionString();
+			Dimension d = GetStringBoundingBox(STR_TIMETABLE_MOVE_ORDERS_CAPTION);
+			size->width = d.width + 25;
 			break;
 		}
 	}
@@ -297,3 +365,8 @@ void ShowSetDurationWindow(Window *parent, int window_number, Duration initial_d
 	new SetDurationWindow(&_set_duration_desc, window_number, parent, initial_duration, allow_zero, caption, callback);
 }
 
+void ShowMoveTimetableWindow(Window *parent, int window_number, int direction, uint16 first_shift_index, uint16 second_shift_index, MoveTimetableCallback *callback)
+{
+	DeleteWindowByClass(WC_SET_DURATION);
+	new MoveTimetableWindow(&_set_duration_desc, window_number, parent, direction, first_shift_index, second_shift_index, callback);
+}

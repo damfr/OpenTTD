@@ -97,6 +97,34 @@ static void SetLengthCallback(const Window *w, Duration duration)
 	DoCommandP(0, p1, p2, CMD_SET_TIMETABLE_LENGTH | CMD_MSG(STR_ERROR_CAN_T_TIMETABLE_VEHICLE));
 }
 
+static void MoveTimetableCallbackImpl(const Window *w, Duration duration, int direction, uint16 first_shift_index, uint16 second_shift_index)
+{
+	VehicleID vehicle_id = (VehicleID)w->window_number;
+	Vehicle *vehicle = Vehicle::GetIfValid(vehicle_id);
+	if (vehicle == NULL) {
+		return;
+	} else {
+		bool start_with_departure = first_shift_index % 2;
+		bool end_with_departure = second_shift_index % 2;
+		VehicleOrderID first_order_index = (VehicleOrderID)(first_shift_index / 2);
+		VehicleOrderID second_order_index = (VehicleOrderID)(second_shift_index / 2);
+
+		for (VehicleOrderID curr_order_index = first_order_index; curr_order_index <= min(vehicle->GetNumOrders(), second_order_index); curr_order_index++) {
+			Order *order = vehicle->GetOrder(curr_order_index);
+			if (order->HasArrival() && (curr_order_index > first_order_index || !start_with_departure)) {
+				Date arrival = order->GetArrival();
+				Date new_arrival = direction == -1 ? SubtractFromDate(arrival, duration) : AddToDate(arrival, duration);
+				DoCommandP(0, order->index | vehicle->index << 16, new_arrival, CMD_SET_ORDER_ARRIVAL | CMD_MSG(STR_ERROR_CAN_T_TIMETABLE_VEHICLE));
+			}
+			if (order->HasDeparture() && (curr_order_index < min(vehicle->GetNumOrders(), second_order_index) || end_with_departure)) {
+				Date departure = order->GetDeparture();
+				Date new_departure = direction == -1 ? SubtractFromDate(departure, duration) : AddToDate(departure, duration);
+				DoCommandP(0, order->index | vehicle->index << 16, new_departure, CMD_SET_ORDER_DEPARTURE | CMD_MSG(STR_ERROR_CAN_T_TIMETABLE_VEHICLE));
+			}
+		}
+	}
+}
+
 /** Constructs the caption to be used for the datefast_gui, when choosing an arrival for the given order,
  *  and writes it into the given buffer.
  */
@@ -165,6 +193,17 @@ private:
 	VehicleOrderID order_over;         ///< Order over which another order is dragged, \c INVALID_VEH_ORDER_ID if none.
 
 	bool can_do_autorefit; ///< Vehicle chain can be auto-refitted.
+
+    int shift_timetable_direction; ///< Order of shifting (parts of) the timetable.  +1 for future, -1 for past.
+	enum TimetableShiftMode {
+		TSM_NONE,
+		TSM_CHOOSE_FIRST_ORDER,
+		TSM_CHOOSE_SECOND_ORDER
+	};
+	TimetableShiftMode shift_mode;
+	uint16 first_shift_index;   ///< When shifting arrivals/departures: The order index to start with, either 2 * order_index for the arrival, or 2 * order_index + 1 for the departure
+	uint16 second_shift_index;
+	uint16 INVALID_SHIFT_ORDER_INDEX = 0xFFFF;
 
 	enum TimetableQueryType {
 		TQT_NAME,
@@ -796,6 +835,16 @@ private:
 	{
 		int clicked_line = GetLineFromPt(pt.y);
 
+		if (this->shift_mode == TSM_CHOOSE_FIRST_ORDER) {
+			this->first_shift_index = 2 * (uint16)this->GetOrderID(clicked_line) + (_ctrl_pressed ? 0 : 1);
+			this->shift_mode = TSM_CHOOSE_SECOND_ORDER;
+			return;
+		} else if (this->shift_mode == TSM_CHOOSE_SECOND_ORDER) {
+			this->second_shift_index = 2 * (uint16)this->GetOrderID(clicked_line) + (_ctrl_pressed ? 1 : 0);
+			this->OpenShiftAmountDialog();
+			return;
+		}
+
 		if (this->place_object_type == TIMETABLE_POS_CONDITIONAL) {
 			this->place_object_type = TIMETABLE_POS_GOTO;
 
@@ -978,6 +1027,48 @@ private:
 			i = (order->GetDepotOrderType() & ODTFB_SERVICE) ? DA_ALWAYS_GO : DA_SERVICE;
 		}
 		DoCommandP(this->vehicle->tile, this->vehicle->index + (sel_ord << 20), MOF_DEPOT_ACTION | (i << 4), CMD_MODIFY_ORDER | CMD_MSG(STR_ERROR_CAN_T_MODIFY_THIS_ORDER));
+	}
+
+	void ProcessShiftTimetable(int direction)
+	{
+		/* Autofill and shifting timetables are not compatible.  Shifting screws up the data autofill uses,
+	     * and additionally, they use the same GUI section for their status messages */
+		if (this->vehicle->IsAutofilling()) {
+			this->StopAutofill();
+		}
+
+		this->shift_timetable_direction = direction;
+		if (this->shift_mode == TSM_NONE) {
+			/* Shift mode was not active.  Now the player can (1) click some order to choose the first boundary of the order range to shift,
+			 * or (2) click again on the shift button, to shift the whole timetable.  In either case, a Duration window will pop up for choosing the amount of time to shift. */
+			this->shift_mode = TSM_CHOOSE_FIRST_ORDER;
+			this->first_shift_index = this->INVALID_SHIFT_ORDER_INDEX;
+			this->second_shift_index = this->INVALID_SHIFT_ORDER_INDEX;
+		} else if (this->shift_mode == TSM_CHOOSE_FIRST_ORDER) {
+			/* Shift the whole timetable */
+			this->first_shift_index = 0;
+			this->second_shift_index = 2 * (this->vehicle->GetNumOrders() - 1) + 1;
+			this->OpenShiftAmountDialog();
+		} else if (this->shift_mode == TSM_CHOOSE_SECOND_ORDER) {
+			/* The first boundary of the order range to shift was already defined, interpret this second click to shift all orders starting with that boundary. */
+			this->second_shift_index = 2 * (this->vehicle->GetNumOrders() - 1) + 1;
+			this->OpenShiftAmountDialog();
+		}
+
+		this->InvalidateData();
+	}
+
+	void OpenShiftAmountDialog()
+	{
+		this->shift_mode = TSM_NONE;
+
+		if (this->first_shift_index > this->second_shift_index) {
+			uint16 tmp = this->first_shift_index;
+			this->first_shift_index = this->second_shift_index;
+			this->second_shift_index = tmp;
+		}
+
+		ShowMoveTimetableWindow(this, this->vehicle->index, this->shift_timetable_direction, this->first_shift_index, this->second_shift_index, MoveTimetableCallbackImpl);
 	}
 
 	void ProcessSetDepartureClick()
@@ -1313,6 +1404,7 @@ public:
 
 		this->owner = this->vehicle->owner;
 		this->order_over = INVALID_VEH_ORDER_ID;
+		this->shift_mode = TSM_NONE;
 
 		this->UpdateAutoRefitState();
 
@@ -1656,24 +1748,35 @@ public:
 
 				y += FONT_HEIGHT_NORMAL;
 
-				char buffer[512] = "";
-				char* curr_buffer_pointer = buffer;
-				char tmp_buffer[200];
+				if (this->shift_mode == TSM_NONE) {
+					char buffer[512] = "";
+					char* curr_buffer_pointer = buffer;
+					char tmp_buffer[200];
 
-				this->PrepareForVehicleIntervalLine();
-				TextColour status_color = IsVehicleIntervalLineSelected() ? TC_WHITE : TC_BLACK;
-				
-				GetString(tmp_buffer, STR_TIMETABLE_VEHICLE_INTERVAL_LINE, lastof(tmp_buffer));
-				curr_buffer_pointer = strecat(curr_buffer_pointer, tmp_buffer, lastof(buffer));
-
-				bool autofilling = HasBit(this->vehicle->vehicle_flags, VF_AUTOFILL_TIMETABLE);
-				bool autofill_fills_metadata = HasBit(this->vehicle->vehicle_flags, VF_AUTOFILL_UPDATE_METADATA);
-				if (autofilling) {
-					StringID str = autofill_fills_metadata ? STR_TIMETABLE_AUTOFILL_RUNS_ORDERS_METADATA : STR_TIMETABLE_AUTOFILL_RUNS_ORDERS;
-					GetString(tmp_buffer, str, lastof(tmp_buffer));
+					this->PrepareForVehicleIntervalLine();
+					TextColour status_color = IsVehicleIntervalLineSelected() ? TC_WHITE : TC_BLACK;
+					GetString(tmp_buffer, STR_TIMETABLE_VEHICLE_INTERVAL_LINE, lastof(tmp_buffer));
 					curr_buffer_pointer = strecat(curr_buffer_pointer, tmp_buffer, lastof(buffer));
+				
+					bool autofilling = HasBit(this->vehicle->vehicle_flags, VF_AUTOFILL_TIMETABLE);
+					bool autofill_fills_metadata = HasBit(this->vehicle->vehicle_flags, VF_AUTOFILL_UPDATE_METADATA);
+					if (autofilling) {
+						StringID str = autofill_fills_metadata ? STR_TIMETABLE_AUTOFILL_RUNS_ORDERS_METADATA : STR_TIMETABLE_AUTOFILL_RUNS_ORDERS;
+						GetString(tmp_buffer, str, lastof(tmp_buffer));
+						curr_buffer_pointer = strecat(curr_buffer_pointer, tmp_buffer, lastof(buffer));
+					}
+					DrawString(r.left + WD_FRAMERECT_LEFT, r.right - WD_FRAMERECT_RIGHT, y, buffer, status_color);
+				} else {
+					if (this->shift_mode == TSM_CHOOSE_FIRST_ORDER) {
+						DrawString(r.left + WD_FRAMERECT_LEFT, r.right - WD_FRAMERECT_RIGHT, y, STR_TIMETABLE_SHIFT_CHOOSE_FIRST);
+					} else if (this->shift_mode == TSM_CHOOSE_SECOND_ORDER) {
+						bool start_with_departure = this->first_shift_index % 2;
+						VehicleID first_order = (VehicleOrderID)(this->first_shift_index / 2);
+						SetDParam(0, start_with_departure ? STR_TIMETABLE_SHIFT_DEPARTURE : STR_TIMETABLE_SHIFT_ARRIVAL);
+						SetDParam(1, first_order + 1);
+						DrawString(r.left + WD_FRAMERECT_LEFT, r.right - WD_FRAMERECT_RIGHT, y, STR_TIMETABLE_SHIFT_CHOOSE_SECOND);
+					}
 				}
-				DrawString(r.left + WD_FRAMERECT_LEFT, r.right - WD_FRAMERECT_RIGHT, y, buffer, status_color);
 				break;
 			}
 		}
@@ -1766,6 +1869,10 @@ public:
 	virtual void OnClick(Point pt, int widget, int click_count)
 	{
 		const Vehicle *v = this->vehicle;
+
+		if (this->shift_mode != TSM_NONE && widget != WID_VT_TIMETABLE_PANEL && widget != WID_VT_SHIFT_ORDERS_PAST_BUTTON && widget != WID_VT_SHIFT_ORDERS_FUTURE_BUTTON) {
+			this->shift_mode = TSM_NONE;
+		}
 
 		switch (widget) {
 			case WID_VT_FULL_FILTER_BUTTON:
@@ -1933,6 +2040,16 @@ public:
 					default_length = this->vehicle->orders.list->GetTimetableDuration();
 				}
 				ShowSetDurationWindow(this, this->vehicle->index, default_length, false, STR_TIMETABLE_LENGTH_CAPTION, SetLengthCallback);
+				break;
+			}
+
+			case WID_VT_SHIFT_ORDERS_PAST_BUTTON: {
+				this->ProcessShiftTimetable(-1);
+				break;
+			}
+
+			case WID_VT_SHIFT_ORDERS_FUTURE_BUTTON: {
+				this->ProcessShiftTimetable(1);
 				break;
 			}
 
@@ -2171,6 +2288,10 @@ public:
 
 	void StartAutofill(int index)
 	{
+		/* Autofill and shifting timetables are not compatible.  Shifting screws up the data autofill uses,
+	     * and additionally, they use the same GUI section for their status messages */
+		this->shift_mode = TSM_NONE;
+
 		uint32 p2 = 0;
 		SetBit(p2, 0);
 		if (_ctrl_pressed) SetBit(p2, 1);
