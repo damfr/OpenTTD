@@ -345,6 +345,12 @@ enum WindowClass {
 	WC_STATION_VIEW,
 
 	/**
+	 * Node timetable window, %Windwo numbers:
+	 *   - TODO as soon as I have understood the syntax/sense of these comments...
+	 */
+	WC_NODETIMETABLE_WINDOW,
+
+	/**
 	 * Depot view; %Window numbers:
 	 *   - #TileIndex = #DepotWidgets
 	 */

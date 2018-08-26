@@ -107,14 +107,14 @@ static void MoveTimetableCallbackImpl(const Window *w, Duration duration, int di
 		VehicleOrderID first_order_index = (VehicleOrderID)(first_shift_index / 2);
 		VehicleOrderID second_order_index = (VehicleOrderID)(second_shift_index / 2);
 
-		for (VehicleOrderID curr_order_index = first_order_index; curr_order_index <= min(vehicle->GetNumOrders(), second_order_index); curr_order_index++) {
+		for (VehicleOrderID curr_order_index = first_order_index; curr_order_index <= std::min(vehicle->GetNumOrders(), second_order_index); curr_order_index++) {
 			Order *order = vehicle->GetOrder(curr_order_index);
 			if (order->HasArrival() && (curr_order_index > first_order_index || !start_with_departure)) {
 				Date arrival = order->GetArrival();
 				Date new_arrival = direction == -1 ? SubtractFromDate(arrival, duration) : AddToDate(arrival, duration);
 				DoCommandP(0, order->index | vehicle->index << 16, new_arrival, CMD_SET_ORDER_ARRIVAL | CMD_MSG(STR_ERROR_CAN_T_TIMETABLE_VEHICLE));
 			}
-			if (order->HasDeparture() && (curr_order_index < min(vehicle->GetNumOrders(), second_order_index) || end_with_departure)) {
+			if (order->HasDeparture() && (curr_order_index < std::min(vehicle->GetNumOrders(), second_order_index) || end_with_departure)) {
 				Date departure = order->GetDeparture();
 				Date new_departure = direction == -1 ? SubtractFromDate(departure, duration) : AddToDate(departure, duration);
 				DoCommandP(0, order->index | vehicle->index << 16, new_departure, CMD_SET_ORDER_DEPARTURE | CMD_MSG(STR_ERROR_CAN_T_TIMETABLE_VEHICLE));

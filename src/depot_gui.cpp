@@ -22,6 +22,7 @@
 #include "vehicle_func.h"
 #include "company_func.h"
 #include "tilehighlight_func.h"
+#include "timetable_func.h"
 #include "window_gui.h"
 #include "vehiclelist.h"
 #include "order_backup.h"
@@ -72,6 +73,7 @@ static const NWidgetPart _nested_train_depot_widgets[] = {
 	NWidget(NWID_HORIZONTAL, NC_EQUALSIZE),
 		NWidget(WWT_PUSHTXTBTN, COLOUR_GREY, WID_D_BUILD), SetDataTip(0x0, STR_NULL), SetFill(1, 1), SetResize(1, 0),
 		NWidget(WWT_TEXTBTN, COLOUR_GREY, WID_D_CLONE), SetDataTip(0x0, STR_NULL), SetFill(1, 1), SetResize(1, 0),
+		NWidget(WWT_PUSHTXTBTN, COLOUR_GREY, WID_D_TIMETABLE), SetDataTip(STR_BUTTON_TIMETABLE, STR_DEPOT_TIMETABLE_BUTTON_TOOLTIP), SetFill(1, 1), SetResize(1, 0),
 		NWidget(WWT_PUSHTXTBTN, COLOUR_GREY, WID_D_VEHICLE_LIST), SetDataTip(0x0, STR_NULL), SetFill(0, 1),
 		NWidget(WWT_PUSHIMGBTN, COLOUR_GREY, WID_D_STOP_ALL), SetDataTip(SPR_FLAG_VEH_STOPPED, STR_NULL), SetFill(0, 1),
 		NWidget(WWT_PUSHIMGBTN, COLOUR_GREY, WID_D_START_ALL), SetDataTip(SPR_FLAG_VEH_RUNNING, STR_NULL), SetFill(0, 1),
@@ -797,6 +799,11 @@ struct DepotWindow : Window {
 				SetDParam(1, Depot::GetByTile((TileIndex)this->window_number)->index);
 				ShowQueryString(STR_DEPOT_NAME, STR_DEPOT_RENAME_DEPOT_CAPTION, MAX_LENGTH_DEPOT_NAME_CHARS, this, CS_ALPHANUMERAL, QSF_ENABLE_DEFAULT | QSF_LEN_IN_CHARS);
 				break;
+
+			case WID_D_TIMETABLE: {
+				ShowDepotTimetableWindow(GetDepotIndex(), !_ctrl_pressed, _ctrl_pressed);
+				break;
+			}
 
 			case WID_D_STOP_ALL:
 			case WID_D_START_ALL: {

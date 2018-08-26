@@ -236,6 +236,7 @@ STR_TOOLTIP_FILTER_CRITERIA                                     :{BLACK}Select f
 STR_BUTTON_SORT_BY                                              :{BLACK}Sort by
 STR_BUTTON_CATCHMENT                                            :{BLACK}Coverage
 STR_TOOLTIP_CATCHMENT                                           :{BLACK}Toggle coverage area display
+STR_BUTTON_TIMETABLE                                            :{BLACK}Timetable
 
 STR_TOOLTIP_CLOSE_WINDOW                                        :{BLACK}Close window
 STR_TOOLTIP_WINDOW_TITLE_DRAG_THIS                              :{BLACK}Window title - drag this to move window
@@ -3364,6 +3365,7 @@ STR_CARGO_RATING_OUTSTANDING                                    :Outstanding
 
 STR_STATION_VIEW_CENTER_TOOLTIP                                 :{BLACK}Centre main view on station location. Ctrl+Click opens a new viewport on station location
 STR_STATION_VIEW_RENAME_TOOLTIP                                 :{BLACK}Change name of station
+STR_STATION_VIEW_TIMETABLE_TOOLTIP                              :{BLACK}Open the timetable of the station (with Ctrl: arrivals, without: departures)
 
 STR_STATION_VIEW_SCHEDULED_TRAINS_TOOLTIP                       :{BLACK}Show all trains which have this station on their schedule
 STR_STATION_VIEW_SCHEDULED_ROAD_VEHICLES_TOOLTIP                :{BLACK}Show all road vehicles which have this station on their schedule
@@ -3379,8 +3381,10 @@ STR_STATION_VIEW_CLOSE_AIRPORT_TOOLTIP                          :{BLACK}Prevent 
 STR_WAYPOINT_VIEW_CAPTION                                       :{WHITE}{WAYPOINT}
 STR_WAYPOINT_VIEW_CENTER_TOOLTIP                                :{BLACK}Centre main view on waypoint location. Ctrl+Click opens a new viewport on waypoint location
 STR_WAYPOINT_VIEW_CHANGE_WAYPOINT_NAME                          :{BLACK}Change waypoint name
+STR_WAYPOINT_VIEW_OPEN_TIMETABLE                                :{BLACK}Open the timetable of the waypoint
 STR_BUOY_VIEW_CENTER_TOOLTIP                                    :{BLACK}Centre main view on buoy location. Ctrl+Click opens a new viewport on buoy location
 STR_BUOY_VIEW_CHANGE_BUOY_NAME                                  :{BLACK}Change buoy name
+STR_BUOY_VIEW_OPEN_TIMETABLE                                    :{BLACK}Open the timetable of the buoy
 
 STR_EDIT_WAYPOINT_NAME                                          :{WHITE}Edit waypoint name
 
@@ -3688,6 +3692,7 @@ STR_DEPOT_CAPTION                                               :{WHITE}{DEPOT}
 
 STR_DEPOT_RENAME_TOOLTIP                                        :{BLACK}Change name of depot
 STR_DEPOT_RENAME_DEPOT_CAPTION                                  :Rename depot
+STR_DEPOT_TIMETABLE_BUTTON_TOOLTIP                              :Open the timetable of the depot.
 
 STR_DEPOT_NO_ENGINE                                             :{BLACK}-
 STR_DEPOT_VEHICLE_TOOLTIP                                       :{BLACK}{ENGINE}{RAW_STRING}
@@ -4291,6 +4296,18 @@ STR_DELAY_MARKER_ON_TIME_SMALL                                  :{TINY_FONT}{WHI
 STR_DELAY_MARKER_ON_TIME                                        :{WHITE}{NUM}
 STR_DELAY_MARKER_TOO_EARLY_SMALL                                :{TINY_FONT}{GREEN}{NUM}
 STR_DELAY_MARKER_TOO_EARLY                                      :{GREEN}{NUM}
+
+# Node Timetable Window
+STR_NODETIMETABLE_STATION_ARRIVAL_CAPTION                       :{WHITE}Arrivals {STATION}
+STR_NODETIMETABLE_STATION_DEPARTURE_CAPTION                     :{WHITE}Departures {STATION}
+STR_NODETIMETABLE_WAYPOINT_ARRIVAL_CAPTION                      :{WHITE}Arrivals {WAYPOINT}
+STR_NODETIMETABLE_WAYPOINT_DEPARTURE_CAPTION                    :{WHITE}Departures {WAYPOINT}
+STR_NODETIMETABLE_DEPOT_ARRIVAL_CAPTION                         :{WHITE}Arrivals {DEPOT}
+STR_NODETIMETABLE_DEPOT_DEPARTURE_CAPTION                       :{WHITE}Departures {DEPOT}
+STR_NODETIMETABLE_ARRIVAL_BUTTON_CAPTION                        :{BLACK}Arrivals
+STR_NODETIMETABLE_ARRIVAL_BUTTON_TOOLTIP                        :{BLACK}Show the corresponding arrival timetable
+STR_NODETIMETABLE_DEPARTURE_BUTTON_CAPTION                      :{BLACK}Departures
+STR_NODETIMETABLE_DEPARTURE_BUTTON_TOOLTIP                      :{BLACK}Show the corresponding departure timetable.
 
 # Date window (for timetable)
 STR_DATE_CAPTION                                                :{WHITE}Set date

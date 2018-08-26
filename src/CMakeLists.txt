@@ -284,6 +284,7 @@ add_files(
     news_gui.cpp
     news_gui.h
     news_type.h
+    nodetimetable_gui.cpp
     object.h
     object_base.h
     object_cmd.cpp
@@ -424,6 +425,7 @@ add_files(
     tilematrix_type.hpp
     timetable.h
     timetable_cmd.cpp
+    timetable_func.h
     timetable_gui.cpp
     toolbar_gui.cpp
     toolbar_gui.h
