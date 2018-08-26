@@ -162,6 +162,11 @@ enum WindowClass {
 	 */
 	WC_SET_DATE,
 
+	/**
+	 * Set duration; %Window numbers:
+	 *   - TODO once I understand that comment
+	 */
+	WC_SET_DURATION,
 
 	/**
 	 * AI settings; %Window numbers:

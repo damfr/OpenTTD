@@ -177,6 +177,7 @@ direction_type.h
 disaster_vehicle.h
 music/dmusic.h
 driver.h
+duration_gui.h
 economy_base.h
 economy_func.h
 economy_type.h
@@ -461,6 +462,7 @@ console_gui.cpp
 date_gui.cpp
 depot_gui.cpp
 dock_gui.cpp
+duration_gui.cpp
 engine_gui.cpp
 error_gui.cpp
 fios_gui.cpp
@@ -525,6 +527,7 @@ widgets/dropdown.cpp
 widgets/dropdown_func.h
 widgets/dropdown_type.h
 widgets/dropdown_widget.h
+widgets/duration_widget.h
 widgets/engine_widget.h
 widgets/error_widget.h
 widgets/fios_widget.h

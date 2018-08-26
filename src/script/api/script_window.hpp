@@ -29,6 +29,7 @@
 #include "../../widgets/depot_widget.h"
 #include "../../widgets/dock_widget.h"
 #include "../../widgets/dropdown_widget.h"
+#include "../../widgets/duration_widget.h"
 #include "../../widgets/engine_widget.h"
 #include "../../widgets/error_widget.h"
 #include "../../widgets/fios_widget.h"
@@ -245,6 +246,11 @@ public:
 		 *   - #VehicleID = #SetDateWidgets
 		 */
 		WC_SET_DATE                                  = ::WC_SET_DATE,
+
+		/** Set a duration; Window numbers:
+		 *  // TODO once I understand the synax of that extra line
+		 */
+		WC_SET_DURATION = ::WC_SET_DURATION,
 
 
 		/**
@@ -1195,6 +1201,17 @@ public:
 		WID_SD_MONTH                                 = ::WID_SD_MONTH,                                 ///< Dropdown for the month.
 		WID_SD_YEAR                                  = ::WID_SD_YEAR,                                  ///< Dropdown for the year.
 		WID_SD_SET_DATE                              = ::WID_SD_SET_DATE,                              ///< Actually set the date.
+	};
+
+    enum SetDurationWidgets {
+		WID_SDU_CAPTION                      = ::WID_SDU_CAPTION,                      ///< The caption of the window
+		WID_SDU_FAST_SMALLER_BUTTON          = ::WID_SDU_FAST_SMALLER_BUTTON,          ///< The button for making the value smaller in bigger steps
+	    WID_SDU_SMALLER_BUTTON               = ::WID_SDU_SMALLER_BUTTON,               ///< The button for making the value smaller in steps of size one
+	    WID_SDU_LENGTH_EDIXBOX               = ::WID_SDU_LENGTH_EDITBOX,               ///< The editbox for entering the value
+	    WID_SDU_BIGGER_BUTTON                = ::WID_SDU_BIGGER_BUTTON,                ///< The button for making the value bigger in steps of size one
+	    WID_SDU_FAST_BIGGER_BUTTON           = ::WID_SDU_FAST_BIGGER_BUTTON,           ///< The button for making the value bigger in bigger steps
+	    WID_SDU_UNIT_DROPDOWN                = ::WID_SDU_UNIT_DROPDOWN,                ///< The dropdown for choosing the unit
+	    WID_SDU_CHOOSE_BUTTON                = ::WID_SDU_CHOOSE_BUTTON,                ///< The button for choosing a value
 	};
 
 	/* automatically generated from ../../widgets/depot_widget.h */

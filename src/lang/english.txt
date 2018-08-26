@@ -4073,6 +4073,27 @@ STR_DATE_DAY_TOOLTIP                                            :{BLACK}Select d
 STR_DATE_MONTH_TOOLTIP                                          :{BLACK}Select month
 STR_DATE_YEAR_TOOLTIP                                           :{BLACK}Select year
 
+# Duration window
+STR_DURATION_CAPTION                                            :{WHITE}Enter Duration
+STR_TIMETABLE_OFFSET_CAPTION                                    :{WHITE}Enter the Offset for the Timetable
+STR_TIMETABLE_LENGTH_CAPTION                                    :{WHITE}Enter the Length of the Timetable
+STR_DURATION_FAST_SMALLER_BUTTON_CAPTION                        :{BLACK}<<
+STR_DURATION_FAST_SMALLER_BUTTON_TOOLTIP                        :{BLACK}Decrement Length in Steps of 20
+STR_DURATION_SMALLER_BUTTON_CAPTION                             :{BLACK}<
+STR_DURATION_SMALLER_BUTTON_TOOLTIP                             :{BLACK}Decrement Length in Steps of One
+STR_DURATION_FAST_BIGGER_BUTTON_CAPTION                         :{BLACK}>>
+STR_DURATION_FAST_BIGGER_BUTTON_TOOLTIP                         :{BLACK}Increment Length in Steps of 20
+STR_DURATION_BIGGER_BUTTON_CAPTION                              :{BLACK}>
+STR_DURATION_BIGGER_BUTTON_TOOLTIP                              :{BLACK}Increment Length in Steps of One
+STR_DURATION_UNIT_DROPDOWN_TOOLTIP                              :{BLACK}Choose the Unit of the Duration
+STR_DURATION_CHOOSE_DURATION_BUTTON_CAPTION                     :{BLACK}Choose
+STR_DURATION_CHOOSE_DURATION_BUTTON_TOOLTIP                     :{BLACK}Choose the Duration
+STR_DURATION_ENTER_LENGTH_OSKTITLE                              :{BLACK}Enter a Value
+STR_DURATION_ENTER_LENGTH_TOOLTIP                               :{BLACK}Enter a Value
+
+STR_DURATION_DAYS_UNIT                                          :Days
+STR_DURATION_MONTHS_UNIT                                        :Months
+STR_DURATION_YEARS_UNIT                                         :Years
 
 # AI debug window
 STR_AI_DEBUG                                                    :{WHITE}AI/Game Script Debug
