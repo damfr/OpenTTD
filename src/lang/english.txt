@@ -4005,6 +4005,11 @@ STR_TIMETABLE_INVALID_DURATION                                  :----
 STR_TIMETABLE_PROPERTY_LINE                                     :Start {DATE_LONG}  Offset {DURATION}  Length {DURATION}
 STR_TIMETABLE_VEHICLE_INTERVAL_LINE                             :=> Vehicle timetable {DATE_LONG} to {DATE_LONG}
 
+STR_TIMETABLE_DELAY                                             :{BLACK}delayed
+STR_TIMETABLE_TOO_EARLY                                         :{BLACK}too early
+STR_TIMETABLE_ON_TIME_UPPER                                     :{BLACK}On
+STR_TIMETABLE_ON_TIME_LOWER                                     :{BLACK}Time
+
 STR_TIMETABLE_TOTAL_TIME                                        :{BLACK}This timetable will take {STRING1} to complete
 STR_TIMETABLE_TOTAL_TIME_INCOMPLETE                             :{BLACK}This timetable will take at least {STRING1} to complete (not all timetabled)
 
