@@ -267,11 +267,7 @@ void DrawOrderString(const Vehicle *v, const Order *order, int order_index, int 
 
 			if (timetable) {
 				SetDParam(3, STR_EMPTY);
-
-				if (order->GetWaitTime() > 0) {
-					SetDParam(5, order->IsWaitTimetabled() ? STR_TIMETABLE_STAY_FOR : STR_TIMETABLE_STAY_FOR_ESTIMATED);
-					SetTimetableParams(6, 7, order->GetWaitTime());
-				}
+				SetDParam(5, STR_EMPTY);
 			} else {
 				SetDParam(3, (order->GetNonStopType() & ONSF_NO_STOP_AT_DESTINATION_STATION) ? STR_EMPTY : _station_load_types[order->IsRefit()][unload][load]);
 				if (order->IsRefit()) {
@@ -336,12 +332,7 @@ void DrawOrderString(const Vehicle *v, const Order *order, int order_index, int 
 				SetDParam(4, value);
 			}
 
-			if (timetable && order->GetWaitTime() > 0) {
-				SetDParam(5, order->IsWaitTimetabled() ? STR_TIMETABLE_AND_TRAVEL_FOR : STR_TIMETABLE_AND_TRAVEL_FOR_ESTIMATED);
-				SetTimetableParams(6, 7, order->GetWaitTime());
-			} else {
-				SetDParam(5, STR_EMPTY);
-			}
+			SetDParam(5, STR_EMPTY);
 			break;
 
 		default: NOT_REACHED();
