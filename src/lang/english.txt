@@ -4000,6 +4000,9 @@ STR_TIMETABLE_MONTHS                                            :{COMMA}{NBSP}mo
 STR_TIMETABLE_YEARS                                             :{COMMA}{NBSP}year{P "" s}
 STR_TIMETABLE_INVALID_DURATION                                  :----
 
+STR_TIMETABLE_PROPERTY_LINE                                     :Start {DATE_LONG}  Offset {DURATION}  Length {DURATION}
+STR_TIMETABLE_VEHICLE_INTERVAL_LINE                             :=> Vehicle timetable {DATE_LONG} to {DATE_LONG}
+
 STR_TIMETABLE_TOTAL_TIME                                        :{BLACK}This timetable will take {STRING1} to complete
 STR_TIMETABLE_TOTAL_TIME_INCOMPLETE                             :{BLACK}This timetable will take at least {STRING1} to complete (not all timetabled)
 

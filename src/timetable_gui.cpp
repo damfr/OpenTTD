@@ -261,6 +261,37 @@ private:
 	/********************************************* Assembling output strings **********************************************/
 	/**********************************************************************************************************************/
 
+	/** Prepares for output or measurement of the string to be printed for the start/offset/length line.
+	 *  (code is extracted to this method, since it is exactly the same for both DrawString and GetStringBoundingBox)
+	 */
+	void PrepareForPropertyLine() const
+	{
+		const OrderList *order_list = this->vehicle->orders.list;
+		Date start_date = (order_list == NULL ? INVALID_DATE : order_list->GetStartTime());
+		Duration timetable_length = (order_list == NULL ? Duration(0, DU_INVALID) : order_list->GetTimetableDuration());
+
+		SetDParam(0, start_date);
+		SetDParam(1, this->vehicle->timetable_offset.GetLength());
+		SetDParam(2, this->vehicle->timetable_offset.GetUnit());
+		SetDParam(3, timetable_length.GetLength());
+		SetDParam(4, timetable_length.GetUnit());
+	}
+
+	/** Prepares for output or measurement of the string to be printed in the Vehicle timetable line.
+     *  Does not deal with potential autofill information towards the end of that line.
+     */
+	void PrepareForVehicleIntervalLine() const
+	{
+		const OrderList *order_list = this->vehicle->orders.list;
+		Duration length = (order_list == NULL ? Duration(0, DU_INVALID) : order_list->GetTimetableDuration()); // Timetable length, e.g. 2 months
+		Date vehicle_timetable_start = this->vehicle->timetable_start;          // Start of vehicle timetable, e.g. 1st Feb 1905
+		Date next_iteration_start = AddToDate(vehicle_timetable_start, length); // Start of next iteration of vehicle timetable, e.g. 1st April 1905
+		Date vehicle_timetable_end = SubtractFromDate(next_iteration_start, Duration(1, DU_DAYS)); // Last date of vehicle timetable, e.g. 31st March 1905
+
+		SetDParam(0, vehicle_timetable_start);
+		SetDParam(1, vehicle_timetable_end);
+	}
+
 	/** Calculates and returns the string assembled for a Timetable line corresponding to some Order.
 	 *  @param buffer buffer to write to
 	 *  @param last end of buffer
@@ -564,6 +595,19 @@ private:
 	/**********************************************************************************************************************/
 	/************************************** Processing clicks to the various buttons etc. *********************************/
 	/**********************************************************************************************************************/
+
+	void ProcessMetaDataPanelClick(Point pt)
+	{
+		int clicked_line = (pt.y - this->GetWidget<NWidgetBase>(WID_VT_SUMMARY_PANEL)->pos_y - WD_FRAMERECT_TOP) / FONT_HEIGHT_NORMAL;
+
+		if (clicked_line == 0) {
+			SelectPropertyLine();
+		} else if (clicked_line == 1) {
+			SelectVehicleIntervalLine();
+		}
+
+		this->UpdateButtonState();
+	}
 
 	/** This function processes a click into the destination / timetable panel.
 	 *  @param pt Point where the user clicked to
@@ -909,6 +953,21 @@ public:
 				break;
 			}
 
+			case WID_VT_SUMMARY_PANEL: {
+				Dimension d = {0, 0};
+				this->PrepareForPropertyLine();
+				d = maxdim(d, GetStringBoundingBox(STR_TIMETABLE_PROPERTY_LINE));
+				
+				this->PrepareForVehicleIntervalLine();
+				d = maxdim(d, GetStringBoundingBox(STR_TIMETABLE_VEHICLE_INTERVAL_LINE));
+
+				d.width += padding.width + WD_FRAMERECT_LEFT + WD_FRAMERECT_RIGHT;
+
+				size->width = max(size->width, d.width);
+ 				size->height = WD_FRAMERECT_TOP + 2 * FONT_HEIGHT_NORMAL + WD_FRAMERECT_BOTTOM;
+ 				break;
+			}
+
 			case WID_VT_COND_VARIABLE_DROPDOWN: {
 				Dimension d = {0, 0};
 				for (uint i = 0; i < lengthof(_order_conditional_variable); i++) {
@@ -1132,6 +1191,17 @@ public:
 			}
 
 			case WID_VT_SUMMARY_PANEL: {
+				int y = r.top + WD_FRAMERECT_TOP;
+
+				this->PrepareForPropertyLine();
+				TextColour offset_color = IsPropertyLineSelected() ? TC_WHITE : TC_BLACK;
+				DrawString(r.left + WD_FRAMERECT_LEFT, r.right - WD_FRAMERECT_RIGHT, y, STR_TIMETABLE_PROPERTY_LINE, offset_color);
+
+				y += FONT_HEIGHT_NORMAL;
+
+				this->PrepareForVehicleIntervalLine();
+				TextColour status_color = IsVehicleIntervalLineSelected() ? TC_WHITE : TC_BLACK;
+				DrawString(r.left + WD_FRAMERECT_LEFT, r.right - WD_FRAMERECT_RIGHT, y, STR_TIMETABLE_VEHICLE_INTERVAL_LINE, status_color);
 				break;
 			}
 		}
@@ -1145,6 +1215,11 @@ public:
 			case WID_VT_ORDER_VIEW: // Order view button
 				ShowOrdersWindow(v);
 				break;
+
+			case WID_VT_SUMMARY_PANEL: {
+				ProcessMetaDataPanelClick(pt);
+				break;
+			}
 
 			case WID_VT_TIMETABLE_PANEL: { // Main panel.
 				ProcessListClick(pt);
