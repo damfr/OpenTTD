@@ -22,7 +22,6 @@
 #include "widgets/dropdown_type.h"
 #include "widgets/date_widget.h"
 
-
 /** Window to select a date fast, choosing it by buttons starting at a default date, with the option to choose the next date right away */
 struct SetDateFastWindow : Window {
 	SetDateFastCallback *callback; ///< Callback to call when a date has been selected
