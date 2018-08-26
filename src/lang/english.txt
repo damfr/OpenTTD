@@ -4155,6 +4155,15 @@ STR_TIMETABLE_NO_TRAVEL                                         :No travel
 STR_TIMETABLE_NOT_TIMETABLEABLE                                 :Travel (automatic; timetabled by next manual order)
 STR_TIMETABLE_TRAVEL_NOT_TIMETABLED                             :Travel (not timetabled)
 STR_TIMETABLE_TRAVEL_NOT_TIMETABLED_SPEED                       :Travel (not timetabled) with at most {2:VELOCITY}
+
+STR_TIMETABLE_DEPARTURE                                         : Depart {DATE_LONG}
+STR_TIMETABLE_SPEEDLIMIT                                        : Travel with at most {2:VELOCITY}
+STR_TIMETABLE_ARRIVAL                                           :Arrive {DATE_LONG}
+STR_TIMETABLE_NOT_LAST_SEPARATOR                                :,
+STR_TIMETABLE_LAST_SEPARATOR                                    : and
+
+STR_TIMETABLE_DEPARTWITHDELAY_LIMIT_ARRIVEWITHDELAY       :Depart {DATE_LONG} ({DECIMAL} days), travel with limit {VELOCITY}, arrive {DATE_LONG} ({DECIMAL} days)
+
 STR_TIMETABLE_TRAVEL_FOR                                        :Travel for {STRING1}
 STR_TIMETABLE_TRAVEL_FOR_SPEED                                  :Travel for {STRING1} with at most {VELOCITY}
 STR_TIMETABLE_TRAVEL_FOR_ESTIMATED                              :Travel (for {STRING1}, not timetabled)

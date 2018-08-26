@@ -13,6 +13,10 @@
 #include "date_type.h"
 #include "vehicle_type.h"
 
+struct Order;
+
 void ShowTimetableWindow(const Vehicle *v);
+
+bool IsOrderTimetableValid(const Vehicle *vehicle, const Order *order);
 
 #endif /* TIMETABLE_H */

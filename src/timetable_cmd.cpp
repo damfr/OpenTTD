@@ -78,3 +78,30 @@ CommandCost CmdAutofillTimetable(TileIndex tile, DoCommandFlag flags, uint32 p1,
 
 	return CommandCost();
 }
+
+bool IsOrderTimetableValid(const Vehicle *vehicle, const Order *order)
+{
+	Date timetable_start = vehicle->orders.list->GetStartTime();
+	Date timetable_end = AddToDate(timetable_start, vehicle->orders.list->GetTimetableDuration());
+
+	if (order->HasArrival()) {
+		Date arrival = order->GetArrival();
+		if (arrival < timetable_start || arrival >= timetable_end) {
+			return false;
+		}
+	}
+	if (order->HasDeparture()) {
+		Date departure = order->GetDeparture();
+		if (departure < timetable_start || departure >= timetable_end) {
+			return false;
+		} else if (order->next != NULL && order->next->HasArrival() && departure > order->next->GetArrival()) {
+			return false;
+		}
+	}
+
+ 	if (order->HasArrival() && order->HasDeparture() && order->GetArrival() > order->GetDeparture()) {
+ 		return false;
+ 	} else {
+ 		return true;
+ 	}
+}
