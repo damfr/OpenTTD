@@ -47,6 +47,19 @@
 extern uint ConvertSpeedToDisplaySpeed(uint speed);
 extern uint ConvertDisplaySpeedToSpeed(uint speed);
 
+const int _timetable_setdate_offsets[] = {
+	-10, -5, -1, 1, 5, 10
+};
+
+const StringID _timetable_setdate_strings[] = {
+	STR_TIMETABLE_DATE_MINUS_THREE,
+	STR_TIMETABLE_DATE_MINUS_TWO,
+	STR_TIMETABLE_DATE_MINUS_ONE,
+	STR_TIMETABLE_DATE_PLUS_ONE,
+	STR_TIMETABLE_DATE_PLUS_TWO,
+	STR_TIMETABLE_DATE_PLUS_THREE
+};
+
 /**
  * Callback for when a time has been chosen to start the time table
  * @param window the window related to the setting of the date
@@ -76,6 +89,41 @@ static void SetLengthCallback(const Window *w, Duration duration)
 	DoCommandP(0, p1, p2, CMD_SET_TIMETABLE_LENGTH | CMD_MSG(STR_ERROR_CAN_T_TIMETABLE_VEHICLE));
 }
 
+/** Constructs the caption to be used for the datefast_gui, when choosing an arrival for the given order,
+ *  and writes it into the given buffer.
+ */
+static void GetArrivalQueryCaption(const Vehicle *vehicle, char *buffer, const char* last, const Order *order)
+{
+	if (order->IsWaypointOrder()) {
+		GetString(buffer, STR_TIMETABLE_SET_ARRIVAL_WAYPOINT_CAPTION, last);
+	} else if (order->IsDepotOrder()) {
+		SetDParam(0, vehicle->type);
+		SetDParam(1, order->GetDestination());
+		GetString(buffer, STR_TIMETABLE_SET_ARRIVAL_DEPOT_CAPTION, last);
+	} else {
+		SetDParam(0, order->GetDestination());
+		GetString(buffer, STR_TIMETABLE_SET_ARRIVAL_STATION_CAPTION, last);
+	}
+}
+
+/** Constructs the caption to be used for the datefast_gui, when choosing a departure for the given order,
+ *  and writes it into the given buffer.
+ */
+static void GetDepartureQueryCaption(const Vehicle *vehicle, char *buffer, const char* last, const Order *order)
+{
+	if (order->IsWaypointOrder()) {
+		SetDParam(0, order->GetDestination());
+		GetString(buffer, STR_TIMETABLE_SET_DEPARTURE_WAYPOINT_CAPTION, last);
+	} else if (order->IsDepotOrder()) {
+		SetDParam(0, vehicle->type);
+		SetDParam(1, order->GetDestination());
+		GetString(buffer, STR_TIMETABLE_SET_DEPARTURE_DEPOT_CAPTION, last);
+	} else {
+		SetDParam(0, order->GetDestination());
+		GetString(buffer, STR_TIMETABLE_SET_DEPARTURE_STATION_CAPTION, last);
+	}
+}
+
 struct TimetableWindow : Window {
 
 private:
@@ -91,6 +139,12 @@ private:
 
 	/** Constant for marking the fact that currently, no timetable line is selected (e.g. since one of the meta data lines on top are selected) */
 	static const int INVALID_SELECTION = -1;
+
+	/** The default value assumed for staying in a station (when setting arrivals / departures using Choose & Next in the datefast_gui) */
+	static const int DEFAULT_STATION_TIME = 5;
+
+	/** The default value assumed for traveling between two stations (when setting arrivals / departures using Choose & Next in the datefast_gui */
+	static const int DEFAULT_TRAVEL_TIME = 10;
 
 	const Vehicle *vehicle; ///< Vehicle monitored by the window.
 
@@ -835,6 +889,120 @@ private:
 		DoCommandP(this->vehicle->tile, this->vehicle->index + (sel_ord << 20), MOF_DEPOT_ACTION | (i << 4), CMD_MODIFY_ORDER | CMD_MSG(STR_ERROR_CAN_T_MODIFY_THIS_ORDER));
 	}
 
+	void ProcessSetDepartureClick()
+	{
+		const Order *o = this->vehicle->GetOrder(this->GetSelectedOrderID());
+
+		/* We try to choose an appropriate default date for the choose dialog.
+		 * The goal is not, that we exactly offer the indented date (the probability to do so is rather low),
+		 * but saving the user clicks, i.e. coming close to the intended date.
+		 * Thus, we offer a date somewhat after the last defined date, use some default values for traviling
+		 * and stopping.  If we do not find a previous order with a timetabled value, we just use the start date
+		 * of the vehicles timetable. */
+		Date default_date = INVALID_DATE;
+		int assumed_offset = (IsNonStopOrder(o) ? 0 : DEFAULT_STATION_TIME);
+
+		if (o->HasDeparture()) {
+			/* If there is already a departure set, use it as a default date */
+			default_date = o->GetDeparture();
+		} else if (o->HasArrival()) {
+			default_date = o->GetArrival() + assumed_offset;
+		} else {
+			/* Note concerning the loop: VehicleOrderIDs are unsigned.  Thus, to check wether we passed the first one, we must
+			 * test for 0xFF, i.e. INVALID_VEH_ORDER_ID. */
+			for (VehicleOrderID prev_order_id = this->GetSelectedOrderID() - 1; prev_order_id != INVALID_VEH_ORDER_ID; prev_order_id--) {
+				Order *prev_order = this->vehicle->GetOrder(prev_order_id);
+
+				assumed_offset += DEFAULT_TRAVEL_TIME;
+				if (prev_order->HasDeparture()) {
+					default_date = prev_order->GetDeparture() + assumed_offset;
+					break;
+				}
+
+				assumed_offset += (IsNonStopOrder(prev_order) ? 0 : DEFAULT_STATION_TIME);
+				if (prev_order->HasArrival()) {
+					default_date = prev_order->GetArrival() + assumed_offset;
+					break;
+				}
+			}
+		}
+
+		Date timetable_start = this->vehicle->timetable_start;
+		Date timetable_end = this->vehicle->timetable_end;
+
+		/* If we did not find a appropriate default date, just take the timetable start.  Otherwise, apply the vehicles timetable offset. */
+		if (default_date == INVALID_DATE) {
+			default_date = timetable_start;
+		} else {
+			Duration offset = vehicle->timetable_offset;
+			default_date = AddToDate(default_date, offset);
+		}
+
+		/* Offering a date the user may not use makes no sense */
+		default_date = Clamp(default_date, timetable_start, timetable_end - 1);
+
+		char buffer[256] = "";
+
+		GetDepartureQueryCaption(this->vehicle, buffer, lastof(buffer), o);
+
+		ShowSetDateFastWindow(this, this->vehicle->index, default_date, timetable_start, timetable_end, buffer, _timetable_setdate_offsets, _timetable_setdate_strings, TimetableWindow::SetDepartureCallback);
+	}
+
+	void ProcessSetArrivalClick()
+	{
+		const Order *o = this->vehicle->GetOrder(this->GetSelectedOrderID());
+
+		/* We try to choose an appropriate default date for the choose dialog.
+		 * The goal is not, that we exactly offer the indented date (the probability to do so is rather low),
+		 * but saving the user clicks, i.e. coming close to the intended date.
+		 * Thus, we offer a date somewhat after the last defined date, use some default values for traviling
+		 * and stopping.  If we do not find a previous order with a timetabled value, we just use the start date
+		 * of the vehicles timetable. */
+		Date default_date = INVALID_DATE;
+		int assumed_offset = 0;
+
+		if (o->HasArrival()) {
+			default_date = o->GetArrival();
+		} else {
+			/* Note concerning the loop: VehicleOrderIDs are unsigned.  Thus, to check wether we passed the first one, we must
+			 * test for 0xFF, i.e. INVALID_VEH_ORDER_ID. */
+			for (VehicleOrderID prev_order_id = this->GetSelectedOrderID() - 1; prev_order_id != INVALID_VEH_ORDER_ID; prev_order_id--) {
+				Order *prev_order = this->vehicle->GetOrder(prev_order_id);
+
+				assumed_offset += DEFAULT_TRAVEL_TIME;
+				if (prev_order->HasDeparture()) {
+					default_date = prev_order->GetDeparture() + assumed_offset;
+					break;
+				}
+
+				assumed_offset += (IsNonStopOrder(prev_order) ? 0 : DEFAULT_STATION_TIME);
+				if (prev_order->HasArrival()) {
+					default_date = prev_order->GetArrival() + assumed_offset;
+					break;
+				}
+			}
+		}
+
+		Date timetable_start = this->vehicle->timetable_start;
+		Date timetable_end = this->vehicle->timetable_end;
+
+		/* If we did not find a appropriate default date, just take the timetable start.  Otherwise, apply the vehicles timetable offset. */
+		if (default_date == INVALID_DATE) {
+			default_date = timetable_start;
+		} else {
+			Duration offset = vehicle->timetable_offset;
+			default_date = AddToDate(default_date, offset);
+		}
+
+		/* Offering a date the user may not use makes no sense */
+		default_date = Clamp(default_date, timetable_start, timetable_end - 1);
+
+		char buffer[256] = "";
+		GetArrivalQueryCaption(this->vehicle, buffer, lastof(buffer), o);
+
+		ShowSetDateFastWindow(this, this->vehicle->index, default_date, timetable_start, timetable_end, buffer, _timetable_setdate_offsets, _timetable_setdate_strings, TimetableWindow::SetArrivalCallback);
+	}
+
 	/**
 	 * Handle the click on the conditional order button.
 	 * @param i Dummy parameter.
@@ -977,6 +1145,14 @@ public:
 
 		// Trigger certain refresh activities e.g. regarding button state
 		this->OnInvalidateData(-2);
+	}
+
+	/** Selects the line corresponding to the given order_id.
+	 *  @param order_id the VehicleOrderID inside the order list
+	 */
+	void SelectTimetableLineForOrder(VehicleOrderID order_id)
+	{
+		this->selected_timetable_line = (2 * order_id) + 1;
 	}
 
 	virtual void UpdateWidgetSize(int widget, Dimension *size, const Dimension &padding, Dimension *fill, Dimension *resize) override
@@ -1256,6 +1432,90 @@ public:
 		}
 	}
 
+	/** Returns wether the given order is regarded as non stop order from the timetable perspective.  The orders for which
+	 *  true is returned are those where we assume a difference of zero between arrival at the order destination and departure by default.
+	 */
+	static bool IsNonStopOrder(const Order *order)
+	{
+		return order->GetNonStopType() == ONSF_NO_STOP_AT_DESTINATION_STATION || order->GetNonStopType() == ONSF_NO_STOP_AT_ANY_STATION
+			   || order->IsWaypointOrder() || order->IsDepotOrder();
+	}
+
+	/** Callback to be executed once the user has chosen some departure.  Depending on wether Choose & Close or Choose & Next was
+     *  chosen in the datefast_gui, either the datefast_gui is just closed, or reopened for choosing the next arrival.
+     *  @param w the corresponding timetable window
+     *  @param date the chosen date
+     *  @param choose_next wether the user hit Choose & Next
+     */
+	static void SetDepartureCallback(Window *w, Date date, bool choose_next)
+	{
+		TimetableWindow *timetable_window = (TimetableWindow*)w;
+		if (timetable_window->IsTimetableLineSelected()) {
+			VehicleOrderID selected_order_id = timetable_window->GetSelectedOrderID();
+			Order *selected_order = timetable_window->vehicle->orders.list->GetOrderAt(selected_order_id);
+			Duration vehicle_offset = timetable_window->vehicle->timetable_offset;
+
+			uint32 p1 = ((uint32)timetable_window->vehicle->index << 16 | (uint32)selected_order->index);
+			uint32 p2 = SubtractFromDate(date, vehicle_offset);
+			DoCommandP(0, p1, p2, CMD_SET_ORDER_DEPARTURE | CMD_MSG(STR_ERROR_TIMETABLE_CAN_T_SET_DEPARTURE));
+
+			if (choose_next) {
+				VehicleOrderID next_order_id = (selected_order_id < timetable_window->vehicle->orders.list->GetNumOrders() - 1 ? selected_order_id + 1 : 0);
+				Order *next_order = timetable_window->vehicle->orders.list->GetOrderAt(next_order_id);
+				timetable_window->SelectTimetableLineForOrder(next_order_id);
+				timetable_window->SetDirty();
+
+				char buffer[256] = "";
+				GetArrivalQueryCaption(timetable_window->vehicle, buffer, lastof(buffer), next_order);
+
+				/* Let the user choose the next arrival, for initialization, make a guess that he will probably choose a date somewhat later than the just chosen date. */
+				UpdateSetDateFastWindow(date + DEFAULT_TRAVEL_TIME, buffer, TimetableWindow::SetArrivalCallback);
+			}
+		}
+	}
+
+	/** Callback to be executed once the user has chosen some arrival.  Depending on wether Choose & Close or Choose & Next was
+     *  chosen in the datefast_gui, either the datefast_gui is just closed, or reopened for choosing the next departure.
+     *  @param w the corresponding timetable window
+     *  @param date the chosen date
+     *  @param choose_next wether the user hit Choose & Next
+     */
+	static void SetArrivalCallback(Window *w, Date date, bool choose_next)
+	{
+		TimetableWindow *timetable_window = (TimetableWindow*)w;
+		if (timetable_window->IsTimetableLineSelected()) {
+			VehicleOrderID selected_order_id = timetable_window->GetSelectedOrderID();
+			Order *order = timetable_window->vehicle->orders.list->GetOrderAt(selected_order_id);
+			Duration vehicle_offset = timetable_window->vehicle->timetable_offset;
+
+			uint32 p1 = ((uint32)timetable_window->vehicle->index << 16 | (uint32)order->index);
+			uint32 p2 = SubtractFromDate(date, vehicle_offset);
+			DoCommandP(0, p1, p2, CMD_SET_ORDER_ARRIVAL | CMD_MSG(STR_ERROR_TIMETABLE_CAN_T_SET_ARRIVAL));
+
+			bool non_stop_order = IsNonStopOrder(order);
+			/* If the order does not imply stopping at some location, set the departure equal to the arrival */
+			if (non_stop_order) {
+				p1 = ((uint32)timetable_window->vehicle->index << 16 | (uint32)order->index);
+				DoCommandP(0, p1, p2, CMD_SET_ORDER_DEPARTURE | CMD_MSG(STR_ERROR_TIMETABLE_CAN_T_SET_ARRIVAL));
+			}
+
+			if (choose_next) {
+				char buffer[256] = "";
+				if (non_stop_order) {
+					VehicleOrderID next_order_id = (selected_order_id < timetable_window->vehicle->orders.list->GetNumOrders() - 1 ? selected_order_id + 1 : 0);
+					Order *next_order = timetable_window->vehicle->orders.list->GetOrderAt(next_order_id);
+					timetable_window->SelectTimetableLineForOrder(next_order_id);
+					GetArrivalQueryCaption(timetable_window->vehicle, buffer, lastof(buffer), next_order);
+				} else {
+					GetDepartureQueryCaption(timetable_window->vehicle, buffer, lastof(buffer), order);
+				}
+
+				/* Let the user choose the next departure, for initialization, make a guess that he will probably choose a date somewhat later than the just chosen date. */
+				UpdateSetDateFastWindow(date + DEFAULT_STATION_TIME, buffer, (non_stop_order ? TimetableWindow::SetArrivalCallback : TimetableWindow::SetDepartureCallback));
+			}
+		}
+	}
+
 	virtual void OnClick(Point pt, int widget, int click_count) override
 	{
 		const Vehicle *v = this->vehicle;
@@ -1307,6 +1567,16 @@ public:
 				} else {
 					ShowDropDownMenu(this, _order_full_load_dropdown, this->vehicle->GetOrder(this->GetSelectedOrderID())->GetLoadType(), WID_VT_FULL_LOAD_DROPDOWN, 0, 2);
 				}
+				break;
+			}
+
+			case WID_VT_DEPARTURE_BUTTON: {
+				this->ProcessSetDepartureClick();
+				break;
+			}
+
+			case WID_VT_ARRIVAL_BUTTON: {
+				this->ProcessSetArrivalClick();
 				break;
 			}
 

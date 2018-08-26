@@ -88,6 +88,12 @@ public:
 		return IsType(OT_GOTO_WAYPOINT) || IsType(OT_GOTO_DEPOT) || IsType(OT_GOTO_STATION);
 	}
 
+	inline bool IsStationOrder() const { return IsType(OT_GOTO_STATION); }
+
+ 	inline bool IsWaypointOrder() const { return IsType(OT_GOTO_WAYPOINT); }
+
+ 	inline bool IsDepotOrder() const { return IsType(OT_GOTO_DEPOT); }
+
 	/**
 	 * Gets the destination of this order.
 	 * @pre IsType(OT_GOTO_WAYPOINT) || IsType(OT_GOTO_DEPOT) || IsType(OT_GOTO_STATION).

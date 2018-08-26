@@ -203,7 +203,6 @@ CommandCost CmdRenameTimetable(TileIndex tile, DoCommandFlag flags, uint32 p1, u
 		return CMD_ERROR;
 	}
 
-
 	bool reset = StrEmpty(text);
 
 	if (!reset) {
@@ -222,6 +221,106 @@ CommandCost CmdRenameTimetable(TileIndex tile, DoCommandFlag flags, uint32 p1, u
 		free(vehicle->orders.list->GetName());
 		/* Assign the new one */
 		vehicle->orders.list->SetName(reset ? NULL : stredup(text));
+	}
+
+	return CommandCost();
+}
+
+/**
+ * Set the departure time for an order.  Only departure time within the range
+ * timetable_start (inclusive) .. timetable_start plus length of the timetable
+ * (exclusive) are allowed.
+ * @param tile Not used.
+ * @param flags Operation to perform.
+ * @param p1 Bits 0..15: Order ID
+ *           Bits 16..23: ID of the Vehicle the order is for
+ * @param p2 New departure date, may be the invalid date.
+ * @param text Not used.
+ * @return The error or cost of the operation.
+ */
+CommandCost CmdSetOrderDeparture(TileIndex tile, DoCommandFlag flags, uint32 p1, uint32 p2, const char *text)
+{
+	OrderID order_id = (p1 & 0x0000FFFF);
+	VehicleID vehicle_id = (p1 >> 16) & 0x0000FFFF;
+
+	Order* order = Order::GetIfValid(order_id);
+	Vehicle *vehicle = Vehicle::GetIfValid(vehicle_id);
+
+	if (order == NULL || vehicle == NULL) {
+		return CMD_ERROR;
+	}
+
+	Date timetable_start = vehicle->orders.list->GetStartTime();
+	if (timetable_start == INVALID_DATE) {
+		return_cmd_error(STR_ERROR_TIMETABLE_NO_TIMETABLE_START_GIVEN);
+	}
+
+	Duration timetable_length = vehicle->orders.list->GetTimetableDuration();
+	if (timetable_length.IsInvalid()) {
+		return_cmd_error(STR_ERROR_TIMETABLE_NO_TIMETABLE_LENGTH_GIVEN);
+	}
+
+	Date timetable_end = AddToDate(timetable_start, timetable_length);
+
+	Date new_departure_date = (Date)p2;
+	if (new_departure_date != INVALID_DATE && (new_departure_date < timetable_start || new_departure_date >= timetable_end)) {
+		return_cmd_error(STR_ERROR_TIMETABLE_DATE_NOT_IN_TIMETABLE);
+	}
+
+	if (flags & DC_EXEC) {
+		order->SetDeparture(new_departure_date);
+
+		SetWindowDirty(WC_VEHICLE_TIMETABLE, vehicle->index);
+	}
+
+	return CommandCost();
+}
+
+/**
+ * Set the arrival date for an order.  Only arrival dates within the range
+ * start date of the vehicles timetable (inclusive) .. start date plus vehicle offset
+ * (exclusive) are allowed.
+ * @param tile Not used.
+ * @param flags Operation to perform.
+ * @param p1 Bits 0..15: Order ID
+ *           Bits 16..31: ID of the Vehicle the order is for
+ * @param p2 New arrival date, may be the invalid date
+ * @param text Not used.
+ * @return The error or cost of the operation.
+ */
+CommandCost CmdSetOrderArrival(TileIndex tile, DoCommandFlag flags, uint32 p1, uint32 p2, const char *text)
+{
+	OrderID order_id = (p1 & 0x0000FFFF);
+	VehicleID vehicle_id = (p1 >> 16) & 0x0000FFFF;
+
+	Order* order = Order::GetIfValid(order_id);
+	Vehicle *vehicle = Vehicle::GetIfValid(vehicle_id);
+
+	if (order == NULL || vehicle == NULL) {
+		return CMD_ERROR;
+	}
+
+	Date timetable_start = vehicle->orders.list->GetStartTime();
+	if (timetable_start == INVALID_DATE) {
+		return_cmd_error(STR_ERROR_TIMETABLE_NO_TIMETABLE_START_GIVEN);
+	}
+
+	Duration timetable_length = vehicle->orders.list->GetTimetableDuration();
+	if (timetable_length.IsInvalid()) {
+		return_cmd_error(STR_ERROR_TIMETABLE_NO_TIMETABLE_LENGTH_GIVEN);
+	}
+
+	Date timetable_end = AddToDate(timetable_start, timetable_length);
+
+	Date new_arrival_date = (Date)p2;
+	if (new_arrival_date != INVALID_DATE && (new_arrival_date < timetable_start || new_arrival_date >= timetable_end)) {
+		return_cmd_error(STR_ERROR_TIMETABLE_DATE_NOT_IN_TIMETABLE);
+	}
+
+	if (flags & DC_EXEC) {
+		order->SetArrival(new_arrival_date);
+
+		SetWindowDirty(WC_VEHICLE_TIMETABLE, vehicle->index);
 	}
 
 	return CommandCost();

@@ -4254,6 +4254,13 @@ STR_TIMETABLE_DATE_PLUS_ONE                                     :{BLACK}+1
 STR_TIMETABLE_DATE_PLUS_TWO                                     :{BLACK}+5
 STR_TIMETABLE_DATE_PLUS_THREE                                   :{BLACK}+10
 
+STR_TIMETABLE_SET_ARRIVAL_DEPOT_CAPTION                         :{BLACK}Set the Arrival Date at {DEPOT}
+STR_TIMETABLE_SET_ARRIVAL_STATION_CAPTION                       :{BLACK}Set The Arrival Date at {STATION}
+STR_TIMETABLE_SET_ARRIVAL_WAYPOINT_CAPTION                      :{BLACK}Set The Arrival Date at {WAYPOINT}
+STR_TIMETABLE_SET_DEPARTURE_DEPOT_CAPTION                       :{BLACK}Set the Departure Date at {DEPOT}
+STR_TIMETABLE_SET_DEPARTURE_STATION_CAPTION                     :{BLACK}Set The Departure Date at {STATION}
+STR_TIMETABLE_SET_DEPARTURE_WAYPOINT_CAPTION                    :{BLACK}Set The Departure Date at {WAYPOINT}
+
 # Date window (for timetable)
 STR_DATE_CAPTION                                                :{WHITE}Set date
 STR_DATE_SET_DATE                                               :{BLACK}Set date
@@ -4809,9 +4816,14 @@ STR_ERROR_AIRCRAFT_NOT_ENOUGH_RANGE                             :{WHITE}... airc
 
 # Timetable related errors
 STR_ERROR_CAN_T_TIMETABLE_VEHICLE                               :{WHITE}Can't timetable vehicle...
+STR_ERROR_TIMETABLE_DATE_NOT_IN_TIMETABLE                       :{WHITE}Departures and Arrivals must be within the corresponding timetable, given by its start and length
+STR_ERROR_TIMETABLE_NO_TIMETABLE_START_GIVEN                    :{WHITE}Before setting arrivals and departures, the start date of the timetable must be set
+STR_ERROR_TIMETABLE_NO_TIMETABLE_LENGTH_GIVEN                   :{WHITE}Before setting arrivals and departures, the length of the timetable must be set
 STR_ERROR_TIMETABLE_ONLY_WAIT_AT_STATIONS                       :{WHITE}Vehicles can only wait at stations
 STR_ERROR_TIMETABLE_NOT_STOPPING_HERE                           :{WHITE}This vehicle is not stopping at this station
 STR_ERROR_TIMETABLE_CAN_T_RENAME                                :{WHITE}Can't rename timetable...
+STR_ERROR_TIMETABLE_CAN_T_SET_DEPARTURE                         :{WHITE}Can't set the departure...
+STR_ERROR_TIMETABLE_CAN_T_SET_ARRIVAL                           :{WHITE}Can't set the arrival...
 
 # Sign related errors
 STR_ERROR_TOO_MANY_SIGNS                                        :{WHITE}... too many signs
