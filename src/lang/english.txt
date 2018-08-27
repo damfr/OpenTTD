@@ -3976,6 +3976,8 @@ STR_TIMETABLE_TITLE                                             :{WHITE}{VEHICLE
 STR_TIMETABLE_TITLE_NAMED                                       :{WHITE}{VEHICLE} (Timetable{RAW_STRING}{RAW_STRING})
 STR_TIMETABLE_ORDER_VIEW                                        :{BLACK}Orders
 STR_TIMETABLE_ORDER_VIEW_TOOLTIP                                :{BLACK}Switch to the order view
+STR_TIMETABLE_GRAPH_VIEW										:{BLACK}Graph
+STR_TIMETABLE_GRAPH_VIEW_TOOLTIP								:{BLACK}Show the timetable graph window
 
 STR_TIMETABLE_TOOLTIP                                           :{BLACK}Timetable - click on an order to highlight it
 

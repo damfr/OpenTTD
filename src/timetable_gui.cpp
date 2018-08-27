@@ -1906,6 +1906,10 @@ public:
 				ShowOrdersWindow(v);
 				break;
 
+			case WID_VT_GRAPH_VIEW: // Timetable graph window
+				//ShowTimetableGraphWindow(v);
+				break;
+
 			case WID_VT_SUMMARY_PANEL: {
 				ProcessMetaDataPanelClick(pt);
 				break;
@@ -2312,6 +2316,7 @@ static const NWidgetPart _nested_timetable_widgets[] = {
 	NWidget(NWID_HORIZONTAL),
 		NWidget(WWT_CLOSEBOX, COLOUR_GREY),
 		NWidget(WWT_CAPTION, COLOUR_GREY, WID_VT_CAPTION), SetDataTip(STR_TIMETABLE_TITLE_NAMED, STR_TOOLTIP_WINDOW_TITLE_DRAG_THIS),
+		NWidget(WWT_PUSHTXTBTN, COLOUR_GREY, WID_VT_GRAPH_VIEW), SetMinimalSize(61, 14), SetDataTip( STR_TIMETABLE_GRAPH_VIEW, STR_TIMETABLE_GRAPH_VIEW_TOOLTIP),
 		NWidget(WWT_PUSHTXTBTN, COLOUR_GREY, WID_VT_ORDER_VIEW), SetMinimalSize(61, 14), SetDataTip( STR_TIMETABLE_ORDER_VIEW, STR_TIMETABLE_ORDER_VIEW_TOOLTIP),
 		NWidget(WWT_SHADEBOX, COLOUR_GREY),
 		NWidget(WWT_DEFSIZEBOX, COLOUR_GREY),
