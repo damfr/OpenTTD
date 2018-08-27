@@ -14,6 +14,7 @@
 enum VehicleTimetableWidgets {
 	WID_VT_CAPTION,                     ///< Caption of the window.
 	WID_VT_ORDER_VIEW,                  ///< Order view.
+	WID_VT_GRAPH_VIEW,					///< Timetable graph view
 
 	WID_VT_SHIFT_BY_LENGTH_PAST_BUTTON, ///< Button for shifting the timetable into the past by its length
 	WID_VT_SHIFT_BY_LENGTH_FUTURE_BUTTON, ///< Button for shifting the timetable into the future by its length
