@@ -223,6 +223,7 @@ enum WindowClass {
 	 */
 	WC_VEHICLE_TIMETABLE,
 
+
 	/**
 	 * Company colour selection; %Window numbers:
 	 *   - #CompanyID = #SelectCompanyLiveryWidgets
@@ -324,6 +325,12 @@ enum WindowClass {
 	 *   - Packed value = #GroupListWidgets / #VehicleListWidgets
 	 */
 	WC_AIRCRAFT_LIST,
+
+	/**
+	 * Timetable graph window; %Window numbers:
+	 * 	- Packed value = #GroupListWidgets / #VehicleListWidgets
+	 */
+	WC_TIMETABLE_GRAPH,
 
 
 	/**

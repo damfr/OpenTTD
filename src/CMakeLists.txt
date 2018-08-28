@@ -426,6 +426,7 @@ add_files(
     timetable.h
     timetable_cmd.cpp
     timetable_func.h
+    timetable_graph_gui.cpp
     timetable_gui.cpp
     toolbar_gui.cpp
     toolbar_gui.h
