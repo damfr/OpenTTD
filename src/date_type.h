@@ -101,6 +101,7 @@ public:
 	Duration operator- () { return Duration(-length, unit); }
 
 	int32 GetLengthInTicks();
+	Date GetLengthAsDate();
 
 	inline void Add(Duration d) { this->length += GetLengthInOurUnit(d); }
 	inline void AddLength(int32 length) { this->length += length; }
