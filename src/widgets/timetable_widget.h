@@ -84,4 +84,10 @@ enum NodeTimetableWindowWidgets {
 	WID_NTW_MODE_BUTTON                       ///< Button for controlling wether the Window is in departure or arrival mode
 };
 
+/** Widgets of the timetable graph window */
+enum TimetableGraphWindowWidgets {
+	WID_TGW_CAPTION,                          ///< Caption of the window
+	WID_TGW_GRAPH                			  ///< The widget where the graph is displayed
+};
+
 #endif /* WIDGETS_TIMETABLE_WIDGET_H */

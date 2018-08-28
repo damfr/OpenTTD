@@ -44,6 +44,8 @@
 #include "order_func.h"
 #include "order_gui.h"
 
+#include "timetable_graph_gui.h"
+
 #include "safeguards.h"
 
 extern uint ConvertSpeedToDisplaySpeed(uint speed);
@@ -1907,7 +1909,7 @@ public:
 				break;
 
 			case WID_VT_GRAPH_VIEW: // Timetable graph window
-				//ShowTimetableGraphWindow(v);
+				ShowTimetableGraphWindow(v->orders.list);
 				break;
 
 			case WID_VT_SUMMARY_PANEL: {

@@ -504,6 +504,7 @@ subsidy_gui.cpp
 terraform_gui.cpp
 textfile_gui.cpp
 timetable_gui.cpp
+timetable_graph_gui.cpp
 toolbar_gui.cpp
 town_gui.cpp
 train_gui.cpp

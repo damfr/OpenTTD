@@ -4179,6 +4179,12 @@ STR_DURATION_DAYS_UNIT                                          :Days
 STR_DURATION_MONTHS_UNIT                                        :Months
 STR_DURATION_YEARS_UNIT                                         :Years
 
+#Timetable graph window
+STR_TIMETABLE_GRAPH_CAPTION										:{WHITE}Timetable graph
+STR_TIMETABLE_GRAPH_STATION_LABEL								:{TINY_FONT}{STATION}
+STR_TIMETABLE_GRAPH_WAYPOINT_LABEL								:{TINY_FONT}{WAYPOINT}
+STR_TIMETABLE_GRAPH_DEPOT_LABEL									:{TINY_FONT}{DEPOT}
+
 # AI debug window
 STR_AI_DEBUG                                                    :{WHITE}AI/Game Script Debug
 STR_AI_DEBUG_NAME_AND_VERSION                                   :{BLACK}{RAW_STRING} (v{NUM})
