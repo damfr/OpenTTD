@@ -498,6 +498,30 @@ int32 Duration::GetLengthInTicks()
 	}
 }
 
+/**
+ * Returns the length of this Duration, transformed into Date.
+ * NOTE: The conversion factors are 1 year = 12 months, 1 month = 30 days,
+ *        i.e. the result will not be exact with respect to calculating
+ *        differences based on a real calendar.
+ *  @see Duration::GetLengthInTicks
+ *  @return length, transformed into Ticks, as described.
+ */
+Date Duration::GetLengthAsDate()
+{
+	if (this->IsInTicks()) {
+			return this->length / DAY_TICKS;
+		} else if (this->IsInDays()) {
+			return this->length;
+		} else if (this->IsInMonths()) {
+			return this->length * DAYS_PER_MONTH;
+		} else if (this->IsInYears()) {
+			return this->length * DAYS_PER_YEAR;
+		} else {
+			/* Fallback case if e.g. Duration is Invalid */
+			return 0;
+		}
+}
+
 /** Prints this Duration to DEBUG (misc) in a human readable fashion, e.g.
  *  <prefix passed> 4 months <postfix passed>
  *  @param level level passed to DEBUG
