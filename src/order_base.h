@@ -342,7 +342,7 @@ public:
 
 	void SetStartTime(Date start_time);
 
-	inline bool HasStartTime() { return this->start_time != INVALID_DATE; }
+	inline bool HasStartTime() const { return this->start_time != INVALID_DATE; }
 
 	inline Date GetStartTime() const { return this->start_time; }
 
