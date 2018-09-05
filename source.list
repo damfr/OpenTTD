@@ -92,6 +92,7 @@ texteff.cpp
 tgp.cpp
 tile_map.cpp
 tilearea.cpp
+timetable_graph.cpp
 townname.cpp
 #if WIN32
 #else
@@ -369,6 +370,7 @@ tilehighlight_type.h
 tilematrix_type.hpp
 timetable.h
 timetable_func.h
+timetable_graph.h
 toolbar_gui.h
 town.h
 town_type.h

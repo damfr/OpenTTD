@@ -87,7 +87,15 @@ enum NodeTimetableWindowWidgets {
 /** Widgets of the timetable graph window */
 enum TimetableGraphWindowWidgets {
 	WID_TGW_CAPTION,                          ///< Caption of the window
-	WID_TGW_GRAPH                			  ///< The widget where the graph is displayed
+	WID_TGW_GRAPH,               			  ///< The widget where the graph is displayed
+	WID_TGW_RESIZE,
+	WID_TGW_ENABLE_ALL,						  ///< The button to enable all the other order lists shown
+	WID_TGW_DISABLE_ALL,					  ///< The button to disable all the other order lists shown
+	WID_TGW_ORDERS_SELECTION,				  ///< The selector of the other OrderLists to show (empty widget)
+
+	//Range begin
+	WID_TGW_ORDERS_SELECTION_BEGIN			  ///<Beginning of range for the order list buttons
+	// Do not add anything under
 };
 
 #endif /* WIDGETS_TIMETABLE_WIDGET_H */
