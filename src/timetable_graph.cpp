@@ -7,7 +7,11 @@
 
 #include "stdafx.h"
 #include "timetable_graph.h"
+#include <set>
 
+/**
+ *
+ */
 TimetableGraphBuilder::TimetableGraphBuilder(const OrderList* baseOrders)
 	: baseOrders(baseOrders)
 {
@@ -25,11 +29,94 @@ GraphLine TimetableGraphBuilder::BuildGraph()
 
 GraphLine TimetableGraphBuilder::GetGraphForOrderList(const OrderList* orders)
 {
-	orderIt = GotoOrderListIterator(orders);
-	baseOrderIt = GotoOrderListIterator(baseOrders);
-	return std::vector<GraphSegment>();//TODO
+	std::vector<GraphSegment> graph;
+
+	for (GotoOrderListIterator compIt(orders); !compIt.IsRepeating(); ++compIt) {
+
+		std::pair<DestIndexIterator, DestIndexIterator> pair = destinationsIndex.equal_range(compIt->GetDestination());
+		for (DestIndexIterator baseIt = pair.first; baseIt != pair.second; ++baseIt) {
+
+			GraphSegment segment = BuildGraphLine(orders, compIt, GotoOrderListIterator(baseOrders, baseIt->second.first), baseIt->second.second);
+			if (segment.order1 != NULL) {
+				graph.push_back(segment);
+			}
+		}
+
+	}
+
+	return graph;
+}
+
+GraphSegment TimetableGraphBuilder::BuildGraphLine(const OrderList* orderList, GotoOrderListIterator compItStart, GotoOrderListIterator baseItStart, int baseStartIndex)
+{
+	std::set<Destination> visitedBase, visitedComp;
+	visitedBase.insert(baseItStart->GetDestination());
+	visitedComp.insert(baseItStart->GetDestination());
+	int currentBaseIndex = baseStartIndex +1;
+	bool baseEnded = false, compEnded = false;
+
+	GotoOrderListIterator compIt = compItStart;
+	++compIt;
+	GotoOrderListIterator baseIt = baseItStart;
+	++baseIt;
+
+	for (;;) {
+		if (!baseEnded && visitedBase.count(baseIt->GetDestination()) != 0) {
+			baseEnded = true;
+		}
+		if (!compEnded && visitedComp.count(compIt->GetDestination()) != 0) {
+			compEnded = true;
+		}
+		if (compEnded && baseEnded) return GraphSegment();
+
+		if (!baseEnded && !compEnded) {
+			if (baseIt->GetDestination() == compIt->GetDestination()) {
+				GraphSegment segment(*compItStart, *compIt, baseStartIndex, currentBaseIndex);
+				if (compIt.HasPassedEnd()) {
+					segment.offset2 = orderList->GetTimetableDuration().GetLengthAsDate();
+				}
+				return segment;
+			}
+		}
+
+		if (!compEnded) {
+			int index = baseStartIndex;
+			for (GotoOrderListIterator it = baseItStart; it != baseIt; ++it, ++index) {
+
+				if (it->GetDestination() == compIt->GetDestination()) {
+					GraphSegment segment(*compItStart, *compIt, baseStartIndex, index);
+					if (compIt.HasPassedEnd()) {
+						segment.offset2 = orderList->GetTimetableDuration().GetLengthAsDate();
+					}
+					return segment;
+				}
+			}
+
+			++compIt;
+			visitedComp.insert(compIt->GetDestination());
+		}
+
+		if (!baseEnded) {
+			for (GotoOrderListIterator it = compItStart; it != compIt; ++it) {
+
+				if (it->GetDestination() == baseIt->GetDestination()) {
+					GraphSegment segment(*compItStart, *it, baseStartIndex, currentBaseIndex);
+					if (it.HasPassedEnd()) {
+						segment.offset2 = orderList->GetTimetableDuration().GetLengthAsDate();
+					}
+					return segment;
+				}
+			}
+			++baseIt;
+			++currentBaseIndex;
+			visitedBase.insert(baseIt->GetDestination());
+		}
+
+
+	}
 
 }
+
 
 void TimetableGraphBuilder::BuildDestinationsIndex()
 {
@@ -41,15 +128,15 @@ void TimetableGraphBuilder::BuildDestinationsIndex()
 		destinations.push_back(GraphSegment(*orderIt1, *orderIt2, i, i+1, 0,
 				orderIt2.IsRepeating() ? baseOrders->GetTimetableDuration().GetLengthAsDate() : 0));
 
-		destinationsIndex.insert(std::pair<Destination, int>(orderIt1->GetDestination(), i));
+		destinationsIndex.insert(std::pair<Destination, BasePair>(orderIt1->GetDestination(), BasePair(*orderIt1, i)));
 		++i;
 		++orderIt1;
 		++orderIt2;
 	}//FIXME What happens with an orderlist with 1 order ?
-
-	if (i>= 2) { //
-		destinationsIndex.insert(std::pair<Destination, int>(baseOrders->GetFirstOrder()->GetDestination(), i));
-	}
+	/*
+	if (i>= 2) {
+		destinationsIndex.insert(std::pair<Destination, BasePair>(baseOrders->GetFirstOrder()->GetDestination(), BasePair(baseOrders->GetFirstOrder(), i)));
+	}*/
 }
 
 
@@ -57,8 +144,9 @@ void TimetableGraphBuilder::BuildDestinationsIndex()
 
 
 GotoOrderListIterator::GotoOrderListIterator(const OrderList* orderList, const Order* order)
-	: orderList(orderList), current(orderList != NULL ? orderList->GetFirstOrder() : NULL), counter(0)
+	: orderList(orderList), current(order), counter(0), passedEnd(false)
 {
+	if (orderList != NULL && current == NULL) current = orderList->GetFirstOrder();
 	if (orderList != NULL && !current->IsGotoOrder()) this->AdvanceToNextGoto(false);
 }
 
@@ -73,7 +161,12 @@ GotoOrderListIterator& GotoOrderListIterator::operator++()
 void GotoOrderListIterator::AdvanceToNextGoto(bool incrCounter) {
 	int internalCounter = 0; //prevent infinite loops when there is no goto order
 	do {
-		current = orderList->GetNext(current);
+		if (current->next == NULL) {
+			current = orderList->GetFirstOrder();
+			passedEnd = true;
+		} else {
+			current = current->next;
+		}
 		++internalCounter;
 		if (incrCounter) ++counter;
 	} while (internalCounter < orderList->GetNumOrders() && !current->IsGotoOrder());
