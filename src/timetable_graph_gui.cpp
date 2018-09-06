@@ -21,6 +21,7 @@
 #include "widgets/timetable_widget.h"
 #include "core/geometry_func.hpp"
 #include "timetable_graph.h"
+#include "date_func.h"
 
 
 static const NWidgetPart _nested_timetable_graph[] = {
@@ -33,7 +34,7 @@ static const NWidgetPart _nested_timetable_graph[] = {
 	EndContainer(),
 
 	NWidget(WWT_PANEL, COLOUR_GREY/*, WID_TGW_BACKGROUND*/),
-		NWidget(NWID_HORIZONTAL), SetPadding(10, 0, 0, 10),//FIXME
+		NWidget(NWID_HORIZONTAL),
 			NWidget(WWT_EMPTY, COLOUR_GREY, WID_TGW_GRAPH), SetMinimalSize(576, 160), SetFill(0, 1), SetResize(1, 1),
 			NWidget(NWID_VERTICAL),
 				NWidget(NWID_SPACER), SetFill(0, 1), SetResize(0, 1),
@@ -53,6 +54,7 @@ static const NWidgetPart _nested_timetable_graph[] = {
 	EndContainer()
 };
 
+static const int MIN_PXL_PER_DAY = 1;
 
 /**
  * Window for the (old) vehicle listing.
@@ -74,6 +76,9 @@ protected:
 	typedef DestinationID Destination;
 
 	uint YlabelWidth;
+	Date startDate;
+	Date endDate;
+	int XLegendHeight;
 
 	struct OrderListGraph {
 		GraphLine line;
@@ -91,11 +96,16 @@ protected:
 
 	int orderListButtonsCount;
 
+	int graphPaddingTop;
+	int graphPaddingBottom;
+	int graphPaddingLeft;
+
 public:
 
 	TimetableGraphWindow(WindowDesc *desc, WindowNumber window_number)
 		: Window(desc), baseOrderList(NULL), vli(VehicleListIdentifier::UnPack(window_number)),
-			YlabelWidth(0), baseGraphLine(), orderListGraphs(), orderListButtonsCount(0)
+			YlabelWidth(0), baseGraphLine(), orderListGraphs(), orderListButtonsCount(0),
+			graphPaddingTop(GetCharacterHeight(FS_SMALL) / 2), graphPaddingBottom(GetCharacterHeight(FS_SMALL) / 2), graphPaddingLeft(0)
 	{
 		this->CreateNestedTree();
 
@@ -106,6 +116,7 @@ public:
 		InitOrderListButtons();
 
 		CalculateYLabelWidth();
+		InitXAxis();
 
 		/* Set up the window widgets */
 		//this->GetWidget<NWidgetCore>(WID_VL_LIST)->tool_tip = STR_VEHICLE_LIST_TRAIN_LIST_TOOLTIP + this->vli.vtype;
@@ -233,6 +244,19 @@ protected:
 		}
 
 		this->YlabelWidth = max_width;
+		this->graphPaddingLeft = YlabelWidth + 5;
+	}
+
+	void InitXAxis() {
+		YearMonthDay ymd;
+		ConvertDateToYMD(baseOrderList->GetStartTime(), &ymd);
+		this->startDate = ConvertYMDToDate(ymd.year, ymd.month, 0);
+
+		Duration dur = baseOrderList->GetTimetableDuration();
+		dur.AddLength(1);
+		this->endDate = AddToDate(baseOrderList->GetStartTime(), dur);
+
+		this->XLegendHeight = FONT_HEIGHT_SMALL * 2;
 	}
 
 	/**
@@ -240,8 +264,10 @@ protected:
 	 * @param date the date to map
 	 * @return x position
 	 */
-	int MapDateToXPosition(Date date, uint width) const {
-		return (date - baseOrderList->GetStartTime()) * width / (this->baseOrderList->GetTimetableDuration().GetLengthAsDate()*2);
+	int MapDateToXPosition(Date date, int graphWidth) const {
+		if (endDate - startDate > 0) {
+			return (date - startDate) * graphWidth / (endDate - startDate);
+		} else return 0;
 	}
 
 	/**
@@ -259,14 +285,13 @@ protected:
 	void DrawGraphLine(const Rect &r, const GraphLine& line, byte colour) const {
 		if (line.size() < 2 ) return;
 
-		uint width = r.right - r.left; //Graph width
-
+		int graphWidth = r.right - r.left;
 		for (GraphLine::const_iterator it = line.begin(); it != line.end(); ++it) {
 			if (it->order1->HasDeparture() && it->order2->HasArrival()) {
-				int x = r.left + MapDateToXPosition(it->order1->GetDeparture() + it->offset1, width);
+				int x = r.left + MapDateToXPosition(it->order1->GetDeparture() + it->offset1, graphWidth);
 				int y = r.top + yindexPositions[it->index1];
 
-				int x2 = r.left + MapDateToXPosition(it->order2->GetArrival() + it->offset2, width);
+				int x2 = r.left + MapDateToXPosition(it->order2->GetArrival() + it->offset2, graphWidth);
 				int y2 = r.top + yindexPositions[it->index2];
 
 				GfxDrawLine(x, y, x2, y2, colour, 1, 0);
@@ -276,7 +301,7 @@ protected:
 
 	/**
 	 * Draw the legend for the Y axis and the horizontal grid lines
-	 * @param r the rectangle of the graph
+	 * @param r the rectangle of the graph widget
 	 */
 	void DrawYLegendAndGrid(const Rect &r) const {
 		for (GraphLine::const_iterator it = baseGraphLine.begin(); it != baseGraphLine.end(); ++it) {
@@ -314,6 +339,30 @@ protected:
 		}
 	}
 
+
+	/**
+	 * @param r The rect of the graph itself (not the widget)
+	 */
+	void DrawXLegendAndGrid(const Rect& r) const {
+		for (Date date = startDate; date <= endDate; date = AddToDate(date, Duration(1, DU_MONTHS))) {
+			int x = MapDateToXPosition(date, r.right - r.left);
+			//Draw the vertical line
+			GfxFillRect(r.left + x,
+						r.top,
+						r.left + x,
+						r.bottom + this->XLegendHeight,
+						PC_BLACK,
+						FILLRECT_CHECKER);
+
+			YearMonthDay ymd;
+			ConvertDateToYMD(date, &ymd);
+			SetDParam(0, ymd.month + STR_MONTH_ABBREV_JAN);
+			SetDParam(1, ymd.year);
+			DrawStringMultiLine(r.left + x - 15, r.left + x + 15, r.bottom, r.bottom + XLegendHeight,
+					STR_TIMETABLE_GRAPH_X_LEGEND, TC_BLACK, SA_CENTER);
+		}
+	}
+
 	StringID PrepareTimetableNameString(int orderListIndex) const {
 		if (orderListGraphs[orderListIndex].orderList->GetName() == NULL) {
 			return STR_TIMETABLE_GRAPH_UNNAMED_TIMETABLE;
@@ -328,12 +377,8 @@ protected:
 	{
 		if (widget == WID_TGW_GRAPH) {
 			Dimension dmin;
-			dmin.height = rowCount * FONT_HEIGHT_SMALL;
-			dmin.width = YlabelWidth;
-			if (baseOrderList && !baseOrderList->GetTimetableDuration().IsInvalid()) {
-				dmin.width += 1 * baseOrderList->GetTimetableDuration().GetLengthAsDate(); // 1pixel per day
-			}
-
+			dmin.height = rowCount * FONT_HEIGHT_SMALL + graphPaddingTop + XLegendHeight;
+			dmin.width = graphPaddingLeft + (endDate - startDate) * MIN_PXL_PER_DAY;
 
 			*size = maxdim(*size, dmin);
 		} else if (widget >= WID_TGW_ORDERS_SELECTION_BEGIN) {
@@ -346,6 +391,7 @@ protected:
 
 			*size = maxdim(*size, dim);
 		}
+
 	}
 	/*
 	virtual void SetStringParameters(int widget) const
@@ -362,13 +408,16 @@ protected:
 	virtual void DrawWidget(const Rect &r, int widget) const
 	{
 		if (widget == WID_TGW_GRAPH) {
-
-			DrawYLegendAndGrid(r);
-
 			Rect graphRect(r);
-			graphRect.top += 0; //FIXME
-			graphRect.left += YlabelWidth;
-			graphRect.bottom -= 10; //FIXME
+
+			graphRect.top += graphPaddingTop;
+			graphRect.bottom -= graphPaddingBottom + XLegendHeight;
+
+			DrawYLegendAndGrid(graphRect);
+
+			graphRect.left += graphPaddingLeft;
+
+			DrawXLegendAndGrid(graphRect);
 
 			DrawGraphLine(graphRect, baseGraphLine, PC_DARK_BLUE /*_colour_gradient[COLOUR_BLUE][0]*/);
 			for (std::vector<OrderListGraph>::const_iterator graphLine = orderListGraphs.begin();
@@ -391,6 +440,11 @@ protected:
 
 			DrawString(rtl ? r.left : x + 14 + clk_dif, (rtl ? r.right - 14 + clk_dif : r.right), y + clk_dif, this->PrepareTimetableNameString(widget - WID_TGW_ORDERS_SELECTION_BEGIN));
 		}
+	}
+
+	virtual void OnResize() {
+		this->InitXAxis();
+		this->InitYAxisPositions();
 	}
 
 	virtual void OnClick(Point pt, int widget, int click_count)
@@ -422,11 +476,6 @@ protected:
 					this->SetDirty();
 				}
 		}
-	}
-
-	virtual void OnResize()
-	{
-		this->InitYAxisPositions();
 	}
 
 

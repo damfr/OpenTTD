@@ -4187,6 +4187,7 @@ STR_TIMETABLE_GRAPH_DEPOT_LABEL									:{TINY_FONT}{BLACK}{DEPOT}
 STR_TIMETABLE_GRAPH_TIMETABLE_NAME								:{TINY_FONT}{BLACK}{RAW_STRING}
 STR_TIMETABLE_GRAPH_UNNAMED_TIMETABLE							:{TINY_FONT}{BLACK}Unnamed timetable
 STR_TIMETABLE_GRAPH_TIMETABLE_TOOLTIP							:{BLACK}Ctrl-click to show the vehicles of this timetable
+STR_TIMETABLE_GRAPH_X_LEGEND									:{TINY_FONT}{STRING}{} {NUM}
 
 # AI debug window
 STR_AI_DEBUG                                                    :{WHITE}AI/Game Script Debug
