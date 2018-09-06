@@ -17,6 +17,7 @@
 #include "window_gui.h"
 #include "vehiclelist.h"
 #include "vehicle_base.h"
+#include "vehicle_gui.h"
 #include "widgets/timetable_widget.h"
 #include "core/geometry_func.hpp"
 #include "timetable_graph.h"
@@ -88,11 +89,13 @@ protected:
 
 	TimetableGraphBuilder builder;
 
+	int orderListButtonsCount;
+
 public:
 
 	TimetableGraphWindow(WindowDesc *desc, WindowNumber window_number)
 		: Window(desc), baseOrderList(NULL), vli(VehicleListIdentifier::UnPack(window_number)),
-			YlabelWidth(0), baseGraphLine(), orderListGraphs()
+			YlabelWidth(0), baseGraphLine(), orderListGraphs(), orderListButtonsCount(0)
 	{
 		this->CreateNestedTree();
 
@@ -100,17 +103,7 @@ public:
 
 		InitGraphData();
 
-		// Building the buttons to enable/disable showing the order lists
-		NWidgetBackground* buttonsContainer = this->GetWidget<NWidgetBackground>(WID_TGW_ORDERS_SELECTION);
-		for (int i = 0; i < orderListGraphs.size(); ++i) {
-			NWidgetBackground* button = new NWidgetBackground(WWT_PANEL, COLOUR_YELLOW, WID_TGW_ORDERS_SELECTION_BEGIN + i);
-			//button->SetToolTip(STR_TIMETABLE_GRAPH_TIMETABLE_TOOLTIP); TODO
-			button->SetFill(1, 0);
-			button->SetLowered(true);
-			buttonsContainer->Add(button);
-		}
-		this->nested_array_size += orderListGraphs.size();
-		this->nested_root->SetupSmallestSize(this, true);
+		InitOrderListButtons();
 
 		CalculateYLabelWidth();
 
@@ -159,7 +152,35 @@ protected:
 		}
 	}
 
+	/**
+	 * Builds the buttons to enable/disable showing the order lists
+	 */
+	void InitOrderListButtons() {
+		NWidgetBackground* buttonsBackground = this->GetWidget<NWidgetBackground>(WID_TGW_ORDERS_SELECTION);
 
+		if (orderListButtonsCount > 0) {
+			//Removing the current buttons
+			NWidgetVertical* buttonsPIPContainer = dynamic_cast<NWidgetVertical*>(buttonsBackground->GetWidgetOfType(NWID_VERTICAL));
+			//Removing the previous buttons
+			for (int index = WID_TGW_ORDERS_SELECTION_BEGIN; index < WID_TGW_ORDERS_SELECTION_BEGIN + orderListButtonsCount; ++index) {
+				NWidgetBackground* button = this->GetWidget<NWidgetBackground>(index);
+				delete button;
+			}
+			*buttonsPIPContainer = *(new NWidgetVertical);
+			this->CreateNestedTree(true);
+		}
+
+		for (int i = 0; i < orderListGraphs.size(); ++i) {
+			NWidgetBackground* button = new NWidgetBackground(WWT_PANEL, COLOUR_YELLOW, WID_TGW_ORDERS_SELECTION_BEGIN + i);
+			//button->SetToolTip(STR_TIMETABLE_GRAPH_TIMETABLE_TOOLTIP); TODO
+			button->SetFill(1, 0);
+			button->SetLowered(true);
+			buttonsBackground->Add(button);
+		}
+		orderListButtonsCount = orderListGraphs.size();
+		this->nested_array_size += orderListGraphs.size();
+		this->nested_root->SetupSmallestSize(this, true);
+	}
 
 
 
@@ -416,7 +437,17 @@ protected:
 	 */
 	virtual void OnInvalidateData(int data = 0, bool gui_scope = true)
 	{
-		this->InitGraphData();
+		baseGraphLine.clear();
+		orderListGraphs.clear();
+		builder.SetBaseOrderList(NULL);
+
+		if (gui_scope) {
+			this->InitGraphData();
+			this->InitOrderListButtons();
+			this->CalculateYLabelWidth();
+			this->ReInit();
+			this->InitYAxisPositions();
+		}
 	}
 };
 
@@ -424,7 +455,7 @@ protected:
 
 static WindowDesc _timetable_graph_desc(
 	WDP_AUTO, "timetable_graph", 260, 246,
-	WC_TIMETABLE_GRAPH, WC_NONE,
+	WC_INVALID, WC_NONE,
 	0,
 	_nested_timetable_graph, lengthof(_nested_timetable_graph)
 );
@@ -433,9 +464,10 @@ void ShowTimetableGraphWindow(OrderList *orderList)
 {
 	if (orderList == NULL) return;
 
-	WindowNumber num = VehicleListIdentifier(VL_SHARED_ORDERS, orderList->GetFirstSharedVehicle()->type,
+	WindowNumber num = VehicleListIdentifier(VL_TIMETABLE_GRAPH, orderList->GetFirstSharedVehicle()->type,
 			orderList->GetFirstSharedVehicle()->owner, orderList->GetFirstSharedVehicle()->index).Pack();
 
+	_timetable_graph_desc.cls = GetWindowClassForVehicleType(orderList->GetFirstSharedVehicle()->type);
 	AllocateWindowDescFront<TimetableGraphWindow>(&_timetable_graph_desc, num);
 }
 

@@ -19,6 +19,8 @@ TimetableGraphBuilder::TimetableGraphBuilder(const OrderList* baseOrders)
 
 void TimetableGraphBuilder::SetBaseOrderList(const OrderList* baseOrders) {
 	this->baseOrders = baseOrders;
+	destinations.clear();
+	destinationsIndex.clear();
 }
 
 GraphLine TimetableGraphBuilder::BuildGraph()
