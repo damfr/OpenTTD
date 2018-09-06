@@ -22,6 +22,7 @@ enum VehicleListType {
 	VL_STATION_LIST,
 	VL_DEPOT_LIST,
 	VL_GROUP_LIST,
+	VL_TIMETABLE_GRAPH,
 	VLT_END
 };
 
