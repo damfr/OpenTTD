@@ -13,7 +13,7 @@
 #define TIMETABLE_GRAPH_H
 
 #include <vector>
-#include <set>
+#include <map>
 #include "order_base.h"
 
 
@@ -32,10 +32,15 @@ public:
 	 */
 	bool IsRepeating() const { return counter >= orderList->GetNumOrders(); }
 
+	bool HasPassedEnd() const { return passedEnd; }
+
+	bool operator!=(const GotoOrderListIterator& other) { return orderList != other.orderList || current != other.current; }
+
 private:
 	const OrderList* orderList;
 	const Order* current;
 	int counter;
+	bool passedEnd;
 
 	void AdvanceToNextGoto(bool incrCounter);
 };
@@ -69,21 +74,25 @@ public:
 	void SetBaseOrderList(const OrderList* baseOrders);
 
 private:
+	typedef std::pair<const Order*, int> BasePair;
+
 	const OrderList* baseOrders;
 
 	/**
-	 * A set of pairs of (destination, index) (index being the index on the y axis)
+	 * A map : keys = (destination, index) (index being the index on the y axis)
+	 * values = wether we have already considered the associated key in the algorithm
 	 */
-	std::set<std::pair<Destination, int> > destinationsIndex;
+	//std::map<BasePair, bool> destinationsIndex;
+	std::multimap<Destination, BasePair> destinationsIndex;
+
+	typedef std::multimap<Destination, BasePair>::iterator DestIndexIterator;
 
 	GraphLine destinations;
 
 
 	void BuildDestinationsIndex();
 
-
-	GotoOrderListIterator orderIt;
-	GotoOrderListIterator baseOrderIt;
+	GraphSegment BuildGraphLine(const OrderList* orderList, GotoOrderListIterator compItStart, GotoOrderListIterator baseItStart, int baseStartIndex);
 
 };
 

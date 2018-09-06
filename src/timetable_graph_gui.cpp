@@ -39,7 +39,7 @@ static const NWidgetPart _nested_timetable_graph[] = {
 				NWidget(WWT_PUSHTXTBTN, COLOUR_ORANGE, WID_TGW_ENABLE_ALL), SetDataTip(STR_GRAPH_CARGO_ENABLE_ALL, STR_GRAPH_CARGO_TOOLTIP_ENABLE_ALL), SetFill(1, 0),
 				NWidget(WWT_PUSHTXTBTN, COLOUR_ORANGE, WID_TGW_DISABLE_ALL), SetDataTip(STR_GRAPH_CARGO_DISABLE_ALL, STR_GRAPH_CARGO_TOOLTIP_DISABLE_ALL), SetFill(1, 0),
 				NWidget(NWID_SPACER), SetFill(0, 1), SetResize(0, 1),
-				NWidget(NWID_VERTICAL, COLOUR_GREY, WID_TGW_ORDERS_SELECTION), SetFill(1,0), SetResize(1,1),
+				NWidget(WWT_PANEL, COLOUR_GREY, WID_TGW_ORDERS_SELECTION), SetFill(1,0), SetResize(1,1),
 					//Added on construction of the window
 				EndContainer(),
 				NWidget(NWID_SPACER), SetFill(0, 1), SetResize(0, 1),
@@ -72,15 +72,6 @@ protected:
 
 	typedef DestinationID Destination;
 
-	/*
-	struct Row {
-		Destination dest; //The destination
-		uint index;		//Its index on the list of destinations shown
-		Row(Destination dest, uint index) : dest(dest), index(index) {}
-	};
-
-	*/
-
 	uint YlabelWidth;
 
 	struct OrderListGraph {
@@ -110,7 +101,7 @@ public:
 		InitGraphData();
 
 		// Building the buttons to enable/disable showing the order lists
-		NWidgetContainer* buttonsContainer = this->GetWidget<NWidgetContainer>(WID_TGW_ORDERS_SELECTION);
+		NWidgetBackground* buttonsContainer = this->GetWidget<NWidgetBackground>(WID_TGW_ORDERS_SELECTION);
 		for (int i = 0; i < orderListGraphs.size(); ++i) {
 			NWidgetBackground* button = new NWidgetBackground(WWT_PANEL, COLOUR_YELLOW, WID_TGW_ORDERS_SELECTION_BEGIN + i);
 			//button->SetToolTip(STR_TIMETABLE_GRAPH_TIMETABLE_TOOLTIP); TODO
@@ -118,7 +109,8 @@ public:
 			button->SetLowered(true);
 			buttonsContainer->Add(button);
 		}
-
+		this->nested_array_size += orderListGraphs.size();
+		this->nested_root->SetupSmallestSize(this, true);
 
 		CalculateYLabelWidth();
 
@@ -140,7 +132,7 @@ public:
 
 protected:
 	bool IsOrderListTimetabled(const OrderList* orders) const {
-		return orders->GetNumVehicles() > 0 && orders->GetFirstSharedVehicle()->type == vli.type &&
+		return orders->GetNumVehicles() > 0  &&
 				orders->HasStartTime() && !orders->GetTimetableDuration().IsInvalid();
 	}
 
@@ -152,13 +144,13 @@ protected:
 	void InitGraphData() {
 		builder.SetBaseOrderList(this->baseOrderList);
 		this->baseGraphLine = builder.BuildGraph();
-		rowCount = baseGraphLine.size();
+		rowCount = baseGraphLine.size() +1;
 
 		orderListGraphs.clear();
 		const OrderList* orderList;
 
 		FOR_ALL_ORDER_LISTS(orderList) {
-			if (IsOrderListTimetabled(orderList)) {
+			if (orderList != this->baseOrderList && IsOrderListTimetabled(orderList)) {
 				GraphLine graphLine = builder.GetGraphForOrderList(orderList);
 				if (!graphLine.empty()) {
 					orderListGraphs.push_back(OrderListGraph(graphLine, orderList, true));
@@ -181,131 +173,7 @@ protected:
 		}
 	}
 
-	/**
-	 * Build a linked list of GraphPoint from a first match
-	 * @pre (*ordIterator)->GetDestinationId() == destinations[destIndex]
-	 * @param ordIterator a pointer to the *Order which is moved along the orderList's linked list as the algorith progresses
-	 * @param destIt an iterator from the mainGraphLine of the first match
-	 * @return the first element of the built linkedList
-	 */
-	/*
-	GraphPoint* BuildGraphLine(const Order** ordIterator, std::vector<DestinationID>::const_iterator destIt) const {
-		bool beforeReversal = destIt < reverseIt;
 
-		GraphPoint* first = new GraphPoint(*ordIterator, destIndex, NULL);
-		GraphPoint* current = first;
-
-
-		while ((*ordIterator = (*ordIterator)->next) != NULL) {
-
-			destIndex = current->yindex +1; //We start looking for common destinations after the previous match
-
-			while (destIndex < rowCount && this->destinations[destIndex] != (*ordIterator)->GetDestination()) {
-				destIndex++;
-			}
-
-			if ((destIndex < reverseIndex) != beforeReversal || destIndex >= rowCount) {
-				//We have passed the reverse point or we haven't found a match with this->destinations
-				break;
-			}
-
-			//We have found a new matching destination : adding it to the graph line
-			GraphPoint* newPoint = new GraphPoint(*ordIterator, destIndex, NULL);
-			current->next = newPoint;
-			current = newPoint;
-		}
-
-		if (first->next != NULL) { //The line has at least two points
-			return first;
-		}
-		else return NULL;
-	}
-
-	void InitOtherOrderLists() {
-		this->otherGraphLines.clear();
-
-		const OrderList* otherOrderList;
-
-		FOR_ALL_ORDER_LISTS(otherOrderList) {
-			if (otherOrderList->index == baseOrderList->index) continue;
-
-			GraphPoint* down = NULL;
-			GraphPoint* up = NULL;
-
-			for (const Order* order = otherOrderList->GetFirstOrder(); order != NULL; order = order->next) {
-				int destinationIndex;
-				if (order->IsGotoOrder() &&
-						(destinationIndex = destinations.FindIndex(order->GetDestination())) != -1) {
-					bool beforeReversal = destinationIndex < reverseIndex;
-
-					//We have found the first match in this portion of the orderList
-					//Now we look for other matches which are on the same side of the reversal point as this one
-					//Note: BuildGraphLine changes order (moves it forward in the linked list)
-					GraphPoint* point = BuildGraphLine(&order, destinationIndex);
-
-					if (beforeReversal) {
-						down = point; //point can be NULL, but there is no need to check
-					}
-					else {
-						up = point; //Same as above
-					}
-
-				}
-			}
-
-			if (down != NULL || up != NULL) { //There is at least one non-empty GraphLine
-				otherGraphLines.insert(
-					std::pair<OrderListID, GraphLine>(otherOrderList->index,
-													GraphLine(down, up, false)));
-			}
-
-		}
-	}
-
-
-	void InitOtherOrderLists2() {
-		class CompRows {
-			bool operator() (const Row& a, const Row& b) {
-				return (a.dest < b.dest) || (a.dest == b.dest && a.index < b.index);
-				//Lexicographical order on Row
-			}
-		};
-		std::set<Row, CompRows> rowMap;
-
-		//Building the set
-		for (int i = 0; i < destinations.size(); i++) {
-			rowMap.insert(Row(destinations[i], i));
-		}
-
-
-		const OrderList* otherOrderList;
-
-		FOR_ALL_ORDER_LISTS(otherOrderList) {
-			if (otherOrderList->index == baseOrderList->index) continue;
-
-			int prevMatchIndex = -1;
-			Destination prevMatchDest = INVALID_STATION;
-
-			for (const Order* order = otherOrderList->GetFirstOrder(); order != NULL; order = order->next) {
-				Destination currDest = order->GetDestination();
-
-				if (!order->IsGotoOrder() || currDest == prevMatchDest) continue;
-
-				std::set<Row, CompRows>::const_iterator potentialNextMatch =
-						rowMap.lower_bound(Row(order->GetDestination(), prevMatchIndex+1));
-
-				if (potentialNextMatch->dest != currDest) {
-					//We didn't find a match that was in the correct order from the previous one
-					//(we must have prevMatchIndex < currMatchIndex
-
-					//Now we search whether there is
-				}
-
-			}
-		}
-
-	}
-	*/
 
 	/**
 	 * Set the DParam for the label string
@@ -352,7 +220,7 @@ protected:
 	 * @return x position
 	 */
 	int MapDateToXPosition(Date date, uint width) const {
-		return (date - baseOrderList->GetStartTime()) * width / (this->baseOrderList->GetTimetableDuration().GetLengthAsDate());
+		return (date - baseOrderList->GetStartTime()) * width / (this->baseOrderList->GetTimetableDuration().GetLengthAsDate()*2);
 	}
 
 	/**
@@ -372,7 +240,7 @@ protected:
 
 		uint width = r.right - r.left; //Graph width
 
-		for (GraphLine::const_iterator it = line.begin(); it + 1 != line.end(); ++it) {
+		for (GraphLine::const_iterator it = line.begin(); it != line.end(); ++it) {
 			if (it->order1->HasDeparture() && it->order2->HasArrival()) {
 				int x = r.left + MapDateToXPosition(it->order1->GetDeparture() + it->offset1, width);
 				int y = r.top + yindexPositions[it->index1];
@@ -429,7 +297,7 @@ protected:
 		if (orderListGraphs[orderListIndex].orderList->GetName() == NULL) {
 			return STR_TIMETABLE_GRAPH_UNNAMED_TIMETABLE;
 		} else {
-			SetDParamStr(STR_TIMETABLE_GRAPH_TIMETABLE_NAME, orderListGraphs[orderListIndex].orderList->GetName());
+			SetDParamStr(0, orderListGraphs[orderListIndex].orderList->GetName());
 			return STR_TIMETABLE_GRAPH_TIMETABLE_NAME;
 		}
 	}
@@ -514,14 +382,14 @@ protected:
 			case WID_TGW_DISABLE_ALL:
 				for (int i = 0; i < orderListGraphs.size(); ++i) {
 					orderListGraphs[i].enabled = false;
-					this->SetWidgetLoweredState(i - WID_TGW_ORDERS_SELECTION_BEGIN, false);
+					this->SetWidgetLoweredState(i + WID_TGW_ORDERS_SELECTION_BEGIN, false);
 				}
 				this->SetDirty();
 				break;
 			case WID_TGW_ENABLE_ALL:
 				for (int i = 0; i < orderListGraphs.size(); ++i) {
 					orderListGraphs[i].enabled = true;
-					this->SetWidgetLoweredState(i - WID_TGW_ORDERS_SELECTION_BEGIN, true);
+					this->SetWidgetLoweredState(i + WID_TGW_ORDERS_SELECTION_BEGIN, true);
 				}
 				this->SetDirty();
 				break;
@@ -530,6 +398,7 @@ protected:
 					int orderListIndex = widget - WID_TGW_ORDERS_SELECTION_BEGIN;
 					orderListGraphs[orderListIndex].enabled = !orderListGraphs[orderListIndex].enabled;
 					this->ToggleWidgetLoweredState(widget);
+					this->SetDirty();
 				}
 		}
 	}
