@@ -58,6 +58,8 @@
 
 #include "safeguards.h"
 
+#include "tbtr_template_vehicle_func.h"
+
 /* Number of bits in the hash to use from each vehicle coord */
 static const uint GEN_HASHX_BITS = 6;
 static const uint GEN_HASHY_BITS = 6;
@@ -691,6 +693,13 @@ void ResetVehicleColourMap()
 typedef SmallMap<Vehicle *, bool, 4> AutoreplaceMap;
 static AutoreplaceMap _vehicles_to_autoreplace;
 
+/**
+ * List of vehicles that are issued for template replacement this tick.
+ * Mapping is {vehicle : leave depot after replacement}
+ */
+typedef SmallMap<Train *, bool, 4> TemplateReplacementMap;
+static TemplateReplacementMap _vehicles_to_templatereplace;
+
 void InitializeVehicles()
 {
 	_vehicles_to_autoreplace.Reset();
@@ -894,6 +903,25 @@ Vehicle::~Vehicle()
  */
 void VehicleEnteredDepotThisTick(Vehicle *v)
 {
+	/* Template Replacement Setup stuff */
+	bool stayInDepot = v->current_order.GetDepotActionType();
+	TemplateReplacement *tr = GetTemplateReplacementByGroupID(v->group_id);
+	if ( tr ) {
+		if ( stayInDepot )	_vehicles_to_templatereplace[(Train*)v] = true;
+		else				_vehicles_to_templatereplace[(Train*)v] = false;
+	}
+	/*
+	 * Always schedule trains for auto replacement, even if they're already
+	 * scheduled for template replacement. This ensures that if a vehicle is
+	 * too old and needs to be auto-replaced, but template replacement fails,
+	 * it will still try to auto replace the vehicle.
+	 * Later, we first try to template replace a vehicle and if that succeeds,
+	 * we de-schedule its auto-replacement. Doing the template replacement first
+	 * and then auto-replacement ensures that we don't enter a state where the
+	 * vehicle does not have a proper template vehicle assigned, thus skipping
+	 * its template replacement entirely and auto-replacing it instead, even
+	 * when a template replacement was originally intended
+	 */
 	/* Vehicle should stop in the depot if it was in 'stopping' state */
 	_vehicles_to_autoreplace[v] = !(v->vehstatus & VS_STOPPED);
 
@@ -902,6 +930,7 @@ void VehicleEnteredDepotThisTick(Vehicle *v)
 	 * the path out of the depot before we might autoreplace it to a different
 	 * engine. The new engine would not own the reserved path we store that we
 	 * stopped the vehicle, so autoreplace can start it again */
+
 	v->vehstatus |= VS_STOPPED;
 }
 
@@ -943,6 +972,7 @@ static void RunVehicleDayProc()
 void CallVehicleTicks()
 {
 	_vehicles_to_autoreplace.Clear();
+	_vehicles_to_templatereplace.Clear();
 
 	RunVehicleDayProc();
 
@@ -1026,6 +1056,28 @@ void CallVehicleTicks()
 		}
 	}
 
+	/* do Template Replacement */
+	Backup<CompanyByte> tmpl_cur_company(_current_company, FILE_LINE);
+	for (TemplateReplacementMap::iterator it = _vehicles_to_templatereplace.Begin(); it != _vehicles_to_templatereplace.End(); it++) {
+
+		Train *t = it->first;
+
+		tmpl_cur_company.Change(t->owner);
+
+		bool stayInDepot = it->second;
+
+		it->first->vehstatus |= VS_STOPPED;
+		CommandCost cost = DoCommand(0, t->index, stayInDepot, DC_EXEC, CMD_TEMPLATE_REPLACE_TRAIN);
+		/* if it wasn't for free, it succeeded, so don't auto-replace it */
+		if(cost.GetCost() != 0) {
+			_vehicles_to_autoreplace.Erase(t);
+		}
+		/* Redraw main gui for changed statistics */
+		SetWindowClassesDirty(WC_TEMPLATEGUI_MAIN);
+	}
+	tmpl_cur_company.Restore();
+
+	/* do Auto Replacement */
 	Backup<CompanyByte> cur_company(_current_company, FILE_LINE);
 	for (AutoreplaceMap::iterator it = _vehicles_to_autoreplace.Begin(); it != _vehicles_to_autoreplace.End(); it++) {
 		v = it->first;
@@ -1070,7 +1122,6 @@ void CallVehicleTicks()
 		SetDParam(1, error_message);
 		AddVehicleAdviceNewsItem(message, v->index);
 	}
-
 	cur_company.Restore();
 }
 
