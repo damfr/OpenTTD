@@ -50,6 +50,8 @@ src/os/windows/ottdres.rc
 !/config.lib
 !*.in
 *.tmp
+
+*.swp
 /.cproject
 
 /.project
