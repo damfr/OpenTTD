@@ -98,10 +98,11 @@ protected:
 	struct OrderListGraph {
 		GraphLine line;
 		const OrderList* orderList;
+		byte colour;
 		bool enabled;
 
-		OrderListGraph(const GraphLine& line, const OrderList* orderList, bool enabled = true)
-			: line(line), orderList(orderList), enabled(enabled) {}
+		OrderListGraph(const GraphLine& line, const OrderList* orderList, byte colour, bool enabled = true)
+			: line(line), orderList(orderList), colour(colour), enabled(enabled) {}
 	};
 
 	GraphLine baseGraphLine;
@@ -163,11 +164,20 @@ protected:
 		orderListGraphs.clear();
 		const OrderList* orderList;
 
+		int colour = COLOUR_BEGIN;
+		int shade = 4;
+
 		FOR_ALL_ORDER_LISTS(orderList) {
 			if (orderList != this->baseOrderList && IsOrderListTimetabled(orderList)) {
 				GraphLine graphLine = builder.GetGraphForOrderList(orderList);
 				if (!graphLine.empty()) {
-					orderListGraphs.push_back(OrderListGraph(graphLine, orderList, true));
+					orderListGraphs.push_back(OrderListGraph(graphLine, orderList, _colour_gradient[colour][shade], true));
+					++colour;
+					if (colour >= COLOUR_WHITE) {
+						colour = COLOUR_BEGIN;
+						if (shade == 4) shade = 7;
+						else break; //We have exhausted all colours
+					}
 				}
 			}
 		}
@@ -177,12 +187,12 @@ protected:
 	 * Update the state of the buttons to enable/disable showing the order lists
 	 */
 	void InitOrderListButtons() {
-		for (int i = 0; i < MAX_ORDER_LISTS_SHOWN; ++i) {
+		for (uint i = 0; i < MAX_ORDER_LISTS_SHOWN; ++i) {
 			NWidgetBackground* button = this->GetWidget<NWidgetBackground>(WID_TGW_ORDERS_SELECTION_BEGIN + i);
 
 			if (i < orderListGraphs.size()) {
 				button->SetDisabled(false);
-				button->SetLowered(!orderListGraphs[i].enabled);
+				button->SetLowered(orderListGraphs[i].enabled);
 			} else {
 				button->SetLowered(false);
 				button->SetDisabled(true);
@@ -417,11 +427,11 @@ protected:
 
 			DrawXLegendAndGrid(graphRect);
 
-			DrawGraphLine(graphRect, baseGraphLine, PC_DARK_BLUE /*_colour_gradient[COLOUR_BLUE][0]*/);
+			DrawGraphLine(graphRect, baseGraphLine, _colour_gradient[COLOUR_WHITE][7]);
 			for (std::vector<OrderListGraph>::const_iterator graphLine = orderListGraphs.begin();
 					graphLine != orderListGraphs.end(); ++graphLine) {
 				if (graphLine->enabled) {
-					DrawGraphLine(graphRect, graphLine->line, _colour_gradient[COLOUR_DARK_GREEN][0]);
+					DrawGraphLine(graphRect, graphLine->line, graphLine->colour);
 				}
 			}
 
@@ -434,7 +444,7 @@ protected:
 			int rect_x = clk_dif + (rtl ? r.right - 12 : r.left + WD_FRAMERECT_LEFT);
 
 			GfxFillRect(rect_x, y + clk_dif, rect_x + 8, y + 5 + clk_dif, PC_BLACK);
-			GfxFillRect(rect_x + 1, y + 1 + clk_dif, rect_x + 7, y + 4 + clk_dif, _colour_gradient[COLOUR_DARK_GREEN][0]);//TODO colour
+			GfxFillRect(rect_x + 1, y + 1 + clk_dif, rect_x + 7, y + 4 + clk_dif, orderListGraphs[widget-WID_TGW_ORDERS_SELECTION_BEGIN].colour);
 
 			DrawString(rtl ? r.left : x + 14 + clk_dif, (rtl ? r.right - 14 + clk_dif : r.right), y + clk_dif, this->PrepareTimetableNameString(widget - WID_TGW_ORDERS_SELECTION_BEGIN));
 		}
