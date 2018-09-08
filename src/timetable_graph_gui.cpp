@@ -24,6 +24,23 @@
 #include "date_func.h"
 
 
+static const int MAX_ORDER_LISTS_SHOWN = 20;
+
+static NWidgetBase* MakeOrderListButtons(int *biggestIndex) {
+	NWidgetVertical* ver = new NWidgetVertical;
+
+	for (int i = 0; i < MAX_ORDER_LISTS_SHOWN; ++i) {
+		NWidgetBackground* button = new NWidgetBackground(WWT_PANEL, COLOUR_YELLOW, WID_TGW_ORDERS_SELECTION_BEGIN + i);
+		//button->tool_tip =
+		button->SetFill(1, 0);
+		button->SetLowered(true);
+		button->SetDisabled(true);
+		ver->Add(button);
+	}
+	*biggestIndex = WID_TGW_ORDERS_SELECTION_BEGIN + MAX_ORDER_LISTS_SHOWN;
+	return ver;
+}
+
 static const NWidgetPart _nested_timetable_graph[] = {
 	NWidget(NWID_HORIZONTAL),
 		NWidget(WWT_CLOSEBOX, COLOUR_GREY),
@@ -40,10 +57,8 @@ static const NWidgetPart _nested_timetable_graph[] = {
 				NWidget(NWID_SPACER), SetFill(0, 1), SetResize(0, 1),
 				NWidget(WWT_PUSHTXTBTN, COLOUR_ORANGE, WID_TGW_ENABLE_ALL), SetDataTip(STR_GRAPH_CARGO_ENABLE_ALL, STR_GRAPH_CARGO_TOOLTIP_ENABLE_ALL), SetFill(1, 0),
 				NWidget(WWT_PUSHTXTBTN, COLOUR_ORANGE, WID_TGW_DISABLE_ALL), SetDataTip(STR_GRAPH_CARGO_DISABLE_ALL, STR_GRAPH_CARGO_TOOLTIP_DISABLE_ALL), SetFill(1, 0),
-				NWidget(NWID_SPACER), SetFill(0, 1), SetResize(0, 1),
-				NWidget(WWT_PANEL, COLOUR_GREY, WID_TGW_ORDERS_SELECTION), SetFill(1,0), SetResize(1,1),
-					//Added on construction of the window
-				EndContainer(),
+				NWidget(NWID_SPACER), SetMinimalSize(0, 4),
+				NWidgetFunction(MakeOrderListButtons),
 				NWidget(NWID_SPACER), SetFill(0, 1), SetResize(0, 1),
 			EndContainer(),
 		EndContainer(),
@@ -94,8 +109,6 @@ protected:
 
 	TimetableGraphBuilder builder;
 
-	int orderListButtonsCount;
-
 	int graphPaddingTop;
 	int graphPaddingBottom;
 	int graphPaddingLeft;
@@ -104,7 +117,7 @@ public:
 
 	TimetableGraphWindow(WindowDesc *desc, WindowNumber window_number)
 		: Window(desc), baseOrderList(nullptr), vli(VehicleListIdentifier::UnPack(window_number)),
-			YlabelWidth(0), baseGraphLine(), orderListGraphs(), orderListButtonsCount(0),
+			YlabelWidth(0), baseGraphLine(), orderListGraphs(),
 			graphPaddingTop(GetCharacterHeight(FS_SMALL) / 2), graphPaddingBottom(GetCharacterHeight(FS_SMALL) / 2), graphPaddingLeft(0)
 	{
 		this->CreateNestedTree();
@@ -163,33 +176,21 @@ protected:
 	}
 
 	/**
-	 * Builds the buttons to enable/disable showing the order lists
+	 * Update the state of the buttons to enable/disable showing the order lists
 	 */
 	void InitOrderListButtons() {
-		NWidgetBackground* buttonsBackground = this->GetWidget<NWidgetBackground>(WID_TGW_ORDERS_SELECTION);
+		for (uint i = 0; i < MAX_ORDER_LISTS_SHOWN; ++i) {
+			NWidgetBackground* button = this->GetWidget<NWidgetBackground>(WID_TGW_ORDERS_SELECTION_BEGIN + i);
 
-		if (orderListButtonsCount > 0) {
-			//Removing the current buttons
-			NWidgetVertical* buttonsPIPContainer = dynamic_cast<NWidgetVertical*>(buttonsBackground->GetWidgetOfType(NWID_VERTICAL));
-			//Removing the previous buttons
-			for (int index = WID_TGW_ORDERS_SELECTION_BEGIN; index < WID_TGW_ORDERS_SELECTION_BEGIN + orderListButtonsCount; ++index) {
-				NWidgetBackground* button = this->GetWidget<NWidgetBackground>(index);
-				delete button;
+			if (i < orderListGraphs.size()) {
+				button->SetDisabled(false);
+				button->SetLowered(!orderListGraphs[i].enabled);
+			} else {
+				button->SetLowered(false);
+				button->SetDisabled(true);
 			}
-			*buttonsPIPContainer = *(new NWidgetVertical);
-			this->CreateNestedTree(true);
-		}
 
-		for (int i = 0; i < orderListGraphs.size(); ++i) {
-			NWidgetBackground* button = new NWidgetBackground(WWT_PANEL, COLOUR_YELLOW, WID_TGW_ORDERS_SELECTION_BEGIN + i);
-			//button->SetToolTip(STR_TIMETABLE_GRAPH_TIMETABLE_TOOLTIP); TODO
-			button->SetFill(1, 0);
-			button->SetLowered(true);
-			buttonsBackground->Add(button);
 		}
-		orderListButtonsCount = orderListGraphs.size();
-		this->nested_array_size += orderListGraphs.size();
-		this->nested_root->SetupSmallestSize(this, true);
 	}
 
 
@@ -380,7 +381,7 @@ protected:
 			dmin.width = graphPaddingLeft + (endDate - startDate) * MIN_PXL_PER_DAY;
 
 			*size = maxdim(*size, dmin);
-		} else if (widget >= WID_TGW_ORDERS_SELECTION_BEGIN) {
+		} else if (widget >= WID_TGW_ORDERS_SELECTION_BEGIN && widget < WID_TGW_ORDERS_SELECTION_BEGIN + orderListGraphs.size()) {
 			int orderListIndex = widget - WID_TGW_ORDERS_SELECTION_BEGIN;
 			Dimension dim = GetStringBoundingBox(this->PrepareTimetableNameString(orderListIndex));
 
