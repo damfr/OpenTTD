@@ -122,7 +122,7 @@ public:
 	{
 		this->CreateNestedTree();
 
-		this->baseOrderList = Vehicle::GetIfValid(this->vli.index)->orders.list;
+		this->baseOrderList = OrderList::GetIfValid(this->vli.index);
 
 		InitGraphData();
 
@@ -130,9 +130,6 @@ public:
 
 		CalculateYLabelWidth();
 		InitXAxis();
-
-		/* Set up the window widgets */
-		//this->GetWidget<NWidgetCore>(WID_VL_LIST)->tool_tip = STR_VEHICLE_LIST_TRAIN_LIST_TOOLTIP + this->vli.vtype;
 
 		//TODO put timetable name in caption
 		//this->GetWidget<NWidgetCore>(WID_TGW_CAPTION)->widget_data = STR_TIMETABLE_GRAPH_CAPTION;
@@ -513,7 +510,8 @@ void ShowTimetableGraphWindow(OrderList *orderList)
 {
 	if (orderList == NULL) return;
 
-	WindowNumber num = orderList->index;
+	WindowNumber num = VehicleListIdentifier(VL_TIMETABLE_GRAPH, orderList->GetFirstSharedVehicle()->type,
+				orderList->GetFirstSharedVehicle()->owner, orderList->index).Pack();
 
 	AllocateWindowDescFront<TimetableGraphWindow>(&_timetable_graph_desc, num);
 }
