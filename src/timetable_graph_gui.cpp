@@ -504,7 +504,7 @@ protected:
 
 static WindowDesc _timetable_graph_desc(
 	WDP_AUTO, "timetable_graph", 260, 246,
-	WC_INVALID, WC_NONE,
+	WC_TIMETABLE_GRAPH, WC_NONE,
 	0,
 	_nested_timetable_graph, lengthof(_nested_timetable_graph)
 );
@@ -513,10 +513,8 @@ void ShowTimetableGraphWindow(OrderList *orderList)
 {
 	if (orderList == NULL) return;
 
-	WindowNumber num = VehicleListIdentifier(VL_TIMETABLE_GRAPH, orderList->GetFirstSharedVehicle()->type,
-			orderList->GetFirstSharedVehicle()->owner, orderList->GetFirstSharedVehicle()->index).Pack();
+	WindowNumber num = orderList->index;
 
-	_timetable_graph_desc.cls = GetWindowClassForVehicleType(orderList->GetFirstSharedVehicle()->type);
 	AllocateWindowDescFront<TimetableGraphWindow>(&_timetable_graph_desc, num);
 }
 

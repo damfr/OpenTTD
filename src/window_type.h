@@ -327,6 +327,11 @@ enum WindowClass {
 	WC_AIRCRAFT_LIST,
 
 	/**
+	 * Timetable graph
+	 */
+	WC_TIMETABLE_GRAPH,
+
+	/**
 	 * Town view; %Window numbers:
 	 *   - #TownID = #TownViewWidgets
 	 */
