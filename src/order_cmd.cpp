@@ -263,6 +263,7 @@ void InvalidateVehicleOrder(const Vehicle *v, int data)
 		/* Calls SetDirty() too */
 		InvalidateWindowData(WC_VEHICLE_ORDERS,    v->index, data);
 		InvalidateWindowData(WC_VEHICLE_TIMETABLE, v->index, data);
+		if (v->orders.list != NULL) InvalidateWindowData(WC_TIMETABLE_GRAPH, v->orders.list->index);
 		return;
 	}
 
