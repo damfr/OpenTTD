@@ -1765,6 +1765,7 @@ void ProcessAutofillEnterStation(Vehicle *v, bool non_stop)
 
 		InvalidateWindowClassesData(WC_VEHICLE_TIMETABLE, false);
 		InvalidateWindowClassesData(WC_NODETIMETABLE_WINDOW);
+		InvalidateWindowClassesData(WC_TIMETABLE_GRAPH);
 	}
 }
 
