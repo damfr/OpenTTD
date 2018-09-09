@@ -436,7 +436,7 @@ Date SubtractFromDate(Date date, Duration duration)
  *  @param d Duration as described
  *  @return length in our unit as described
  */
-int32 Duration::GetLengthInOurUnit(Duration &d)
+int32 Duration::GetLengthInOurUnit(const Duration &d) const
 {
 	/* Unimplemented cases. */
 	assert(!(this->IsInTicks() || this->IsInvalid() || d.IsInTicks() || d.IsInvalid()));
@@ -477,7 +477,7 @@ int32 Duration::GetLengthInOurUnit(Duration &d)
  *        differences based on a real calendar.
  *  @return length, transformed into Ticks, as described.
  */
-int32 Duration::GetLengthInTicks()
+int32 Duration::GetLengthInTicks() const
 {
 	if (this->IsInTicks()) {
 		return this->length;
@@ -501,7 +501,7 @@ int32 Duration::GetLengthInTicks()
  *  @see Duration::GetLengthInTicks
  *  @return length, transformed into Ticks, as described.
  */
-Date Duration::GetLengthAsDate()
+Date Duration::GetLengthAsDate() const
 {
 	if (this->IsInTicks()) {
 			return this->length / DAY_TICKS;
