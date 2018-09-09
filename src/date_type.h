@@ -81,7 +81,7 @@ enum DurationUnit {
 struct Duration {
 
 private:
-	int32 GetLengthInOurUnit(Duration &d);
+	int32 GetLengthInOurUnit(const Duration &d) const;
 
 public:
 	static const int DAYS_PER_MONTH = 30;
@@ -95,15 +95,15 @@ public:
 	Duration() { this->length = 0; this->unit = DU_INVALID; }
 	Duration(int32 length, DurationUnit unit) { this->length = length;	this->unit = unit; }
 
-	bool operator< (Duration &d) { return length < GetLengthInOurUnit(d); }
-	bool operator<= (Duration &d) {return length <= GetLengthInOurUnit(d); }
-	bool operator== (Duration &d) { return length == GetLengthInOurUnit(d); }
-	bool operator>= (Duration &d) {return length >= GetLengthInOurUnit(d); }
-	bool operator> (Duration &d) { return length > GetLengthInOurUnit(d); }
+	bool operator< (const Duration &d) const { return length < GetLengthInOurUnit(d); }
+	bool operator<= (const Duration &d) const {return length <= GetLengthInOurUnit(d); }
+	bool operator== (const Duration &d) const { return length == GetLengthInOurUnit(d); }
+	bool operator>= (const Duration &d) const {return length >= GetLengthInOurUnit(d); }
+	bool operator> (const Duration &d) const { return length > GetLengthInOurUnit(d); }
 	Duration operator- () { return Duration(-length, unit); }
 
-	int32 GetLengthInTicks();
-	Date GetLengthAsDate();
+	int32 GetLengthInTicks() const;
+	Date GetLengthAsDate() const;
 
 	inline void Add(Duration d) { this->length += GetLengthInOurUnit(d); }
 	inline void AddLength(int32 length) { this->length += length; }
