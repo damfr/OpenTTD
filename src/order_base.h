@@ -21,6 +21,7 @@
 #include "vehicle_type.h"
 #include "date_type.h"
 #include "timetable.h"
+#include "window_func.h"
 
 typedef Pool<Order, OrderID, 256, 64000> OrderPool;
 typedef Pool<OrderList, OrderListID, 128, 64000> OrderListPool;
@@ -256,7 +257,9 @@ public:
 	OrderList(Order *chain, Vehicle *v) { this->name = NULL; start_time = INVALID_DATE; this->Initialize(chain, v); }
 
 	/** Destructor. Invalidates OrderList for re-usage by the pool. */
-	~OrderList() {}
+	~OrderList() {
+		DeleteWindowById(WC_TIMETABLE_GRAPH, this->index);
+	}
 
 	void Initialize(Order *chain, Vehicle *v);
 

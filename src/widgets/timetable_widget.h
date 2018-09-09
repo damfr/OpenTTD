@@ -91,7 +91,6 @@ enum TimetableGraphWindowWidgets {
 	WID_TGW_RESIZE,
 	WID_TGW_ENABLE_ALL,						  ///< The button to enable all the other order lists shown
 	WID_TGW_DISABLE_ALL,					  ///< The button to disable all the other order lists shown
-	WID_TGW_ORDERS_SELECTION,				  ///< The selector of the other OrderLists to show (empty widget)
 
 	//Range begin
 	WID_TGW_ORDERS_SELECTION_BEGIN			  ///<Beginning of range for the order list buttons

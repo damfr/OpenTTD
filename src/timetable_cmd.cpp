@@ -58,6 +58,7 @@ CommandCost CmdSetTimetableStart(TileIndex tile, DoCommandFlag flags, uint32 p1,
 
 		SetWindowClassesDirty(WC_VEHICLE_TIMETABLE);
 		InvalidateWindowClassesData(WC_NODETIMETABLE_WINDOW);
+		InvalidateWindowClassesData(WC_TIMETABLE_GRAPH);
 	}
 
 	return CommandCost();
@@ -149,6 +150,7 @@ CommandCost CmdSetTimetableLength(TileIndex tile, DoCommandFlag flags, uint32 p1
 
 		SetWindowClassesDirty(WC_VEHICLE_TIMETABLE);
 		InvalidateWindowClassesData(WC_NODETIMETABLE_WINDOW);
+		InvalidateWindowClassesData(WC_TIMETABLE_GRAPH);
 	}
 
 	return CommandCost();
@@ -206,6 +208,7 @@ CommandCost CmdShiftTimetable(TileIndex tile, DoCommandFlag flags, uint32 p1, ui
 
 		SetWindowDirty(WC_VEHICLE_TIMETABLE, v->index);
 		InvalidateWindowClassesData(WC_NODETIMETABLE_WINDOW);
+		SetWindowDirty(WC_TIMETABLE_GRAPH, v->orders.list->index);
 	}
 	return CommandCost();
 }
@@ -262,6 +265,7 @@ CommandCost CmdRenameTimetable(TileIndex tile, DoCommandFlag flags, uint32 p1, u
 		vehicle->orders.list->SetName(reset ? NULL : stredup(text));
 
 		InvalidateWindowClassesData(WC_NODETIMETABLE_WINDOW);
+		SetWindowDirty(WC_TIMETABLE_GRAPH, vehicle->orders.list->index);
 	}
 
 	return CommandCost();
@@ -313,6 +317,7 @@ CommandCost CmdSetOrderDeparture(TileIndex tile, DoCommandFlag flags, uint32 p1,
 
 		SetWindowDirty(WC_VEHICLE_TIMETABLE, vehicle->index);
 		InvalidateWindowClassesData(WC_NODETIMETABLE_WINDOW);
+		SetWindowDirty(WC_TIMETABLE_GRAPH, vehicle->orders.list->index);
 	}
 
 	return CommandCost();
@@ -396,6 +401,7 @@ CommandCost CmdSetOrderArrival(TileIndex tile, DoCommandFlag flags, uint32 p1, u
 
 		SetWindowDirty(WC_VEHICLE_TIMETABLE, vehicle->index);
 		InvalidateWindowClassesData(WC_NODETIMETABLE_WINDOW);
+		SetWindowDirty(WC_TIMETABLE_GRAPH, vehicle->orders.list->index);
 	}
 
 	return CommandCost();
@@ -469,6 +475,7 @@ CommandCost CmdAutofillTimetable(TileIndex tile, DoCommandFlag flags, uint32 p1,
 		}
 
 		InvalidateWindowClassesData(WC_NODETIMETABLE_WINDOW);
+		SetWindowDirty(WC_TIMETABLE_GRAPH, v->orders.list->index);
 	}
 
 	return CommandCost();

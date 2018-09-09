@@ -7,7 +7,7 @@
 
 #include "stdafx.h"
 #include "timetable_graph.h"
-#include <set>
+#include "vehicle_base.h"
 
 /**
  *
@@ -19,7 +19,8 @@ TimetableGraphBuilder::TimetableGraphBuilder(const OrderList* baseOrders)
 
 void TimetableGraphBuilder::SetBaseOrderList(const OrderList* baseOrders) {
 	this->baseOrders = baseOrders;
-	destinations.clear();
+	destinations.segments.clear();
+	destinations.offsets.clear();
 	destinationsIndex.clear();
 }
 
@@ -31,7 +32,7 @@ GraphLine TimetableGraphBuilder::BuildGraph()
 
 GraphLine TimetableGraphBuilder::GetGraphForOrderList(const OrderList* orders)
 {
-	std::vector<GraphSegment> graph;
+	GraphLine line;
 
 	for (GotoOrderListIterator compIt(orders); !compIt.IsRepeating(); ++compIt) {
 
@@ -40,13 +41,24 @@ GraphLine TimetableGraphBuilder::GetGraphForOrderList(const OrderList* orders)
 
 			GraphSegment segment = BuildGraphLine(orders, compIt, GotoOrderListIterator(baseOrders, baseIt->second.first), baseIt->second.second);
 			if (segment.order1 != NULL) {
-				graph.push_back(segment);
+				line.segments.push_back(segment);
 			}
 		}
 
 	}
 
-	return graph;
+	if (!line.segments.empty()) {	//No need to continue if we aren't going to draw anything
+		//Building the offsets vector
+		for (const Vehicle* v = orders->GetFirstSharedVehicle(); v != NULL; v = v->NextShared()) {
+			if (!v->GetTimetableOffset().IsInvalid()) {
+				line.offsets.insert(v->GetTimetableOffset());
+			}
+		}
+	}
+
+	line.orderList = orders;
+
+	return line;
 }
 
 GraphSegment TimetableGraphBuilder::BuildGraphLine(const OrderList* orderList, GotoOrderListIterator compItStart, GotoOrderListIterator baseItStart, int baseStartIndex)
@@ -75,7 +87,7 @@ GraphSegment TimetableGraphBuilder::BuildGraphLine(const OrderList* orderList, G
 			if (baseIt->GetDestination() == compIt->GetDestination()) {
 				GraphSegment segment(*compItStart, *compIt, baseStartIndex, currentBaseIndex);
 				if (compIt.HasPassedEnd()) {
-					segment.offset2 = orderList->GetTimetableDuration().GetLengthAsDate();
+					segment.offset2 = orderList->GetTimetableDuration();
 				}
 				return segment;
 			}
@@ -88,14 +100,14 @@ GraphSegment TimetableGraphBuilder::BuildGraphLine(const OrderList* orderList, G
 				if (it->GetDestination() == compIt->GetDestination()) {
 					GraphSegment segment(*compItStart, *compIt, baseStartIndex, index);
 					if (compIt.HasPassedEnd()) {
-						segment.offset2 = orderList->GetTimetableDuration().GetLengthAsDate();
+						segment.offset2 = orderList->GetTimetableDuration();
 					}
 					return segment;
 				}
 			}
-
-			++compIt;
 			visitedComp.insert(compIt->GetDestination());
+			++compIt;
+
 		}
 
 		if (!baseEnded) {
@@ -104,14 +116,15 @@ GraphSegment TimetableGraphBuilder::BuildGraphLine(const OrderList* orderList, G
 				if (it->GetDestination() == baseIt->GetDestination()) {
 					GraphSegment segment(*compItStart, *it, baseStartIndex, currentBaseIndex);
 					if (it.HasPassedEnd()) {
-						segment.offset2 = orderList->GetTimetableDuration().GetLengthAsDate();
+						segment.offset2 = orderList->GetTimetableDuration();
 					}
 					return segment;
 				}
 			}
+			visitedBase.insert(baseIt->GetDestination());
 			++baseIt;
 			++currentBaseIndex;
-			visitedBase.insert(baseIt->GetDestination());
+
 		}
 
 
@@ -127,8 +140,8 @@ void TimetableGraphBuilder::BuildDestinationsIndex()
 	++orderIt2;
 	while (!orderIt1.IsRepeating()) {
 		//If we are adding the last segment (from the last order to the first, we add an offset
-		destinations.push_back(GraphSegment(*orderIt1, *orderIt2, i, i+1, 0,
-				orderIt2.IsRepeating() ? baseOrders->GetTimetableDuration().GetLengthAsDate() : 0));
+		destinations.segments.push_back(GraphSegment(*orderIt1, *orderIt2, i, i+1, Duration(0, DU_DAYS),
+				orderIt2.IsRepeating() ? baseOrders->GetTimetableDuration() : Duration(0, DU_DAYS)));
 
 		destinationsIndex.insert(std::pair<Destination, BasePair>(orderIt1->GetDestination(), BasePair(*orderIt1, i)));
 		++i;
@@ -140,8 +153,6 @@ void TimetableGraphBuilder::BuildDestinationsIndex()
 		destinationsIndex.insert(std::pair<Destination, BasePair>(baseOrders->GetFirstOrder()->GetDestination(), BasePair(baseOrders->GetFirstOrder(), i)));
 	}*/
 }
-
-
 
 
 
@@ -173,3 +184,4 @@ void GotoOrderListIterator::AdvanceToNextGoto(bool incrCounter) {
 		if (incrCounter) ++counter;
 	} while (internalCounter < orderList->GetNumOrders() && !current->IsGotoOrder());
 }
+
