@@ -159,7 +159,7 @@ protected:
 	void InitGraphData() {
 		builder.SetBaseOrderList(this->baseOrderList);
 		this->baseGraphLine = builder.BuildGraph();
-		rowCount = baseGraphLine.size() +1;
+		rowCount = baseGraphLine.segments.size() +1;
 
 		orderListGraphs.clear();
 		const OrderList* orderList;
@@ -170,7 +170,7 @@ protected:
 		FOR_ALL_ORDER_LISTS(orderList) {
 			if (orderList != this->baseOrderList && IsOrderListTimetabled(orderList)) {
 				GraphLine graphLine = builder.GetGraphForOrderList(orderList);
-				if (!graphLine.empty()) {
+				if (!graphLine.segments.empty()) {
 					orderListGraphs.push_back(OrderListGraph(graphLine, orderList, _colour_gradient[colour][shade], true));
 					++colour;
 					if (colour >= COLOUR_WHITE) {
@@ -243,7 +243,7 @@ protected:
 	{
 		uint max_width = 0;
 
-		for (GraphLine::const_iterator it = baseGraphLine.begin(); it != baseGraphLine.end(); ++it) {
+		for (std::vector<GraphSegment>::const_iterator it = baseGraphLine.segments.begin(); it != baseGraphLine.segments.end(); ++it) {
 			StringID id = PrepareDestinationLabel(it->order1);
 			if (id != STR_NULL) {
 				Dimension d = GetStringBoundingBox(id);
@@ -258,7 +258,7 @@ protected:
 	void InitXAxis() {
 		YearMonthDay ymd;
 		ConvertDateToYMD(baseOrderList->GetStartTime(), &ymd);
-		this->startDate = ConvertYMDToDate(ymd.year, ymd.month, 0);
+		this->startDate = ConvertYMDToDate(ymd.year, ymd.month, 1);
 
 		Duration dur = baseOrderList->GetTimetableDuration();
 		dur.AddLength(1);
@@ -288,18 +288,18 @@ protected:
 	/**
 	 * Draw a graph line (linked list of GraphPoint)
 	 * @param r the rectangle of the graph (without the labels)
-	 * @param firstPoint the first point of the linked list
+	 * @param line the line to draw
+	 * @param colour colour of the line
+	 * @param globalOffset an offset in days to apply to all points of the line
 	 */
-	void DrawGraphLine(const Rect &r, const GraphLine& line, byte colour) const {
-		if (line.size() < 2 ) return;
-
+	void DrawGraphLine(const Rect &r, const std::vector<GraphSegment>& segments, byte colour, Duration globalOffset = Duration(0, DU_DAYS)) const {
 		int graphWidth = r.right - r.left;
-		for (GraphLine::const_iterator it = line.begin(); it != line.end(); ++it) {
+		for (std::vector<GraphSegment>::const_iterator it = segments.begin(); it != segments.end(); ++it) {
 			if (it->order1->HasDeparture() && it->order2->HasArrival()) {
-				int x = r.left + MapDateToXPosition(it->order1->GetDeparture() + it->offset1, graphWidth);
+				int x = r.left + MapDateToXPosition(AddToDate(AddToDate(it->order1->GetDeparture(), it->offset1), globalOffset), graphWidth);
 				int y = r.top + yindexPositions[it->index1];
 
-				int x2 = r.left + MapDateToXPosition(it->order2->GetArrival() + it->offset2, graphWidth);
+				int x2 = r.left + MapDateToXPosition(AddToDate(AddToDate(it->order2->GetArrival(), it->offset2), globalOffset), graphWidth);
 				int y2 = r.top + yindexPositions[it->index2];
 
 				GfxDrawLine(x, y, x2, y2, colour, 1, 0);
@@ -312,20 +312,20 @@ protected:
 	 * @param r the rectangle of the graph widget
 	 */
 	void DrawYLegendAndGrid(const Rect &r) const {
-		for (GraphLine::const_iterator it = baseGraphLine.begin(); it != baseGraphLine.end(); ++it) {
+		for (std::vector<GraphSegment>::const_iterator it = baseGraphLine.segments.begin(); it != baseGraphLine.segments.end(); ++it) {
 			//Draw the label
 			DrawString(r.left,												//left
 					r.left + YlabelWidth,									//right
-					r.top + yindexPositions[std::distance(baseGraphLine.begin(), it)] - GetCharacterHeight(FS_SMALL) / 2,	//top
+					r.top + yindexPositions[std::distance(baseGraphLine.segments.begin(), it)] - GetCharacterHeight(FS_SMALL) / 2,	//top
 					PrepareDestinationLabel(it->order1),								//StringID
 					TC_BLACK,												//colour
 					SA_RIGHT);												//alignment
 
 			//Draw the horizontal grid line
 			GfxFillRect(r.left + YlabelWidth, //FIXME
-						r.top + yindexPositions[std::distance(baseGraphLine.begin(), it)],
+						r.top + yindexPositions[std::distance(baseGraphLine.segments.begin(), it)],
 						r.right,
-						r.top + yindexPositions[std::distance(baseGraphLine.begin(), it)],
+						r.top + yindexPositions[std::distance(baseGraphLine.segments.begin(), it)],
 						PC_BLACK);
 		}
 		if (rowCount >= 2) {
@@ -334,7 +334,7 @@ protected:
 			DrawString(r.left,												//left
 					r.left + YlabelWidth,									//right
 					r.top + yindexPositions[rowCount-1] - GetCharacterHeight(FS_SMALL) / 2,	//top
-					PrepareDestinationLabel(baseGraphLine[0].order1),				//StringID
+					PrepareDestinationLabel(baseGraphLine.segments[0].order1),				//StringID
 					TC_BLACK,												//colour
 					SA_RIGHT);												//alignment
 
@@ -413,6 +413,56 @@ protected:
 		}
 	}
 	*/
+
+	/**
+	 * Draws the graph line, possibly several times (with an offset), on the graph represented by r
+	 * This function attempts to determine the time offset between two vehicles sharing the order list which graphLine represents
+	 * @param r the rectangle of the graph
+	 * @param graphLine the graph line to draw
+	 */
+	void DrawMultipleGraphLine(const Rect& r, const GraphLine& graphLine, byte colour) const {
+		if (graphLine.segments.size() == 0) return;
+
+		Duration length = graphLine.orderList->GetTimetableDuration();
+
+		Date startDate = AddToDate(graphLine.orderList->GetStartTime(), *(graphLine.offsets.begin())); //The date at which this order lists starts in reality
+		Duration offsetFront = *(graphLine.offsets.begin()); //We take the unit for the  offset from the smallest of the offsets (arbitrary)
+		offsetFront.SetLength(0);
+
+
+		//First we go forwards to find the left-most line that is shown in the graph and calculate its offset
+
+		while (AddToDate(startDate, offsetFront) < this->endDate) {
+
+			for (std::set<Duration>::const_iterator itOffset = graphLine.offsets.begin(); itOffset != graphLine.offsets.end(); ++itOffset) {
+				Duration currOffset = offsetFront;
+				currOffset.Add(*itOffset);
+				this->DrawGraphLine(r, graphLine.segments, colour, currOffset);
+			}
+
+
+			offsetFront.Add(length);
+		}
+
+		//Then backwards
+		Duration biggestOffset = *(--graphLine.offsets.end());
+		Date endDate = AddToDate(graphLine.orderList->GetStartTime(), biggestOffset);
+		Duration offsetBack = -length;
+
+		while (AddToDate(AddToDate(endDate, offsetBack), biggestOffset) > this->startDate) {
+			for (std::set<Duration>::const_iterator itOffset = graphLine.offsets.begin(); itOffset != graphLine.offsets.end(); ++itOffset) {
+				Duration currOffset = offsetBack;
+				currOffset.Add(*itOffset);
+				this->DrawGraphLine(r, graphLine.segments, colour, currOffset);
+			}
+
+			offsetBack.Subtract(length);
+		}
+
+
+	}
+
+
 	virtual void DrawWidget(const Rect &r, int widget) const
 	{
 		if (widget == WID_TGW_GRAPH) {
@@ -427,11 +477,11 @@ protected:
 
 			DrawXLegendAndGrid(graphRect);
 
-			DrawGraphLine(graphRect, baseGraphLine, _colour_gradient[COLOUR_WHITE][7]);
+			DrawGraphLine(graphRect, baseGraphLine.segments, _colour_gradient[COLOUR_WHITE][7]);
 			for (std::vector<OrderListGraph>::const_iterator graphLine = orderListGraphs.begin();
 					graphLine != orderListGraphs.end(); ++graphLine) {
 				if (graphLine->enabled) {
-					DrawGraphLine(graphRect, graphLine->line, graphLine->colour);
+					DrawMultipleGraphLine(graphRect, graphLine->line, graphLine->colour);
 				}
 			}
 
@@ -494,7 +544,8 @@ protected:
 	 */
 	virtual void OnInvalidateData(int data = 0, bool gui_scope = true)
 	{
-		baseGraphLine.clear();
+		baseGraphLine.segments.clear();
+		baseGraphLine.offsets.clear();
 		orderListGraphs.clear();
 		builder.SetBaseOrderList(NULL);
 

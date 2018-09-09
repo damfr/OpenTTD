@@ -14,6 +14,7 @@
 
 #include <vector>
 #include <map>
+#include <set>
 #include "order_base.h"
 
 
@@ -49,17 +50,21 @@ private:
 struct GraphSegment {
 	const Order* order1;
 	int index1; //The index (y axis)
-	int offset1; //Offset in days
+	Duration offset1; //Offset
 
 	const Order* order2;
 	int index2; //The index (y axis)
-	int offset2; //Offset in days
+	Duration offset2; //Offset
 
-	GraphSegment(const Order* order1 = NULL, const Order* order2 = NULL, int index1 = -1, int index2 = -1, int offset1 = 0, int offset2 = 0)
+	GraphSegment(const Order* order1 = NULL, const Order* order2 = NULL, int index1 = -1, int index2 = -1, Duration offset1 = Duration(0, DU_DAYS), Duration offset2 = Duration(0, DU_DAYS))
 		: order1(order1), index1(index1), offset1(offset1), order2(order2), index2(index2), offset2(offset2) {}
 };
 
-typedef std::vector<GraphSegment> GraphLine;
+struct GraphLine {
+	std::vector<GraphSegment> segments; ///< An array of segments to draw
+	std::set<Duration> offsets;			///< The offsets of all the vehicles from the shared order list (ordered)
+	const OrderList* orderList;
+};
 
 class TimetableGraphBuilder {
 public:
@@ -93,6 +98,8 @@ private:
 	void BuildDestinationsIndex();
 
 	GraphSegment BuildGraphLine(const OrderList* orderList, GotoOrderListIterator compItStart, GotoOrderListIterator baseItStart, int baseStartIndex);
+
+	Duration GetGlobalOffset(const OrderList* orderList);
 
 };
 
