@@ -105,9 +105,9 @@ GraphSegment TimetableGraphBuilder::BuildGraphLine(const OrderList* orderList, G
 					return segment;
 				}
 			}
-
-			++compIt;
 			visitedComp.insert(compIt->GetDestination());
+			++compIt;
+
 		}
 
 		if (!baseEnded) {
@@ -121,9 +121,10 @@ GraphSegment TimetableGraphBuilder::BuildGraphLine(const OrderList* orderList, G
 					return segment;
 				}
 			}
+			visitedBase.insert(baseIt->GetDestination());
 			++baseIt;
 			++currentBaseIndex;
-			visitedBase.insert(baseIt->GetDestination());
+
 		}
 
 
