@@ -113,13 +113,15 @@ protected:
 	int graphPaddingTop;
 	int graphPaddingBottom;
 	int graphPaddingLeft;
+	int graphPaddingRight;
 
 public:
 
 	TimetableGraphWindow(WindowDesc *desc, WindowNumber window_number)
 		: Window(desc), baseOrderList(nullptr), vli(VehicleListIdentifier::UnPack(window_number)),
 			YlabelWidth(0), baseGraphLine(), orderListGraphs(),
-			graphPaddingTop(GetCharacterHeight(FS_SMALL) / 2), graphPaddingBottom(GetCharacterHeight(FS_SMALL) / 2), graphPaddingLeft(0)
+			graphPaddingTop(GetCharacterHeight(FS_SMALL) / 2 + 5), graphPaddingBottom(GetCharacterHeight(FS_SMALL) / 2), graphPaddingLeft(5),
+			graphPaddingRight(10)
 	{
 		this->CreateNestedTree();
 
@@ -203,12 +205,43 @@ protected:
 
 
 	void InitYAxisPositions() {
-		uint graphHeight = GetWidget<NWidgetBase>(WID_TGW_GRAPH)->current_y;
+		uint graphHeight = GetWidget<NWidgetBase>(WID_TGW_GRAPH)->current_y - graphPaddingTop - graphPaddingBottom - XLegendHeight;
+		uint minRowHeight = FONT_HEIGHT_SMALL;
 		yindexPositions.clear();
 		yindexPositions.reserve(rowCount);
+		
+		Date ttLength = this->baseOrderList->GetTimetableDuration().GetLengthAsDate();
+		uint freeSpace = graphHeight - (rowCount-1) * minRowHeight;	//The vertical space (in pixels) that we can allocate freely (after the minimum heights have been deduced)
+		Date freeSpaceDuration = 0;	//Same, but in Date instead of pixels
+		Date minDuration = ttLength * minRowHeight/graphHeight;	//The equivalent of minRowHeight in Date
 
-		for (uint i = 0; i < rowCount; i++) {
-			yindexPositions.push_back(i * graphHeight / rowCount);
+		//On the first pass we calculate freeSpaceDuration
+		for (uint i = 1; i < rowCount; ++i) {
+			const GraphSegment& segment = this->baseGraphLine.segments[i-1];
+			if (segment.order2->HasArrival() && segment.order1->HasDeparture() &&
+								(segment.order2->GetArrival() + segment.offset2.GetLengthAsDate()) - (segment.order1->GetDeparture() + segment.offset1.GetLengthAsDate()) >= minDuration) {
+				//This segment exceeds the minimum height : we manage its height via freeSpaceDuration
+
+				freeSpaceDuration += (segment.order2->GetArrival() + segment.offset2.GetLengthAsDate())
+						- (segment.order1->GetDeparture() + segment.offset1.GetLengthAsDate());
+			}
+		}
+
+		//Second pass : we calculate the heights
+		uint currY = 0;
+		yindexPositions.push_back(0);
+		for (uint i = 1; i < rowCount; i++) {
+			const GraphSegment& segment = this->baseGraphLine.segments[i-1];
+			if (segment.order2->HasArrival() && segment.order1->HasDeparture() &&
+					(segment.order2->GetArrival() + segment.offset2.GetLengthAsDate()) - (segment.order1->GetDeparture() + segment.offset1.GetLengthAsDate()) >= minDuration) {
+				//We use the freespace in proportion with the duration
+				currY += minRowHeight + (segment.order2->GetArrival() + segment.offset2.GetLengthAsDate()
+						- (segment.order1->GetDeparture() + segment.offset1.GetLengthAsDate())) * freeSpace / freeSpaceDuration;
+			} else {
+				//The height of this segment will be minRowHeight, as it would otherwise be too small
+				currY += minRowHeight;
+			}
+			yindexPositions.push_back(currY);
 		}
 	}
 
@@ -473,6 +506,7 @@ protected:
 			DrawYLegendAndGrid(graphRect);
 
 			graphRect.left += graphPaddingLeft;
+			graphRect.right -= graphPaddingRight;
 
 			DrawXLegendAndGrid(graphRect);
 
