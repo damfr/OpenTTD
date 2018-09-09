@@ -2473,6 +2473,9 @@ void Vehicle::HandleLoading(bool mode)
 			if (mode || !HasBit(this->vehicle_flags, VF_LOADING_FINISHED)
 				|| (this->current_order.HasDeparture() && AddToDate(this->current_order.GetDeparture(), this->timetable_offset) > _date)) return;
 
+			if (this->orders.list && this->orders.list->GetOrderAt(this->cur_real_order_index)->HasDeparture()
+					&& AddToDate(this->orders.list->GetOrderAt(this->cur_real_order_index)->GetDeparture(), this->timetable_offset) > _date) return;
+
 			this->PlayLeaveStationSound();
 
 			this->LeaveStation();
