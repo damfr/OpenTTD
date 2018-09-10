@@ -478,6 +478,7 @@ struct VehicleSettings {
 	byte   extend_vehicle_life;              ///< extend vehicle life by this many years
 	byte   road_side;                        ///< the side of the road vehicles drive on
 	uint8  plane_crashes;                    ///< number of plane crashes, 0 = none, 1 = reduced, 2 = normal
+	bool   slow_loading_short_platforms;	 ///< reduce loading speed when platform is too short for the train
 };
 
 /** Settings related to the economy. */
