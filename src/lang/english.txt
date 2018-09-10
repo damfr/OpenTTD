@@ -1719,6 +1719,9 @@ STR_CONFIG_SETTING_PATHFINDER_FOR_SHIPS_HELPTEXT                :Path finder to 
 STR_CONFIG_SETTING_REVERSE_AT_SIGNALS                           :Automatic reversing at signals: {STRING2}
 STR_CONFIG_SETTING_REVERSE_AT_SIGNALS_HELPTEXT                  :Allow trains to reverse on a signal, if they waited there a long time
 
+STR_CONFIG_SLOW_LOADING_SHORT_PLATFORMS							:Slower loading when the platform is too short: {STRING2}
+STR_CONFIG_SLOW_LOADING_SHORT_PLATFORMS_HELPTEXT				:Trains will load and unload more slowly when the platform is too short for the train when enabled
+
 STR_CONFIG_SETTING_QUERY_CAPTION                                :{WHITE}Change setting value
 
 # Config errors
