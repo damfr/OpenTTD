@@ -2469,6 +2469,10 @@ void Vehicle::HandleLoading(bool mode)
 {
 	switch (this->current_order.GetType()) {
 		case OT_LOADING: {
+			if (this->orders.list && this->orders.list->GetOrderAt(this->cur_real_order_index)->HasDeparture()) {
+				this->current_order.SetDeparture(this->orders.list->GetOrderAt(this->cur_real_order_index)->GetDeparture());
+			}
+
 			/* Not the first call for this tick, or still loading */
 			if (mode || !HasBit(this->vehicle_flags, VF_LOADING_FINISHED)
 				|| (this->current_order.HasDeparture() && AddToDate(this->current_order.GetDeparture(), this->timetable_offset) > _date)) return;
