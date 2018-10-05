@@ -327,6 +327,8 @@ enum SaveLoadVersion : uint16 {
 	SLV_MAPGEN_SETTINGS_REVAMP,             ///< 290  PR#8891 v1.11  Revamp of some mapgen settings (snow coverage, desert coverage, heightmap height, custom terrain type).
 	SLV_GROUP_REPLACE_WAGON_REMOVAL,        ///< 291  PR#7441 Per-group wagon removal flag.
 
+	SLV_INSTANT_LOADING,					///< Add option for instant loading of vehicles
+
 	SL_MAX_VERSION,                         ///< Highest possible saveload version
 };
 
