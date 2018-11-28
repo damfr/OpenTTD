@@ -39,9 +39,10 @@ option(ENABLE_NETWORK "Enable network" ON)
 set(BINARY_NAME "openttd" CACHE STRING "Binary output name")
 
 #Libraries
-if (${OS} STREQUAL WIN32)
+if (OS_WIN32)
 	set(OPENTTD_USEFUL_PATH "" CACHE PATH "Path to the (extracted) openttd-useful archive (pointing to the \"OpenTTD essentials\" directory) for pre-compiled binaries for Windows Visual studio")
 endif()
+
 
 
 

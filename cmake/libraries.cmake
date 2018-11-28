@@ -24,6 +24,22 @@ function(check_load_library PACKAGE_NAME TARGET_NAME OPTION_DESC)
 	endif()
 endfunction(check_load_library)
 
+if (EXISTS ${OPENTTD_USEFUL_PATH})
+	message("Found openttd-useful")
+	set(WINDOWS_ARCHITECTURE 64)
+	if (${CMAKE_HOST_SYSTEM_PROCESSOR} STREQUAL "x86")
+		set(WINDOWS_ARCHITECTURE 32)
+	endif()
+	
+	list(APPEND CMAKE_LIBRARY_PATH ${OPENTTD_USEFUL_PATH}/win${WINDOWS_ARCHITECTURE}/library)
+	list(APPEND CMAKE_INCLUDE_PATH ${OPENTTD_USEFUL_PATH}/shared/include
+									${OPENTTD_USEFUL_PATH}/win${WINDOWS_ARCHITECTURE}/include)
+	
+	#CMake supplied FinZLIB script does not find zlibstat, so override it
+	set(ZLIB_LIBRARY ${OPENTTD_USEFUL_PATH}/win${WINDOWS_ARCHITECTURE}/library/zlibstat.lib)
+	message(${CMAKE_LIBRARY_PATH})
+endif()
+
 #SDL
 set(WITH_SDL "AUTO_DETECT" CACHE STRING "Use SDL")
 if (APPLE AND WITH_COCOA)
