@@ -9,6 +9,9 @@ set(OBJS_DIR ${CMAKE_SOURCE_DIR}/objs)
 #Setting OS variable
 include("cmake/os.cmake")
 
+#Adding options to configuration
+include("cmake/options.cmake")
+
 #Setting compiler-specific global flags (also apply to strgen and settingsgen)
 include("cmake/compiler_flags.cmake")
 
@@ -57,3 +60,10 @@ foreach(OUTPUT_CONFIG ${CMAKE_CONFIGURATION_TYPES})
 endforeach()
 add_dependencies(openttd gen_settings gen_strings_h gen_strings revision)
 target_include_directories(openttd PRIVATE ${OBJS_DIR}/lang ${OBJS_DIR}/setting ${SRC_DIR}/3rdparty/squirrel/include)
+
+#Set C++ standard to c++17 if possible
+set(CXX_STANDARD_REQUIRED OFF)
+set_property(TARGET openttd PROPERTY CXX_STANDARD 17)
+
+#Adding compile and link options to openttd target
+include(cmake/compile_link_options.cmake)
