@@ -25,6 +25,10 @@ add_subdirectory(src/strgen)
 #Adding languages building
 include(cmake/strings.cmake)
 
+#Adding settings generation
+add_subdirectory(src/settingsgen)
+set_source_files_properties(${PROJECT_SOURCE_DIR}/objs/setting/table/settings.h PROPERTIES GENERATED 1)
+
 
 #Adding openttd build target
 add_executable(openttd ${SOURCES_LIST})
