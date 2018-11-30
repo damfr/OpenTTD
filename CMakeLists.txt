@@ -22,6 +22,9 @@ include(source.list)
 #Adding string generation
 add_subdirectory(src/strgen)
 
+#Adding languages building
+include(cmake/strings.cmake)
+
 
 #Adding openttd build target
 add_executable(openttd ${SOURCES_LIST})
