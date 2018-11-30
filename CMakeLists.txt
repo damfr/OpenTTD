@@ -48,5 +48,5 @@ foreach(OUTPUT_CONFIG ${CMAKE_CONFIGURATION_TYPES})
     string(TOUPPER ${OUTPUT_CONFIG} OUTPUT_CONFIG)
     set_target_properties(openttd PROPERTIES RUNTIME_OUTPUT_DIRECTORY_${OUTPUT_CONFIG} ${CMAKE_SOURCE_DIR}/bin)
 endforeach()
-
-add_dependencies(openttd revision)
+add_dependencies(openttd gen_settings gen_strings_h gen_strings revision)
+target_include_directories(openttd PRIVATE ${OBJS_DIR}/lang ${OBJS_DIR}/setting ${SRC_DIR}/3rdparty/squirrel/include)
