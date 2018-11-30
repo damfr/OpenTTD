@@ -29,6 +29,13 @@ include(cmake/strings.cmake)
 add_subdirectory(src/settingsgen)
 set_source_files_properties(${PROJECT_SOURCE_DIR}/objs/setting/table/settings.h PROPERTIES GENERATED 1)
 
+#Adding rev.cpp file configuration
+include(cmake/revision.cmake)
+#We configure rev.cpp at configure time for convenience (IDEs won't complain about missing definitions) but it will be reconfigured at build time
+configure_revision_file(${CMAKE_SOURCE_DIR})
+add_custom_target(revision ALL
+				COMMAND ${CMAKE_COMMAND} -D REVISION_FILE=${CMAKE_SOURCE_DIR}/cmake/revision.cmake -D SOURCE_ROOT_DIR=${CMAKE_SOURCE_DIR} -P ${CMAKE_SOURCE_DIR}/cmake/revision_compile_time.cmake)
+
 
 #Adding openttd build target
 add_executable(openttd ${SOURCES_LIST})
@@ -41,3 +48,5 @@ foreach(OUTPUT_CONFIG ${CMAKE_CONFIGURATION_TYPES})
     string(TOUPPER ${OUTPUT_CONFIG} OUTPUT_CONFIG)
     set_target_properties(openttd PROPERTIES RUNTIME_OUTPUT_DIRECTORY_${OUTPUT_CONFIG} ${CMAKE_SOURCE_DIR}/bin)
 endforeach()
+
+add_dependencies(openttd revision)
