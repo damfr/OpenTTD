@@ -6,6 +6,10 @@ set(SRC_DIR ${CMAKE_SOURCE_DIR}/src)
 set(LANG_DIR ${SRC_DIR}/lang)
 set(OBJS_DIR ${CMAKE_SOURCE_DIR}/objs)
 
+#Setting OS variable
+include("cmake/os.cmake")
+
+
 
 #Adding sources for openttd to SOURCES_LIST
 macro(add_source NAME) #Additionnal parameter COMPILE_FLAGS
