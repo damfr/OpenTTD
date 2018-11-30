@@ -33,3 +33,8 @@ set_property(CACHE WITH_SDL PROPERTY STRINGS "ON" "OFF" "AUTO_DETECT")
 
 option(SDL_STATIC "Link SDL statically (only known to work on Windows, DOS, MacOSX and MorphOS)" OFF)
 check_load_library(SDL SDL::SDL "Use SDL")
+
+#lzo2
+set(WITH_LZO2 "AUTO_DETECT" CACHE STRING "Use lzo2 (for (de)compressing of old (pre 0.3.0) savegames)")
+set_property(CACHE WITH_LZO2 PROPERTY STRINGS "ON" "OFF" "AUTO_DETECT")
+check_load_library(Lzo2 Lzo::Lzo2 "Use lzo2 (for (de)compressing of old (pre 0.3.0) savegames)")
