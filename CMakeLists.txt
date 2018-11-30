@@ -9,6 +9,9 @@ set(OBJS_DIR ${CMAKE_SOURCE_DIR}/objs)
 #Setting OS variable
 include("cmake/os.cmake")
 
+#Setting compiler-specific global flags (also apply to strgen and settingsgen)
+include("cmake/compiler_flags.cmake")
+
 
 
 #Adding sources for openttd to SOURCES_LIST
