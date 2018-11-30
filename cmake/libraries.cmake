@@ -23,3 +23,13 @@ function(check_load_library PACKAGE_NAME TARGET_NAME OPTION_DESC)
 		endif()
 	endif()
 endfunction(check_load_library)
+
+#SDL
+set(WITH_SDL "AUTO_DETECT" CACHE STRING "Use SDL")
+if (APPLE AND WITH_COCOA)
+	set(WITH_SDL "OFF" CACHE STRING "Use SDL" FORCE)
+endif()
+set_property(CACHE WITH_SDL PROPERTY STRINGS "ON" "OFF" "AUTO_DETECT")
+
+option(SDL_STATIC "Link SDL statically (only known to work on Windows, DOS, MacOSX and MorphOS)" OFF)
+check_load_library(SDL SDL::SDL "Use SDL")
