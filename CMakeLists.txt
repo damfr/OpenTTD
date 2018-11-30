@@ -61,6 +61,9 @@ endforeach()
 add_dependencies(openttd gen_settings gen_strings_h gen_strings revision)
 target_include_directories(openttd PRIVATE ${OBJS_DIR}/lang ${OBJS_DIR}/setting ${SRC_DIR}/3rdparty/squirrel/include)
 
+#Add library dependencies to openttd
+include("cmake/libraries.cmake")
+
 #Set C++ standard to c++17 if possible
 set(CXX_STANDARD_REQUIRED OFF)
 set_property(TARGET openttd PROPERTY CXX_STANDARD 17)
