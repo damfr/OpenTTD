@@ -19,6 +19,10 @@ endmacro()
 include(source.list)
 
 
+#Adding string generation
+add_subdirectory(src/strgen)
+
+
 #Adding openttd build target
 add_executable(openttd ${SOURCES_LIST})
 #Set the location where the openttd executable will be created
