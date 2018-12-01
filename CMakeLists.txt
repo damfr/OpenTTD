@@ -70,3 +70,6 @@ set_property(TARGET openttd PROPERTY CXX_STANDARD 17)
 
 #Adding compile and link options to openttd target
 include(cmake/compile_link_options.cmake)
+
+#Add install options
+include(cmake/install.cmake)
