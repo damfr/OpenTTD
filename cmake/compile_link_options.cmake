@@ -130,6 +130,10 @@ if(OS_OPENBSD)
 	target_link_libraries(openttd PRIVATE pthread)
 endif()
 
+if(OS_WIN32 AND ENABLE_NETWORK)
+	target_link_libraries(openttd PRIVATE winmm.lib ws2_32.lib)
+endif()
+
 #if  "$os" = "OS_OSX" ]; then
 #		LDFLAGS="$LDFLAGS -framework Cocoa"
 #
