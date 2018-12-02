@@ -2,6 +2,16 @@
 #Add our own modules to the cmake path
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake/libraries)
 
+if(OS_MINGW OR OS_CYGWIN)
+	#On MinGW, installing libraries via mingw-get installs headers into C:\MinGW\include (in case of the default install path)
+	#This causes the FindXxx.cmake package finders to add to INTERFACE_INCLUDE_DIRECTORIES C:\MinGW\include (or equivalent)
+	#CMake then adds -isystem C:\MinGW\include to the compile options
+	#This prevents gcc from finding cstdlib (error message : fatal error : stdlib.h : No such file or directory)
+	#Adding -I C:\MinGW\include to the compile options does not cause this problem for some reason
+	#So we tell CMake to use -I instead of -isystem when adding imported include directories from targets
+	set_property(TARGET openttd PROPERTY NO_SYSTEM_FROM_IMPORTED "ON")
+endif()
+
 
 function(check_load_library PACKAGE_NAME TARGET_NAME OPTION_DESC)
 	string(TOUPPER ${PACKAGE_NAME} PACKAGE_NAME_UPPER)
