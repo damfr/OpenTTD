@@ -69,3 +69,8 @@ check_load_library(Lzo2 Lzo::Lzo2 "Use lzo2 (for (de)compressing of old (pre 0.3
 set(WITH_ZLIB "AUTO_DETECT" CACHE STRING "Use zlib (for (de)compressing of old (0.3.0-1.0.5) savegames, content downloads, heightmaps)")
 set_property(CACHE WITH_ZLIB PROPERTY STRINGS "ON" "OFF" "AUTO_DETECT")
 check_load_library(ZLIB ZLIB::ZLIB "Use zlib (for (de)compressing of old (0.3.0-1.0.5) savegames, content downloads, heightmaps)")
+
+#lzma
+set(WITH_LZMA "AUTO_DETECT" CACHE STRING "Use lzma (for (de)compressing of savegames (1.1.0 and later))")
+set_property(CACHE WITH_LZMA PROPERTY STRINGS "ON" "OFF" "AUTO_DETECT")
+check_load_library(Lzma Lzma::Lzma "Use lzma (for (de)compressing of savegames (1.1.0 and later))")
