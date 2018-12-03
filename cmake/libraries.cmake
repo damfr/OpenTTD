@@ -31,14 +31,14 @@ endfunction()
 #VERSION_STRING : string to append to PACKAGE_NAME to specify version (ex: >=1.2)
 function(find_library_static_or_shared PACKAGE_NAME TARGET_NAME INCLUDE_FILES LIBRARY_NAME VERSION_STRING)
 	set(INCLUDE_DIRS_COMMENT "${PACKAGE_NAME} include dirs (where ${INCLUDE_FILES} is/are located [guessed]")
-	set(${PACKAGE_NAME_UPPER}_INCLUDE_DIRS "" CACHE PATH ${INCLUDE_DIRS_COMMENT})
+#	set(${PACKAGE_NAME_UPPER}_INCLUDE_DIRS "" CACHE PATH ${INCLUDE_DIRS_COMMENT})
 	set(LIBRARIES_COMMENT "${PACKAGE_NAME} library(ies) file(s) (where (lib)${LIBRARY_NAME}.so/.a/.lib is located) [guessed]")
-	set(${PACKAGE_NAME_UPPER}_LINK_LIBRARIES "" CACHE PATH ${LIBRARIES_COMMENT})
+#	set(${PACKAGE_NAME_UPPER}_LINK_LIBRARIES "" CACHE PATH ${LIBRARIES_COMMENT})
 	
 	
 	string(TOUPPER ${PACKAGE_NAME} PACKAGE_NAME_UPPER)
 	
-	if(PACKAGE_NAME_UPPER_STATIC STREQUAL "FORCE_STATIC" OR (PACKAGE_NAME_UPPER STREQUAL "INHERIT_FROM_ENABLE_STATIC" AND ENABLE_STATIC))
+	if(${PACKAGE_NAME_UPPER}_STATIC STREQUAL "FORCE_STATIC" OR (${PACKAGE_NAME_UPPER}_STATIC STREQUAL "INHERIT_FROM_ENABLE_STATIC" AND ENABLE_STATIC))
 		set(LINK_STATIC "ON")
 	else()
 		set(LINK_STATIC "OFF")
@@ -46,22 +46,32 @@ function(find_library_static_or_shared PACKAGE_NAME TARGET_NAME INCLUDE_FILES LI
 	
 	include(FindPkgConfig)
 	#If found, we use pkg-config in priority, except when a library was already set (either by the user or from a previous configuration)
-	if(PKG_CONFIG_FOUND AND (NOT ${PACKAGE_NAME_UPPER}_LINK_LIBRARIES)
+	if(PKG_CONFIG_FOUND AND (NOT EXISTS ${${PACKAGE_NAME_UPPER}_LINK_LIBRARIES}))
 		pkg_check_modules(${PACKAGE_NAME_UPPER} ${PACKAGE_NAME}${VERSION_STRING})
 		if(LINK_STATIC)
 			set(STATIC_SUFFIX "_STATIC")
 		endif()
+		message("${${PACKAGE_NAME_UPPER}${STATIC_SUFFIX}_FOUND}")
+		message("${SDL_FOUND} ${SDL_STATIC_FOUND}")
 		if(${PACKAGE_NAME_UPPER}${STATIC_SUFFIX}_FOUND)
 			add_library(${TARGET_NAME} UNKNOWN IMPORTED)
+			message("${${PACKAGE_NAME_UPPER}${STATIC_SUFFIX}_INCLUDE_DIRS}")
+			message("${${PACKAGE_NAME_UPPER}${STATIC_SUFFIX}_LIBRARIES}")
+			message("${${PACKAGE_NAME_UPPER}${STATIC_SUFFIX}_LINK_LIBRARIES}")
+			message("${${PACKAGE_NAME_UPPER}${STATIC_SUFFIX}_CFLAGS_OTHER}")
+			if(${${PACKAGE_NAME_UPPER}${STATIC_SUFFIX}_INCLUDE_DIRS})
+				set_target_properties(${TARGET_NAME} PROPERTIES
+								INTERFACE_INCLUDE_DIRECTORIES ${${PACKAGE_NAME_UPPER}${STATIC_SUFFIX}_INCLUDE_DIRS})
+			endif()
 			
 			set_target_properties(${TARGET_NAME} PROPERTIES
-								INTERFACE_INCLUDE_DIRECTORIES ${${PACKAGE_NAME_UPPER}${STATIC_SUFFIX}_INCLUDE_DIRS}
+								IMPORTED_LOCATION ${${PACKAGE_NAME_UPPER}${STATIC_SUFFIX}_LINK_LIBRARIES}
 								INTERFACE_LINK_LIBRARIES ${${PACKAGE_NAME_UPPER}${STATIC_SUFFIX}_LINK_LIBRARIES}
-								INTERFACE_COMPILE_OPTIONS ${${PACKAGE_NAME_UPPER}${STATIC_SUFFIX}_CFLAGS})
+								INTERFACE_COMPILE_OPTIONS ${${PACKAGE_NAME_UPPER}${STATIC_SUFFIX}_CFLAGS_OTHERS})
 			set(${PACKAGE_NAME_UPPER}_FOUND "ON" PARENT_SCOPE)
 			return()
 		endif()
-		#message("${PACKAGE_NAME} could not be found using pkg-config, attempting CMake built-in search")
+		message("${PACKAGE_NAME} could not be found using pkg-config, attempting CMake built-in search")
 	endif()
 	find_path(${PACKAGE_NAME_UPPER}_INCLUDE_DIRS NAMES ${INCLUDE_FILES} DOC ${INCLUDE_DIRS_COMMENT})
 	
@@ -69,17 +79,17 @@ function(find_library_static_or_shared PACKAGE_NAME TARGET_NAME INCLUDE_FILES LI
 		message("You chose to link ${PACKAGE_NAME} statically, but pkg-config was not found. You may have to add dependent libraries of ${PACKAGE_NAME} to ${PACKAGE_NAME_UPPER}_LINK_LIBRARIES manually")
 		#Choosing the appropriate suffix for a static library
 		#Windows causes problems as the same suffix is used in both cases
-		if(OS_WIN32 OR OS_MINGW OR OS_CYGWIN)
-			set(LIB_SUFFIX ".lib")
+		if(OS_WIN32)
+			set(CMAKE_IMPORT_LIBRARY_SUFFIX ".lib")
 		else()
-			set(LIB_SUFFIX ".a")
+			set(CMAKE_IMPORT_LIBRARY_SUFFIX ".a")
 		endif()
 	else()
 		#Choosing the appropriate suffix for a shared library
-		if(OS_WIN32 OR OS_MINGW OR OS_CYGWIN)
-			set(LIB_SUFFIX ".lib")
+		if(OS_WIN32)
+			set(CMAKE_IMPORT_LIBRARY_SUFFIX ".lib")
 		else()
-			set(LIB_SUFFIX ".so")
+			set(CMAKE_IMPORT_LIBRARY_SUFFIX ".so")
 		endif()
 	endif()
 	find_library(${PACKAGE_NAME_UPPER}_LINK_LIBRARIES NAMES ${LIBRARY_NAME}${LIB_SUFFIX} DOC ${LIBRARIES_COMMENT})
@@ -88,6 +98,7 @@ function(find_library_static_or_shared PACKAGE_NAME TARGET_NAME INCLUDE_FILES LI
 		add_library(${TARGET_NAME} UNKNOWN IMPORTED)
 		
 		set_target_properties(${TARGET_NAME} PROPERTIES
+							IMPORTED_LOCATION ${${PACKAGE_NAME_UPPER}_LINK_LIBRARIES}
 							INTERFACE_INCLUDE_DIRECTORIES ${${PACKAGE_NAME_UPPER}_INCLUDE_DIRS}
 							INTERFACE_LINK_LIBRARIES ${${PACKAGE_NAME_UPPER}_LINK_LIBRARIES})
 		set(${PACKAGE_NAME_UPPER}_FOUND "ON" PARENT_SCOPE)
@@ -101,13 +112,13 @@ function(check_load_library PACKAGE_NAME TARGET_NAME  INCLUDE_FILES LIBRARY_NAME
 		
 		if (${PACKAGE_NAME_UPPER}_FOUND)
 			message(STATUS "Using ${PACKAGE_NAME}")
-			set(WITH_${PACKAGE_NAME_UPPER} "ON" CACHE BOOL ${OPTION_DESC} FORCE)
+			set(WITH_${PACKAGE_NAME_UPPER} "ON" CACHE STRING ${OPTION_DESC} FORCE)
 			target_link_libraries(openttd PRIVATE ${TARGET_NAME})
 			target_compile_definitions(openttd PRIVATE -DWITH_${PACKAGE_NAME_UPPER})
 			
 		elseif((NOT ${PACKAGE_NAME_UPPER}_FOUND) AND (WITH_${PACKAGE_NAME_UPPER} STREQUAL "AUTO_DETECT"))
 			message(STATUS "${PACKAGE_NAME} not found")
-			set(WITH_${PACKAGE_NAME_UPPER} "OFF" CACHE BOOL ${OPTION_DESC} FORCE)
+			set(WITH_${PACKAGE_NAME_UPPER} "OFF" CACHE STRING ${OPTION_DESC} FORCE)
 			
 		else()
 			message(SEND_ERROR "${PACKAGE_NAME} was not found")
@@ -138,20 +149,21 @@ if (APPLE AND WITH_COCOA)
 endif()
 set_property(CACHE WITH_SDL PROPERTY STRINGS "ON" "OFF" "AUTO_DETECT")
 
-option(SDL_STATIC "Link SDL statically (only known to work on Windows, DOS, MacOSX and MorphOS)" OFF)
-check_load_library(SDL SDL::SDL "Use SDL")
+#option(SDL_STATIC "Link SDL statically (only known to work on Windows, DOS, MacOSX and MorphOS)" OFF)
+create_static_option(sdl)
+check_load_library(sdl SDL::SDL "SDL/SDL.h" "SDL" ">=1.2" "Use SDL")
 
 #lzo2
-set(WITH_LZO2 "AUTO_DETECT" CACHE STRING "Use lzo2 (for (de)compressing of old (pre 0.3.0) savegames)")
-set_property(CACHE WITH_LZO2 PROPERTY STRINGS "ON" "OFF" "AUTO_DETECT")
-check_load_library(Lzo2 Lzo::Lzo2 "Use lzo2 (for (de)compressing of old (pre 0.3.0) savegames)")
-
-#zlib
-set(WITH_ZLIB "AUTO_DETECT" CACHE STRING "Use zlib (for (de)compressing of old (0.3.0-1.0.5) savegames, content downloads, heightmaps)")
-set_property(CACHE WITH_ZLIB PROPERTY STRINGS "ON" "OFF" "AUTO_DETECT")
-check_load_library(ZLIB ZLIB::ZLIB "Use zlib (for (de)compressing of old (0.3.0-1.0.5) savegames, content downloads, heightmaps)")
-
-#lzma
-set(WITH_LZMA "AUTO_DETECT" CACHE STRING "Use lzma (for (de)compressing of savegames (1.1.0 and later))")
-set_property(CACHE WITH_LZMA PROPERTY STRINGS "ON" "OFF" "AUTO_DETECT")
-check_load_library(Lzma Lzma::Lzma "Use lzma (for (de)compressing of savegames (1.1.0 and later))")
+#set(WITH_LZO2 "AUTO_DETECT" CACHE STRING "Use lzo2 (for (de)compressing of old (pre 0.3.0) savegames)")
+#set_property(CACHE WITH_LZO2 PROPERTY STRINGS "ON" "OFF" "AUTO_DETECT")
+#check_load_library(Lzo2 Lzo::Lzo2 "Use lzo2 (for (de)compressing of old (pre 0.3.0) savegames)")
+#
+##zlib
+#set(WITH_ZLIB "AUTO_DETECT" CACHE STRING "Use zlib (for (de)compressing of old (0.3.0-1.0.5) savegames, content downloads, heightmaps)")
+#set_property(CACHE WITH_ZLIB PROPERTY STRINGS "ON" "OFF" "AUTO_DETECT")
+#check_load_library(ZLIB ZLIB::ZLIB "Use zlib (for (de)compressing of old (0.3.0-1.0.5) savegames, content downloads, heightmaps)")
+#
+##lzma
+#set(WITH_LZMA "AUTO_DETECT" CACHE STRING "Use lzma (for (de)compressing of savegames (1.1.0 and later))")
+#set_property(CACHE WITH_LZMA PROPERTY STRINGS "ON" "OFF" "AUTO_DETECT")
+#check_load_library(Lzma Lzma::Lzma "Use lzma (for (de)compressing of savegames (1.1.0 and later))")
