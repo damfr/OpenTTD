@@ -52,7 +52,7 @@ enum TrackBits : byte {
 	TRACK_BIT_3WAY_NW = TRACK_BIT_Y     | TRACK_BIT_UPPER | TRACK_BIT_LEFT, ///< "Arrow" to the north-west
 	TRACK_BIT_ALL     = TRACK_BIT_CROSS | TRACK_BIT_HORZ  | TRACK_BIT_VERT, ///< All possible tracks
 	TRACK_BIT_MASK    = 0x3FU,                                              ///< Bitmask for the first 6 bits
-	TRACK_BIT_WORMHOLE = 0x40U,                                             ///< Bitflag for a wormhole (used for tunnels)
+	TRACK_BIT_WORMHOLE = 0x40U,                                             ///< Bitflag for a wormhole (used for tunnels and elevated tracks)
 	TRACK_BIT_DEPOT   = 0x80U,                                              ///< Bitflag for a depot
 	INVALID_TRACK_BIT = 0xFF,                                               ///< Flag for an invalid trackbits value
 };

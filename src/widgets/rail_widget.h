@@ -25,6 +25,7 @@ enum RailToolbarWidgets {
 	WID_RAT_BUILD_STATION,  ///< Build a station.
 	WID_RAT_BUILD_SIGNALS,  ///< Build signals.
 	WID_RAT_BUILD_BRIDGE,   ///< Build a bridge.
+	WID_RAT_BUILD_ELEVATED_TRACK, ///< Build an elevated track (flat or ramp)
 	WID_RAT_BUILD_TUNNEL,   ///< Build a tunnel.
 	WID_RAT_REMOVE,         ///< Bulldozer to remove rail.
 	WID_RAT_CONVERT_RAIL,   ///< Convert other rail to this type.
@@ -110,6 +111,18 @@ enum BuildRailWaypointWidgets {
 	WID_BRW_WAYPOINT_MATRIX, ///< Matrix with waypoints.
 	WID_BRW_WAYPOINT,        ///< A single waypoint.
 	WID_BRW_SCROLL,          ///< Scrollbar for the matrix.
+};
+
+/** Widgets of the #BuildElevatedTrackWindow class. */
+enum BuildElevatedTrackWidgets {
+	WID_BET_RAMP_NE, ///< Build a ramp with the entrance in the north east.
+	WID_BET_RAMP_SE, ///< Build a ramp with the entrance in the south east.
+	WID_BET_RAMP_SW, ///< Build a ramp with the entrance in the south west.
+	WID_BET_RAMP_NW, ///< Build a ramp with the entrance in the north west.
+
+	WID_BET_BUILD_HEIGHT_LABEL, ///< Label for the build height of elevated track
+	WID_BET_BUILD_HEIGHT_DECREASE,	///< Decrease the elevated track build height
+	WID_BET_BUILD_HEIGHT_INCREASE,  ///< Increase the elevated track build height
 };
 
 #endif /* WIDGETS_RAIL_WIDGET_H */

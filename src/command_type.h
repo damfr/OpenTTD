@@ -177,8 +177,10 @@ enum Commands {
 	CMD_REMOVE_RAILROAD_TRACK,        ///< remove a rail track
 	CMD_BUILD_SINGLE_RAIL,            ///< build a single rail track
 	CMD_REMOVE_SINGLE_RAIL,           ///< remove a single rail track
+	CMD_BUILD_SINGLE_RAIL_ELEVATED,	  ///< build a single elevated rail track
 	CMD_LANDSCAPE_CLEAR,              ///< demolish a tile
 	CMD_BUILD_BRIDGE,                 ///< build a bridge
+	CMD_BUILD_ELEVATED_RAMP,		  ///< build an elevated ramp
 	CMD_BUILD_RAIL_STATION,           ///< build a rail station
 	CMD_BUILD_TRAIN_DEPOT,            ///< build a train depot
 	CMD_BUILD_SIGNALS,                ///< build a signal

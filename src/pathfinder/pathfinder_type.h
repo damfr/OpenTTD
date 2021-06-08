@@ -51,7 +51,7 @@ static const int YAPF_ROADVEH_PATH_CACHE_DESTINATION_LIMIT = 8;
  * Helper container to find a depot
  */
 struct FindDepotData {
-	TileIndex tile;   ///< The tile of the depot
+	ExtendedTileIndex tile;   ///< The tile of the depot
 	uint best_length; ///< The distance towards the depot in penalty, or UINT_MAX if not found
 	bool reverse;     ///< True if reversing is necessary for the train to get to this depot
 
@@ -61,7 +61,7 @@ struct FindDepotData {
 	 * @param best_length the distance towards the depot, or UINT_MAX if not found
 	 * @param reverse     whether we need to reverse first.
 	 */
-	FindDepotData(TileIndex tile = INVALID_TILE, uint best_length = UINT_MAX, bool reverse = false) :
+	FindDepotData(ExtendedTileIndex tile = INVALID_EXTENDED_TILE, uint best_length = UINT_MAX, bool reverse = false) :
 		tile(tile), best_length(best_length), reverse(reverse)
 	{
 	}

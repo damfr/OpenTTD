@@ -57,7 +57,7 @@ private:
 
 	/** Element of set */
 	struct SSdata {
-		TileIndex tile;
+		ExtendedTileIndex tile;
 		Tdir dir;
 	} data[items];
 
@@ -115,7 +115,7 @@ public:
 	 * @param dir and dir to remove
 	 * @return element was found and removed
 	 */
-	bool Remove(TileIndex tile, Tdir dir)
+	bool Remove(ExtendedTileIndex tile, Tdir dir)
 	{
 		for (uint i = 0; i < this->n; i++) {
 			if (this->data[i].tile == tile && this->data[i].dir == dir) {
@@ -133,7 +133,7 @@ public:
 	 * @param dir and dir to find
 	 * @return true iff the tile & dir element was found
 	 */
-	bool IsIn(TileIndex tile, Tdir dir)
+	bool IsIn(ExtendedTileIndex tile, Tdir dir)
 	{
 		for (uint i = 0; i < this->n; i++) {
 			if (this->data[i].tile == tile && this->data[i].dir == dir) return true;
@@ -149,7 +149,7 @@ public:
 	 * @param dir and dir to add
 	 * @return true iff the item could be added (set wasn't full)
 	 */
-	bool Add(TileIndex tile, Tdir dir)
+	bool Add(ExtendedTileIndex tile, Tdir dir)
 	{
 		if (this->IsFull()) {
 			overflowed = true;
@@ -170,7 +170,7 @@ public:
 	 * @param dir pointer where dir is written to
 	 * @return false iff the set was empty
 	 */
-	bool Get(TileIndex *tile, Tdir *dir)
+	bool Get(ExtendedTileIndex *tile, Tdir *dir)
 	{
 		if (this->n == 0) return false;
 
@@ -209,7 +209,7 @@ static Vehicle *TrainOnTileEnum(Vehicle *v, void *)
  * @param d2 direction (tile side) we are leaving
  * @return false iff reverse direction was in Todo set
  */
-static inline bool CheckAddToTodoSet(TileIndex t1, DiagDirection d1, TileIndex t2, DiagDirection d2)
+static inline bool CheckAddToTodoSet(ExtendedTileIndex t1, DiagDirection d1, ExtendedTileIndex t2, DiagDirection d2)
 {
 	_globset.Remove(t1, d1); // it can be in Global but not in Todo
 	_globset.Remove(t2, d2); // remove in all cases
@@ -235,7 +235,7 @@ static inline bool CheckAddToTodoSet(TileIndex t1, DiagDirection d1, TileIndex t
  * @param d2 direction (tile side) we are leaving
  * @return false iff the Todo buffer would be overrun
  */
-static inline bool MaybeAddToTodoSet(TileIndex t1, DiagDirection d1, TileIndex t2, DiagDirection d2)
+static inline bool MaybeAddToTodoSet(ExtendedTileIndex t1, DiagDirection d1, ExtendedTileIndex t2, DiagDirection d2)
 {
 	if (!CheckAddToTodoSet(t1, d1, t2, d2)) return true;
 
@@ -268,11 +268,12 @@ static SigFlags ExploreSegment(Owner owner)
 {
 	SigFlags flags = SF_NONE;
 
-	TileIndex tile = INVALID_TILE; // Stop GCC from complaining about a possibly uninitialized variable (issue #8280).
+	//TileIndex tile = INVALID_TILE; // Stop GCC from complaining about a possibly uninitialized variable (issue #8280).
+	ExtendedTileIndex tile(INVALID_TILE, 0);
 	DiagDirection enterdir = INVALID_DIAGDIR;
 
 	while (_tbdset.Get(&tile, &enterdir)) { // tile and enterdir are initialized here, unless I'm mistaken.
-		TileIndex oldtile = tile; // tile we are leaving
+		ExtendedTileIndex oldtile = tile; // tile we are leaving
 		DiagDirection exitdir = enterdir == INVALID_DIAGDIR ? INVALID_DIAGDIR : ReverseDiagDir(enterdir); // expected new exit direction (for straight line)
 
 		switch (GetTileType(tile)) {
@@ -341,7 +342,7 @@ static SigFlags ExploreSegment(Owner owner)
 
 				for (DiagDirection dir = DIAGDIR_BEGIN; dir < DIAGDIR_END; dir++) { // test all possible exit directions
 					if (dir != enterdir && (tracks & _enterdir_to_trackbits[dir])) { // any track incidating?
-						TileIndex newtile = tile + TileOffsByDiagDir(dir);  // new tile to check
+						ExtendedTileIndex newtile = MoveExtendedTileByDiagDir(tile, dir); // new tile to check
 						DiagDirection newdir = ReverseDiagDir(dir); // direction we are entering from
 						if (!MaybeAddToTodoSet(newtile, newdir, tile, dir)) return flags | SF_FULL;
 					}
@@ -363,9 +364,10 @@ static SigFlags ExploreSegment(Owner owner)
 			case MP_ROAD:
 				if (!IsLevelCrossing(tile)) continue;
 				if (GetTileOwner(tile) != owner) continue;
-				if (DiagDirToAxis(enterdir) == GetCrossingRoadAxis(tile)) continue; // different axis
+				assert(IsIndexGroundTile(tile)); //TODO elevated crossing
+				if (DiagDirToAxis(enterdir) == GetCrossingRoadAxis(tile.index)) continue; // different axis
 
-				if (!(flags & SF_TRAIN) && HasVehicleOnPos(tile, nullptr, &TrainOnTileEnum)) flags |= SF_TRAIN;
+				if (!(flags & SF_TRAIN) && HasVehicleOnPos(tile.index, nullptr, &TrainOnTileEnum)) flags |= SF_TRAIN;
 				tile += TileOffsByDiagDir(exitdir);
 				break;
 
@@ -374,6 +376,7 @@ static SigFlags ExploreSegment(Owner owner)
 				if (GetTunnelBridgeTransportType(tile) != TRANSPORT_RAIL) continue;
 				DiagDirection dir = GetTunnelBridgeDirection(tile);
 
+				/*
 				if (enterdir == INVALID_DIAGDIR) { // incoming from the wormhole
 					if (!(flags & SF_TRAIN) && HasVehicleOnPos(tile, nullptr, &TrainOnTileEnum)) flags |= SF_TRAIN;
 					enterdir = dir;
@@ -385,7 +388,12 @@ static SigFlags ExploreSegment(Owner owner)
 					tile = GetOtherTunnelBridgeEnd(tile); // just skip to exit tile
 					enterdir = INVALID_DIAGDIR;
 					exitdir = INVALID_DIAGDIR;
-				}
+				} */
+				if (!(flags & SF_TRAIN) && HasVehicleOnPos(tile, nullptr, &TrainOnTileEnum)) flags |= SF_TRAIN;
+				enterdir = dir;
+				exitdir = ReverseDiagDir(dir);
+				tile += TileOffsByDiagDir(exitdir); // just skip to next tile
+
 				}
 				break;
 

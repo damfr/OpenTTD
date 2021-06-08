@@ -21,7 +21,7 @@
  * @return the reserved trackbits. TRACK_BIT_NONE on nothing reserved or
  *     a tile without rail.
  */
-TrackBits GetReservedTrackbits(TileIndex t)
+TrackBits GetReservedTrackbits(ExtendedTileIndex t)
 {
 	switch (GetTileType(t)) {
 		case MP_RAILWAY:
@@ -54,18 +54,20 @@ TrackBits GetReservedTrackbits(TileIndex t)
  * @param dir the direction in which to follow the platform
  * @param b the state the reservation should be set to
  */
-void SetRailStationPlatformReservation(TileIndex start, DiagDirection dir, bool b)
+void SetRailStationPlatformReservation(ExtendedTileIndex start, DiagDirection dir, bool b)
 {
-	TileIndex     tile = start;
-	TileIndexDiff diff = TileOffsByDiagDir(dir);
+	ExtendedTileIndex tile = start;
+	//TileIndex ground_tile = start.index;
+	//TileIndexDiff diff = TileOffsByDiagDir(dir);
 
 	assert(IsRailStationTile(start));
 	assert(GetRailStationAxis(start) == DiagDirToAxis(dir));
 
 	do {
 		SetRailStationReservation(tile, b);
-		MarkTileDirtyByTile(tile);
-		tile = TILE_ADD(tile, diff);
+		MarkTileDirtyByTile(tile.index, tile.height); //TODO elevated stations
+		//tile = TILE_ADD(tile, diff);
+		ExtendedTileAddByDiagDirFollowGround(tile, dir); //TODO performance cache TileIndexDiff
 	} while (IsCompatibleTrainStationTile(tile, start));
 }
 
@@ -77,17 +79,19 @@ void SetRailStationPlatformReservation(TileIndex start, DiagDirection dir, bool 
  * @return \c true if reservation was successful, i.e. the track was
  *     free and didn't cross any other reserved tracks.
  */
-bool TryReserveRailTrack(TileIndex tile, Track t, bool trigger_stations)
+bool TryReserveRailTrack(ExtendedTileIndex tile, Track t, bool trigger_stations)
 {
 	assert(HasTrack(TrackStatusToTrackBits(GetTileTrackStatus(tile, TRANSPORT_RAIL, 0)), t));
 
 	if (_settings_client.gui.show_track_reservation) {
 		/* show the reserved rail if needed */
+		//TODO cleanup
+		/*
 		if (IsBridgeTile(tile)) {
 			MarkBridgeDirty(tile);
-		} else {
-			MarkTileDirtyByTile(tile);
-		}
+		} else {*/
+			MarkTileDirtyByTile(tile); 
+		//}
 	}
 
 	switch (GetTileType(tile)) {
@@ -103,19 +107,21 @@ bool TryReserveRailTrack(TileIndex tile, Track t, bool trigger_stations)
 			break;
 
 		case MP_ROAD:
-			if (IsLevelCrossing(tile) && !HasCrossingReservation(tile)) {
-				SetCrossingReservation(tile, true);
-				BarCrossing(tile);
-				MarkTileDirtyByTile(tile); // crossing barred, make tile dirty
+			assert(IsIndexGroundTile(tile)); //TODO elevated crossings
+			if (IsLevelCrossing(tile.index) && !HasCrossingReservation(tile.index)) {
+				SetCrossingReservation(tile.index, true);
+				BarCrossing(tile.index);
+				MarkTileDirtyByTile(tile.index); // crossing barred, make tile dirty
 				return true;
 			}
 			break;
 
 		case MP_STATION:
-			if (HasStationRail(tile) && !HasStationReservation(tile)) {
-				SetRailStationReservation(tile, true);
-				if (trigger_stations && IsRailStation(tile)) TriggerStationRandomisation(nullptr, tile, SRT_PATH_RESERVATION);
-				MarkTileDirtyByTile(tile); // some GRFs need redraw after reserving track
+			assert(IsIndexGroundTile(tile)); //TODO elevated stations
+			if (HasStationRail(tile.index) && !HasStationReservation(tile.index)) {
+				SetRailStationReservation(tile.index, true);
+				if (trigger_stations && IsRailStation(tile.index)) TriggerStationRandomisation(nullptr, tile.index, SRT_PATH_RESERVATION);
+				MarkTileDirtyByTile(tile.index); // some GRFs need redraw after reserving track
 				return true;
 			}
 			break;
@@ -138,16 +144,12 @@ bool TryReserveRailTrack(TileIndex tile, Track t, bool trigger_stations)
  * @param tile the tile
  * @param t the track
  */
-void UnreserveRailTrack(TileIndex tile, Track t)
+void UnreserveRailTrack(ExtendedTileIndex tile, Track t)
 {
 	assert(HasTrack(TrackStatusToTrackBits(GetTileTrackStatus(tile, TRANSPORT_RAIL, 0)), t));
 
 	if (_settings_client.gui.show_track_reservation) {
-		if (IsBridgeTile(tile)) {
-			MarkBridgeDirty(tile);
-		} else {
-			MarkTileDirtyByTile(tile);
-		}
+		MarkTileDirtyByTile(tile);
 	}
 
 	switch (GetTileType(tile)) {
@@ -162,8 +164,9 @@ void UnreserveRailTrack(TileIndex tile, Track t)
 
 		case MP_ROAD:
 			if (IsLevelCrossing(tile)) {
-				SetCrossingReservation(tile, false);
-				UpdateLevelCrossing(tile);
+				assert(IsIndexGroundTile(tile)); //TODO elevated crossings
+				SetCrossingReservation(tile.index, false);
+				UpdateLevelCrossing(tile.index);
 			}
 			break;
 
@@ -185,9 +188,9 @@ void UnreserveRailTrack(TileIndex tile, Track t)
 
 
 /** Follow a reservation starting from a specific tile to the end. */
-static PBSTileInfo FollowReservation(Owner o, RailTypes rts, TileIndex tile, Trackdir trackdir, bool ignore_oneway = false)
+static PBSTileInfo FollowReservation(Owner o, RailTypes rts, ExtendedTileIndex tile, Trackdir trackdir, bool ignore_oneway = false)
 {
-	TileIndex start_tile = tile;
+	ExtendedTileIndex start_tile = tile;
 	Trackdir  start_trackdir = trackdir;
 	bool      first_loop = true;
 
@@ -207,7 +210,7 @@ static PBSTileInfo FollowReservation(Owner o, RailTypes rts, TileIndex tile, Tra
 				/* Check skipped station tiles as well, maybe our reservation ends inside the station. */
 				TileIndexDiff diff = TileOffsByDiagDir(ft.m_exitdir);
 				while (ft.m_tiles_skipped-- > 0) {
-					ft.m_new_tile -= diff;
+					ft.m_new_tile -= diff; /* Stations are always flat */
 					if (HasStationReservation(ft.m_new_tile)) {
 						tile = ft.m_new_tile;
 						trackdir = DiagDirToDiagTrackdir(ft.m_exitdir);
@@ -268,6 +271,7 @@ static Vehicle *FindTrainOnTrackEnum(Vehicle *v, void *data)
 	if (v->type != VEH_TRAIN || (v->vehstatus & VS_CRASHED)) return nullptr;
 
 	Train *t = Train::From(v);
+	//TODO elevated see about TRACK_BIT_WORMHOLE
 	if (t->track == TRACK_BIT_WORMHOLE || HasBit((TrackBits)t->track, TrackdirToTrack(info->res.trackdir))) {
 		t = t->First();
 
@@ -290,7 +294,7 @@ PBSTileInfo FollowTrainReservation(const Train *v, Vehicle **train_on_res)
 {
 	assert(v->type == VEH_TRAIN);
 
-	TileIndex tile = v->tile;
+	ExtendedTileIndex tile = v->ETileIndex();
 	Trackdir  trackdir = v->GetVehicleTrackdir();
 
 	if (IsRailDepotTile(tile) && !GetDepotReservationTrackBits(tile)) return PBSTileInfo(tile, trackdir, false);
@@ -307,16 +311,16 @@ PBSTileInfo FollowTrainReservation(const Train *v, Vehicle **train_on_res)
 			 * found a train. Also check all previous platform tiles
 			 * for a possible train. */
 			TileIndexDiff diff = TileOffsByDiagDir(TrackdirToExitdir(ReverseTrackdir(ftoti.res.trackdir)));
-			for (TileIndex st_tile = ftoti.res.tile + diff; *train_on_res == nullptr && IsCompatibleTrainStationTile(st_tile, ftoti.res.tile); st_tile += diff) {
+			for (ExtendedTileIndex st_tile = ftoti.res.tile + diff; *train_on_res == nullptr && IsCompatibleTrainStationTile(st_tile, ftoti.res.tile); st_tile += diff) {
 				FindVehicleOnPos(st_tile, &ftoti, FindTrainOnTrackEnum);
 				if (ftoti.best != nullptr) *train_on_res = ftoti.best->First();
 			}
 		}
-		if (*train_on_res == nullptr && IsTileType(ftoti.res.tile, MP_TUNNELBRIDGE)) {
-			/* The target tile is a bridge/tunnel, also check the other end tile. */
-			FindVehicleOnPos(GetOtherTunnelBridgeEnd(ftoti.res.tile), &ftoti, FindTrainOnTrackEnum);
-			if (ftoti.best != nullptr) *train_on_res = ftoti.best->First();
-		}
+		// if (*train_on_res == nullptr && IsTileType(ftoti.res.tile, MP_TUNNELBRIDGE)) {
+		// 	/* The target tile is a bridge/tunnel, also check the other end tile. */
+		// 	FindVehicleOnPos(GetOtherTunnelBridgeEnd(ftoti.res.tile), &ftoti, FindTrainOnTrackEnum);
+		// 	if (ftoti.best != nullptr) *train_on_res = ftoti.best->First();
+		// }
 	}
 	return ftoti.res;
 }
@@ -328,7 +332,7 @@ PBSTileInfo FollowTrainReservation(const Train *v, Vehicle **train_on_res)
  * @param track A reserved track on the tile.
  * @return The vehicle holding the reservation or nullptr if the path is stray.
  */
-Train *GetTrainForReservation(TileIndex tile, Track track)
+Train *GetTrainForReservation(ExtendedTileIndex tile, Track track)
 {
 	assert(HasReservedTracks(tile, TrackToTrackBits(track)));
 	Trackdir  trackdir = TrackToTrackdir(track);
@@ -352,17 +356,18 @@ Train *GetTrainForReservation(TileIndex tile, Track track)
 		/* Special case for stations: check the whole platform for a vehicle. */
 		if (IsRailStationTile(ftoti.res.tile)) {
 			TileIndexDiff diff = TileOffsByDiagDir(TrackdirToExitdir(ReverseTrackdir(ftoti.res.trackdir)));
-			for (TileIndex st_tile = ftoti.res.tile + diff; IsCompatibleTrainStationTile(st_tile, ftoti.res.tile); st_tile += diff) {
+			for (ExtendedTileIndex st_tile = ftoti.res.tile + diff; IsCompatibleTrainStationTile(st_tile, ftoti.res.tile); st_tile += diff) {
 				FindVehicleOnPos(st_tile, &ftoti, FindTrainOnTrackEnum);
 				if (ftoti.best != nullptr) return ftoti.best;
 			}
 		}
 
 		/* Special case for bridges/tunnels: check the other end as well. */
-		if (IsTileType(ftoti.res.tile, MP_TUNNELBRIDGE)) {
-			FindVehicleOnPos(GetOtherTunnelBridgeEnd(ftoti.res.tile), &ftoti, FindTrainOnTrackEnum);
-			if (ftoti.best != nullptr) return ftoti.best;
-		}
+		//TODO cleanup
+		// if (IsTileType(ftoti.res.tile, MP_TUNNELBRIDGE)) {
+		// 	FindVehicleOnPos(GetOtherTunnelBridgeEnd(ftoti.res.tile), &ftoti, FindTrainOnTrackEnum);
+		// 	if (ftoti.best != nullptr) return ftoti.best;
+		// }
 	}
 
 	return nullptr;
@@ -378,7 +383,7 @@ Train *GetTrainForReservation(TileIndex tile, Track track)
  * @param forbid_90deg Don't allow trains to make 90 degree turns
  * @return True if it is a safe position
  */
-bool IsSafeWaitingPosition(const Train *v, TileIndex tile, Trackdir trackdir, bool include_line_end, bool forbid_90deg)
+bool IsSafeWaitingPosition(const Train *v, ExtendedTileIndex tile, Trackdir trackdir, bool include_line_end, bool forbid_90deg)
 {
 	if (IsRailDepotTile(tile)) return true;
 
@@ -424,7 +429,7 @@ bool IsSafeWaitingPosition(const Train *v, TileIndex tile, Trackdir trackdir, bo
  * @param forbid_90deg Don't allow trains to make 90 degree turns
  * @return True if the position is free
  */
-bool IsWaitingPositionFree(const Train *v, TileIndex tile, Trackdir trackdir, bool forbid_90deg)
+bool IsWaitingPositionFree(const Train *v, ExtendedTileIndex tile, Trackdir trackdir, bool forbid_90deg)
 {
 	Track     track = TrackdirToTrack(trackdir);
 	TrackBits reserved = GetReservedTrackbits(tile);

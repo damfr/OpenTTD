@@ -389,7 +389,7 @@ CommandCost CmdBuildAircraft(TileIndex tile, DoCommandFlag flags, const Engine *
 }
 
 
-bool Aircraft::FindClosestDepot(TileIndex *location, DestinationID *destination, bool *reverse)
+bool Aircraft::FindClosestDepot(ExtendedTileIndex *location, DestinationID *destination, bool *reverse)
 {
 	const Station *st = GetTargetAirportIfValid(this);
 	/* If the station is not a valid airport or if it has no hangars */
@@ -402,7 +402,7 @@ bool Aircraft::FindClosestDepot(TileIndex *location, DestinationID *destination,
 		st = Station::Get(station);
 	}
 
-	if (location    != nullptr) *location    = st->xy;
+	if (location    != nullptr) *location    = ExtendedTileIndex(st->xy);
 	if (destination != nullptr) *destination = st->index;
 
 	return true;

@@ -40,6 +40,7 @@
 #include "water.h"
 #include "company_gui.h"
 #include "station_func.h"
+#include "elevated.h"
 
 #include "table/strings.h"
 #include "table/bridge_land.h"
@@ -132,18 +133,23 @@ Foundation GetBridgeFoundation(Slope tileh, Axis axis)
 	return (HasSlopeHighestCorner(tileh) ? InclinedFoundation(axis) : FlatteningFoundation(tileh));
 }
 
+
 /**
- * Determines if the track on a bridge ramp is flat or goes up/down.
+ * Determines if the track on a ramp is flat or goes up/down.
  *
- * @param tileh Slope of the tile under the bridge head
- * @param axis Orientation of bridge
- * @return true iff the track is flat.
+ * @param tile the ExtendedTileIndex of the ramp
+ * @return true if the track is flat
  */
-bool HasBridgeFlatRamp(Slope tileh, Axis axis)
+bool HasBridgeFlatRamp(ExtendedTileIndex tile)
 {
-	ApplyFoundationToSlope(GetBridgeFoundation(tileh, axis), &tileh);
-	/* If the foundation slope is flat the bridge has a non-flat ramp and vice versa. */
-	return (tileh != SLOPE_FLAT);
+	if (IsIndexGroundTile(tile)) {
+		Axis axis = GetBridgeAxis(tile.index);
+		Slope tile_slope = GetTileSlope(tile.index);
+		ApplyFoundationToSlope(GetBridgeFoundation(tile_slope, axis), &tile_slope);
+		return (tile_slope != SLOPE_FLAT);
+	} else {
+		return false; /* Only ramps on the ground can be flat */
+	}
 }
 
 static inline const PalSpriteID *GetBridgeSpriteTable(int index, BridgePieces table)
@@ -167,7 +173,7 @@ static inline const PalSpriteID *GetBridgeSpriteTable(int index, BridgePieces ta
  * @param z TileZ corresponding to tileh, gets modified as well
  * @return Error or cost for bridge foundation
  */
-static CommandCost CheckBridgeSlope(BridgePieces bridge_piece, Axis axis, Slope *tileh, int *z)
+CommandCost CheckBridgeSlope(BridgePieces bridge_piece, Axis axis, Slope *tileh, int *z)
 {
 	assert(bridge_piece == BRIDGE_PIECE_NORTH || bridge_piece == BRIDGE_PIECE_SOUTH);
 
@@ -1460,7 +1466,7 @@ static void DrawTile_TunnelBridge(TileInfo *ti)
 			if (rti->UsesOverlay()) {
 				SpriteID surface = GetCustomRailSprite(rti, ti->tile, RTSG_BRIDGE);
 				if (surface != 0) {
-					if (HasBridgeFlatRamp(ti->tileh, DiagDirToAxis(tunnelbridge_direction))) {
+					if (HasBridgeFlatRamp(ti->tile)) {
 						AddSortableSpriteToDraw(surface + ((DiagDirToAxis(tunnelbridge_direction) == AXIS_X) ? RTBO_X : RTBO_Y), PAL_NONE, ti->x, ti->y, 16, 16, 0, ti->z + 8);
 					} else {
 						AddSortableSpriteToDraw(surface + RTBO_SLOPE + tunnelbridge_direction, PAL_NONE, ti->x, ti->y, 16, 16, 8, ti->z);
@@ -1475,13 +1481,13 @@ static void DrawTile_TunnelBridge(TileInfo *ti)
 			if (_game_mode != GM_MENU && _settings_client.gui.show_track_reservation && HasTunnelBridgeReservation(ti->tile)) {
 				if (rti->UsesOverlay()) {
 					SpriteID overlay = GetCustomRailSprite(rti, ti->tile, RTSG_OVERLAY);
-					if (HasBridgeFlatRamp(ti->tileh, DiagDirToAxis(tunnelbridge_direction))) {
+					if (HasBridgeFlatRamp(ti->tile)) {
 						AddSortableSpriteToDraw(overlay + RTO_X + DiagDirToAxis(tunnelbridge_direction), PALETTE_CRASH, ti->x, ti->y, 16, 16, 0, ti->z + 8);
 					} else {
 						AddSortableSpriteToDraw(overlay + RTO_SLOPE_NE + tunnelbridge_direction, PALETTE_CRASH, ti->x, ti->y, 16, 16, 8, ti->z);
 					}
 				} else {
-					if (HasBridgeFlatRamp(ti->tileh, DiagDirToAxis(tunnelbridge_direction))) {
+					if (HasBridgeFlatRamp(ti->tile)) {
 						AddSortableSpriteToDraw(DiagDirToAxis(tunnelbridge_direction) == AXIS_X ? rti->base_sprites.single_x : rti->base_sprites.single_y, PALETTE_CRASH, ti->x, ti->y, 16, 16, 0, ti->z + 8);
 					} else {
 						AddSortableSpriteToDraw(rti->base_sprites.single_sloped + tunnelbridge_direction, PALETTE_CRASH, ti->x, ti->y, 16, 16, 8, ti->z);
@@ -1533,6 +1539,141 @@ static BridgePieces CalcBridgePiece(uint north, uint south)
 	}
 }
 
+
+
+
+/**
+ * Draw elevated tracks above tile (if they exist)
+ * @param ti Tile information of the tile to draw it on.
+ */
+static void DrawElevatedTrack(const TileInfo *ti)
+{
+    auto iterator_pair = GetElevatedTrackIterator(ti->tile);
+
+    for (ElevatedIndex::iterator it = iterator_pair.first; it != iterator_pair.second; ++it) {
+		ExtendedTileIndex tile_index(ti->tile);
+		tile_index.height = it->tile.height;
+
+        assert(IsTileType(tile_index, MP_RAILWAY)); //TODO elevated roads and aqueducts
+        TransportType transport_type = TRANSPORT_RAIL;
+
+		TrackBits track_bits = GetTrackBits(tile_index);
+		Track track = TrackBitsToTrack(track_bits); //TODO : switches on elevated tracks
+		assert(IsValidTrack(track)); 
+
+		Axis axis = (Axis) track; //TODO diagnoal bridges
+		assert(IsValidAxis(axis));
+
+        /*
+        BridgePieces piece = CalcBridgePiece(
+		GetTunnelBridgeLength(ti->tile, rampnorth) + 1,
+		GetTunnelBridgeLength(ti->tile, rampsouth) + 1
+	    );
+        */
+	   BridgePieces piece = BRIDGE_PIECE_MIDDLE_ODD; //TODO brige pieces
+
+    	const PalSpriteID *psid;
+        bool drawfarpillar;
+        if (transport_type != TRANSPORT_WATER) {
+            BridgeType type = 1; //TODO bridge type
+
+            drawfarpillar = !HasBit(GetBridgeSpec(type)->flags, 0);
+
+            uint base_offset;
+            if (transport_type == TRANSPORT_RAIL) {
+                base_offset = GetRailTypeInfo(GetRailType(tile_index))->bridge_offset;
+            } else {
+                base_offset = 8;
+            }
+
+            psid = base_offset + GetBridgeSpriteTable(type, piece);
+        } else {
+            drawfarpillar = true;
+            psid = _aqueduct_sprites;
+        }
+
+        if (axis != AXIS_X) psid += 4;
+
+        int x = ti->x;
+        int y = ti->y;
+        uint bridge_z = (it->tile.height + 0) * TILE_HEIGHT;
+        int z = bridge_z - BRIDGE_Z_START;
+
+        /* Add a bounding box that separates the bridge from things below it. */
+        AddSortableSpriteToDraw(SPR_EMPTY_BOUNDING_BOX, PAL_NONE, x, y, 16, 16, 1, bridge_z - TILE_HEIGHT + BB_Z_SEPARATOR);
+
+        /* Draw Trambits as SpriteCombine */
+        if (transport_type == TRANSPORT_ROAD || transport_type == TRANSPORT_RAIL) StartSpriteCombine();
+
+        /* Draw floor and far part of bridge*/
+        if (!IsInvisibilitySet(TO_BRIDGES)) {
+            if (axis == AXIS_X) {
+                AddSortableSpriteToDraw(psid->sprite, psid->pal, x, y, 16, 1, 0x28, z, IsTransparencySet(TO_BRIDGES), 0, 0, BRIDGE_Z_START);
+            } else {
+                AddSortableSpriteToDraw(psid->sprite, psid->pal, x, y, 1, 16, 0x28, z, IsTransparencySet(TO_BRIDGES), 0, 0, BRIDGE_Z_START);
+            }
+        }
+
+        psid++;
+
+        if (transport_type == TRANSPORT_ROAD) {
+            /* DrawBridgeRoadBits() calls EndSpriteCombine() and StartSpriteCombine() */
+			//TODO
+            //DrawBridgeRoadBits(rampsouth, x, y, bridge_z, axis ^ 1, false);
+        } else if (transport_type == TRANSPORT_RAIL) {
+            const RailtypeInfo *rti = GetRailTypeInfo(GetRailType(tile_index));
+            if (rti->UsesOverlay() && !IsInvisibilitySet(TO_BRIDGES)) {
+				//TODO newgrf query tile ?
+                SpriteID surface = GetCustomRailSprite(rti, /*rampsouth*/ ti->tile, RTSG_BRIDGE, TCX_ON_BRIDGE);
+                if (surface != 0) {
+                    AddSortableSpriteToDraw(surface + axis, PAL_NONE, x, y, 16, 16, 0, bridge_z, IsTransparencySet(TO_BRIDGES));
+                }
+            }
+
+			//TODO show PBS reservations
+			/*
+            if (_game_mode != GM_MENU && _settings_client.gui.show_track_reservation && !IsInvisibilitySet(TO_BRIDGES) && HasTunnelBridgeReservation(rampnorth)) {
+                if (rti->UsesOverlay()) {
+                    SpriteID overlay = GetCustomRailSprite(rti, ti->tile, RTSG_OVERLAY);
+                    AddSortableSpriteToDraw(overlay + RTO_X + axis, PALETTE_CRASH, ti->x, ti->y, 16, 16, 0, bridge_z, IsTransparencySet(TO_BRIDGES));
+                } else {
+                    AddSortableSpriteToDraw(axis == AXIS_X ? rti->base_sprites.single_x : rti->base_sprites.single_y, PALETTE_CRASH, ti->x, ti->y, 16, 16, 0, bridge_z, IsTransparencySet(TO_BRIDGES));
+                }
+            }
+			*/
+
+            EndSpriteCombine();
+
+            if (HasRailCatenaryDrawn(GetRailType(tile_index))) {
+				//TODO catenary on elevated tracks
+                //DrawRailCatenaryOnBridge(ti);
+            }
+        }
+
+        /* draw roof, the component of the bridge which is logically between the vehicle and the camera */
+        if (!IsInvisibilitySet(TO_BRIDGES)) {
+            if (axis == AXIS_X) {
+                y += 12;
+                if (psid->sprite & SPRITE_MASK) AddSortableSpriteToDraw(psid->sprite, psid->pal, x, y, 16, 4, 0x28, z, IsTransparencySet(TO_BRIDGES), 0, 3, BRIDGE_Z_START);
+            } else {
+                x += 12;
+                if (psid->sprite & SPRITE_MASK) AddSortableSpriteToDraw(psid->sprite, psid->pal, x, y, 4, 16, 0x28, z, IsTransparencySet(TO_BRIDGES), 3, 0, BRIDGE_Z_START);
+            }
+        }
+
+        /* Draw TramFront as SpriteCombine */
+        if (transport_type == TRANSPORT_ROAD) EndSpriteCombine();
+
+        /* Do not draw anything more if bridges are invisible */
+        if (IsInvisibilitySet(TO_BRIDGES)) return;
+
+        psid++;
+        //TODO draw pillars
+		//DrawBridgePillars(psid, ti, axis, drawfarpillar, x, y, z);
+    }
+}
+
+
 /**
  * Draw the middle bits of a bridge.
  * @param ti Tile information of the tile to draw it on.
@@ -1556,6 +1697,13 @@ void DrawBridgeMiddle(const TileInfo *ti)
 	 */
 
 	if (!IsBridgeAbove(ti->tile)) return;
+
+	if (GB(_m[ti->tile].type, 2, 2) == 3) {
+		//Elevated track above
+		//TODO integrate with bridge code
+		DrawElevatedTrack(ti);
+		return;
+	}
 
 	TileIndex rampnorth = GetNorthernBridgeEnd(ti->tile);
 	TileIndex rampsouth = GetSouthernBridgeEnd(ti->tile);
@@ -1794,12 +1942,14 @@ static void TileLoop_TunnelBridge(TileIndex tile)
 	}
 }
 
-static TrackStatus GetTileTrackStatus_TunnelBridge(TileIndex tile, TransportType mode, uint sub_mode, DiagDirection side)
+static TrackStatus GetTileTrackStatus_TunnelBridge(ExtendedTileIndex tile, TransportType mode, uint sub_mode, DiagDirection side)
 {
-	TransportType transport_type = GetTunnelBridgeTransportType(tile);
-	if (transport_type != mode || (transport_type == TRANSPORT_ROAD && !HasTileRoadType(tile, (RoadTramType)sub_mode))) return 0;
+	assert(IsIndexGroundTile(tile)); //TODO elevated ramps
 
-	DiagDirection dir = GetTunnelBridgeDirection(tile);
+	TransportType transport_type = GetTunnelBridgeTransportType(tile.index);
+	if (transport_type != mode || (transport_type == TRANSPORT_ROAD && !HasTileRoadType(tile.index, (RoadTramType)sub_mode))) return 0;
+
+	DiagDirection dir = GetTunnelBridgeDirection(tile.index);
 	if (side != INVALID_DIAGDIR && side != ReverseDiagDir(dir)) return 0;
 	return CombineTrackStatus(TrackBitsToTrackdirBits(DiagDirToDiagTrackBits(dir)), TRACKDIR_BIT_NONE);
 }
@@ -1873,7 +2023,7 @@ static const byte TUNNEL_SOUND_FRAME = 1;
  */
 extern const byte _tunnel_visibility_frame[DIAGDIR_END] = {12, 8, 8, 12};
 
-static VehicleEnterTileStatus VehicleEnter_TunnelBridge(Vehicle *v, TileIndex tile, int x, int y)
+static VehicleEnterTileStatus VehicleEnter_TunnelBridge(Vehicle *v, ExtendedTileIndex tile, int x, int y)
 {
 	int z = GetSlopePixelZ(x, y) - v->z_pos;
 
@@ -1892,6 +2042,7 @@ static VehicleEnterTileStatus VehicleEnter_TunnelBridge(Vehicle *v, TileIndex ti
 			Train *t = Train::From(v);
 
 			if (t->track != TRACK_BIT_WORMHOLE && dir == vdir) {
+				/* Entering a tunnel */
 				if (t->IsFrontEngine() && frame == TUNNEL_SOUND_FRAME) {
 					if (!PlayVehicleSound(t, VSE_TUNNEL) && RailVehInfo(t->engine_type)->engclass == 0) {
 						SndPlayVehicleFx(SND_05_TRAIN_THROUGH_TUNNEL, v);
@@ -1899,8 +2050,8 @@ static VehicleEnterTileStatus VehicleEnter_TunnelBridge(Vehicle *v, TileIndex ti
 					return VETSB_CONTINUE;
 				}
 				if (frame == _tunnel_visibility_frame[dir]) {
-					t->tile = tile;
-					t->track = TRACK_BIT_WORMHOLE;
+					t->tile = tile.index; //TODO elevated is this necessary ?
+					t->track |= TRACK_BIT_WORMHOLE; //We add the flag rather than overwrite t->track
 					t->vehstatus |= VS_HIDDEN;
 					return VETSB_ENTERED_WORMHOLE;
 				}
@@ -1908,21 +2059,21 @@ static VehicleEnterTileStatus VehicleEnter_TunnelBridge(Vehicle *v, TileIndex ti
 
 			if (dir == ReverseDiagDir(vdir) && frame == TILE_SIZE - _tunnel_visibility_frame[dir] && z == 0) {
 				/* We're at the tunnel exit ?? */
-				t->tile = tile;
-				t->track = DiagDirToDiagTrackBits(vdir);
+				t->tile = tile.index; //TODO elevated is this necessary ?
+				t->track = DiagDirToDiagTrackBits(vdir); //TODO elevated probably we should just remove TRACK_BIT_WORMHOLE flag
 				assert(t->track);
 				t->vehstatus &= ~VS_HIDDEN;
 				return VETSB_ENTERED_WORMHOLE;
 			}
 		} else if (v->type == VEH_ROAD) {
 			RoadVehicle *rv = RoadVehicle::From(v);
-
+			//TODO elevated roads
 			/* Enter tunnel? */
 			if (rv->state != RVSB_WORMHOLE && dir == vdir) {
 				if (frame == _tunnel_visibility_frame[dir]) {
 					/* Frame should be equal to the next frame number in the RV's movement */
 					assert(frame == rv->frame + 1);
-					rv->tile = tile;
+					rv->tile = tile.index;
 					rv->state = RVSB_WORMHOLE;
 					rv->vehstatus |= VS_HIDDEN;
 					return VETSB_ENTERED_WORMHOLE;
@@ -1933,7 +2084,7 @@ static VehicleEnterTileStatus VehicleEnter_TunnelBridge(Vehicle *v, TileIndex ti
 
 			/* We're at the tunnel exit ?? */
 			if (dir == ReverseDiagDir(vdir) && frame == TILE_SIZE - _tunnel_visibility_frame[dir] && z == 0) {
-				rv->tile = tile;
+				rv->tile = tile.index;
 				rv->state = DiagDirToDiagTrackdir(vdir);
 				rv->frame = frame;
 				rv->vehstatus &= ~VS_HIDDEN;
@@ -1956,8 +2107,8 @@ static VehicleEnterTileStatus VehicleEnter_TunnelBridge(Vehicle *v, TileIndex ti
 			switch (v->type) {
 				case VEH_TRAIN: {
 					Train *t = Train::From(v);
-					t->track = TRACK_BIT_WORMHOLE;
-					ClrBit(t->gv_flags, GVF_GOINGUP_BIT);
+					t->track |= TRACK_BIT_WORMHOLE;
+					ClrBit(t->gv_flags, GVF_GOINGUP_BIT); //TODO elevated check if 2 consecutive ramps ?
 					ClrBit(t->gv_flags, GVF_GOINGDOWN_BIT);
 					break;
 				}
@@ -1979,12 +2130,15 @@ static VehicleEnterTileStatus VehicleEnter_TunnelBridge(Vehicle *v, TileIndex ti
 			}
 			return VETSB_ENTERED_WORMHOLE;
 		} else if (vdir == ReverseDiagDir(dir)) {
-			v->tile = tile;
+			/* Leaving a bridge ramp */
+			//v->tile = tile; //TODO elevated is this needed ?
 			switch (v->type) {
 				case VEH_TRAIN: {
 					Train *t = Train::From(v);
-					if (t->track == TRACK_BIT_WORMHOLE) {
-						t->track = DiagDirToDiagTrackBits(vdir);
+					if ((t->track & TRACK_BIT_WORMHOLE != 0)) {
+						/* Train track has TRACK_BIT_WORMHOLE flag set -> remove the flag */
+						//TODO elevated ramps
+						t->track = DiagDirToDiagTrackBits(vdir); //TODO elevated is this necessary ?
 						return VETSB_ENTERED_WORMHOLE;
 					}
 					break;

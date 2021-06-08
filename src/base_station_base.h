@@ -152,7 +152,7 @@ struct BaseStation : StationPool::PoolItem<&_station_pool> {
 	 * @param tile The tile to get the base station from.
 	 * @return the station associated with that tile.
 	 */
-	static inline BaseStation *GetByTile(TileIndex tile)
+	static inline BaseStation *GetByTile(ExtendedTileIndex tile)
 	{
 		return BaseStation::Get(GetStationIndex(tile));
 	}

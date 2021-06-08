@@ -15,21 +15,21 @@
 /**
  * Check if a tile is a depot and it is a depot of the given type.
  */
-static inline bool IsDepotTypeTile(TileIndex tile, TransportType type)
+static inline bool IsDepotTypeTile(ExtendedTileIndex tile, TransportType type)
 {
 	switch (type) {
 		default: NOT_REACHED();
 		case TRANSPORT_RAIL:
 			return IsRailDepotTile(tile);
 
-		case TRANSPORT_ROAD:
-			return IsRoadDepotTile(tile);
+		case TRANSPORT_ROAD: //TODO elevated road depots
+			return IsIndexGroundTile(tile) && IsRoadDepotTile(tile.index);
 
-		case TRANSPORT_WATER:
-			return IsShipDepotTile(tile);
+		case TRANSPORT_WATER: //TODO aqueducts
+			return IsIndexGroundTile(tile) && IsShipDepotTile(tile.index);
 
 		case TRANSPORT_AIR:
-			return IsHangarTile(tile);
+			return IsIndexGroundTile(tile) && IsHangarTile(tile.index);
 	}
 }
 
@@ -38,9 +38,10 @@ static inline bool IsDepotTypeTile(TileIndex tile, TransportType type)
  * @param tile the tile to check
  * @return true if and only if there is a depot on the tile.
  */
-static inline bool IsDepotTile(TileIndex tile)
+static inline bool IsDepotTile(ExtendedTileIndex tile)
 {
-	return IsRailDepotTile(tile) || IsRoadDepotTile(tile) || IsShipDepotTile(tile) || IsHangarTile(tile);
+	return IsRailDepotTile(tile) || IsRoadDepotTile(tile) 
+		|| (IsIndexGroundTile(tile) && IsShipDepotTile(tile.index)) || ((IsIndexGroundTile(tile) && IsHangarTile(tile.index));
 }
 
 /**
@@ -49,11 +50,11 @@ static inline bool IsDepotTile(TileIndex tile)
  * @pre IsRailDepotTile(t) || IsRoadDepotTile(t) || IsShipDepotTile(t)
  * @return DepotID
  */
-static inline DepotID GetDepotIndex(TileIndex t)
+static inline DepotID GetDepotIndex(ExtendedTileIndex t)
 {
 	/* Hangars don't have a Depot class, thus store no DepotID. */
-	assert(IsRailDepotTile(t) || IsRoadDepotTile(t) || IsShipDepotTile(t));
-	return _m[t].m2;
+	assert(IsRailDepotTile(t) || IsRoadDepotTile(t) || (IsIndexGroundTile(tile) && IsShipDepotTile(t.index)));
+	return GetElevatedTile(t).m2;
 }
 
 /**

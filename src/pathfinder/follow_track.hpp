@@ -38,13 +38,14 @@ struct CFollowTrackT
 
 	const VehicleType  *m_veh;           ///< moving vehicle
 	Owner               m_veh_owner;     ///< owner of the vehicle
-	TileIndex           m_old_tile;      ///< the origin (vehicle moved from) before move
+	ExtendedTileIndex   m_old_tile;      ///< the origin (vehicle moved from) before move
 	Trackdir            m_old_td;        ///< the trackdir (the vehicle was on) before move
-	TileIndex           m_new_tile;      ///< the new tile (the vehicle has entered)
+	ExtendedTileIndex   m_new_tile;      ///< the new tile (the vehicle has entered)
 	TrackdirBits        m_new_td_bits;   ///< the new set of available trackdirs
 	DiagDirection       m_exitdir;       ///< exit direction (leaving the old tile)
-	bool                m_is_tunnel;     ///< last turn passed tunnel
-	bool                m_is_bridge;     ///< last turn passed bridge ramp
+	//TODO elevated cleanup
+	//bool                m_is_tunnel;     ///< last turn passed tunnel
+	//bool                m_is_bridge;     ///< last turn passed bridge ramp
 	bool                m_is_station;    ///< last turn passed station
 	int                 m_tiles_skipped; ///< number of skipped tunnel or station tiles
 	ErrorCode           m_err;
@@ -75,12 +76,12 @@ struct CFollowTrackT
 		assert(!IsRailTT() || railtype_override != INVALID_RAILTYPES);
 		m_veh_owner = o;
 		/* don't worry, all is inlined so compiler should remove unnecessary initializations */
-		m_old_tile = INVALID_TILE;
+		m_old_tile = INVALID_EXTENDED_TILE;
 		m_old_td = INVALID_TRACKDIR;
-		m_new_tile = INVALID_TILE;
+		m_new_tile = INVALID_EXTENDED_TILE;
 		m_new_td_bits = TRACKDIR_BIT_NONE;
 		m_exitdir = INVALID_DIAGDIR;
-		m_is_station = m_is_bridge = m_is_tunnel = false;
+		m_is_station = /* m_is_bridge = m_is_tunnel = */ false;
 		m_tiles_skipped = 0;
 		m_err = EC_NONE;
 		m_railtypes = railtype_override;
@@ -116,7 +117,7 @@ struct CFollowTrackT
 	 * main follower routine. Fills all members and return true on success.
 	 *  Otherwise returns false if track can't be followed.
 	 */
-	inline bool Follow(TileIndex old_tile, Trackdir old_td)
+	inline bool Follow(ExtendedTileIndex old_tile, Trackdir old_td)
 	{
 		m_old_tile = old_tile;
 		m_old_td = old_td;
@@ -171,7 +172,8 @@ struct CFollowTrackT
 		if (m_is_station) {
 			/* Check skipped station tiles as well. */
 			TileIndexDiff diff = TileOffsByDiagDir(m_exitdir);
-			for (TileIndex tile = m_new_tile - diff * m_tiles_skipped; tile != m_new_tile; tile += diff) {
+			/* There are no sloped stations, so we keep tile.height identical */
+			for (ExtendedTileIndex tile = m_new_tile - diff * m_tiles_skipped; tile != m_new_tile; tile += diff) {
 				if (HasStationReservation(tile)) {
 					m_new_td_bits = TRACKDIR_BIT_NONE;
 					m_err = EC_RESERVED;
@@ -199,29 +201,35 @@ protected:
 	/** Follow the m_exitdir from m_old_tile and fill m_new_tile and m_tiles_skipped */
 	inline void FollowTileExit()
 	{
-		m_is_station = m_is_bridge = m_is_tunnel = false;
+		m_is_station = /* m_is_bridge = m_is_tunnel = */ false;
 		m_tiles_skipped = 0;
 
 		/* extra handling for tunnels and bridges in our direction */
+		// if (IsTileType(m_old_tile, MP_TUNNELBRIDGE)) {
+		// 	DiagDirection enterdir = GetTunnelBridgeDirection(m_old_tile);
+		// 	if (enterdir == m_exitdir) {
+		// 		/* we are entering the tunnel / bridge */
+		// 		if (IsTunnel(m_old_tile)) {
+		// 			m_is_tunnel = true;
+		// 			m_new_tile = GetOtherTunnelEnd(m_old_tile);
+		// 		} else { // IsBridge(m_old_tile)
+		// 			m_is_bridge = true;
+		// 			m_new_tile = GetOtherBridgeEnd(m_old_tile);
+		// 		}
+		// 		m_tiles_skipped = GetTunnelBridgeLength(m_new_tile, m_old_tile);
+		// 		return;
+		// 	}
+		// 	assert(ReverseDiagDir(enterdir) == m_exitdir);
+		// }
 		if (IsTileType(m_old_tile, MP_TUNNELBRIDGE)) {
-			DiagDirection enterdir = GetTunnelBridgeDirection(m_old_tile);
-			if (enterdir == m_exitdir) {
-				/* we are entering the tunnel / bridge */
-				if (IsTunnel(m_old_tile)) {
-					m_is_tunnel = true;
-					m_new_tile = GetOtherTunnelEnd(m_old_tile);
-				} else { // IsBridge(m_old_tile)
-					m_is_bridge = true;
-					m_new_tile = GetOtherBridgeEnd(m_old_tile);
-				}
-				m_tiles_skipped = GetTunnelBridgeLength(m_new_tile, m_old_tile);
-				return;
-			}
-			assert(ReverseDiagDir(enterdir) == m_exitdir);
+			/* We are on a bridge ramp or tunnel head. Use the helper function */
+			m_new_tile = GetElevatedRampNextTile(m_old_tile, m_exitdir);
+		} else {
+			/* normal or station tile, do one step */
+			m_new_tile = ExtendedTileAddByDiagDirFollowGround(m_old_tile, m_exitdir);
 		}
 
-		/* normal or station tile, do one step */
-		m_new_tile = TileAddByDiagDir(m_old_tile, m_exitdir);
+		
 
 		/* special handling for stations */
 		if (IsRailTT() && HasStationTileRail(m_new_tile)) {
@@ -237,7 +245,8 @@ protected:
 		if (IsRailTT() && IsPlainRailTile(m_new_tile)) {
 			m_new_td_bits = (TrackdirBits)(GetTrackBits(m_new_tile) * 0x101);
 		} else if (IsRoadTT()) {
-			m_new_td_bits = GetTrackdirBitsForRoad(m_new_tile, this->IsTram() ? RTT_TRAM : RTT_ROAD);
+			assert(IsIndexGroundTile(m_new_tile)); //TODO elevated roads
+			m_new_td_bits = GetTrackdirBitsForRoad(m_new_tile.index, this->IsTram() ? RTT_TRAM : RTT_ROAD);
 		} else {
 			m_new_td_bits = TrackStatusToTrackdirBits(GetTileTrackStatus(m_new_tile, TT(), 0));
 		}
@@ -337,8 +346,9 @@ protected:
 
 		/* road transport is possible only on compatible road types */
 		if (IsRoadTT()) {
+			assert(IsIndexGroundTile(tile)); //TODO elevated roads
 			const RoadVehicle *v = RoadVehicle::From(m_veh);
-			RoadType roadtype = GetRoadType(m_new_tile, GetRoadTramType(v->roadtype));
+			RoadType roadtype = GetRoadType(m_new_tile.index, GetRoadTramType(v->roadtype));
 			if (!HasBit(v->compatible_roadtypes, roadtype)) {
 				/* incompatible road type */
 				m_err = EC_RAIL_ROAD_TYPE;
@@ -348,6 +358,13 @@ protected:
 
 		/* tunnel holes and bridge ramps can be entered only from proper direction */
 		if (IsTileType(m_new_tile, MP_TUNNELBRIDGE)) {
+			DiagDirection ramp_tunnel_enterdir = GetTunnelBridgeDirection(m_new_tile);
+			if (DiagDirToAxis(ramp_tunnel_enterdir) != DiagDirToAxis(m_exitdir)) {
+				m_err = EC_NO_WAY;
+				return false;
+			}
+
+			/*
 			if (IsTunnel(m_new_tile)) {
 				if (!m_is_tunnel) {
 					DiagDirection tunnel_enterdir = GetTunnelBridgeDirection(m_new_tile);
@@ -365,6 +382,7 @@ protected:
 					}
 				}
 			}
+			*/
 		}
 
 		/* special handling for rail stations - get to the end of platform */
@@ -396,7 +414,7 @@ protected:
 				m_new_td_bits = TrackdirToTrackdirBits(ReverseTrackdir(m_old_td));
 				m_exitdir = exitdir;
 				m_tiles_skipped = 0;
-				m_is_tunnel = m_is_bridge = m_is_station = false;
+				m_is_tunnel = /*m_is_bridge = m_is_station =*/ false;
 				return true;
 			}
 		}
@@ -409,7 +427,7 @@ protected:
 			m_new_td_bits = TrackdirToTrackdirBits(ReverseTrackdir(m_old_td));
 			m_exitdir = ReverseDiagDir(m_exitdir);
 			m_tiles_skipped = 0;
-			m_is_tunnel = m_is_bridge = m_is_station = false;
+			m_is_tunnel = /* m_is_bridge = m_is_station =*/ false;
 			return true;
 		}
 
@@ -445,6 +463,7 @@ public:
 
 		/* Check for on-bridge speed limit */
 		if (!IsWaterTT() && IsBridgeTile(m_old_tile)) {
+			//TODO elevated bridge speed limits
 			int spd = GetBridgeSpec(GetBridgeType(m_old_tile))->speed;
 			if (IsRoadTT()) spd *= 2;
 			max_speed = std::min(max_speed, spd);

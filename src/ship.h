@@ -50,7 +50,7 @@ struct Ship FINAL : public SpecializedVehicle<Ship, VEH_SHIP> {
 	void OnNewDay();
 	Trackdir GetVehicleTrackdir() const;
 	TileIndex GetOrderStationLocation(StationID station);
-	bool FindClosestDepot(TileIndex *location, DestinationID *destination, bool *reverse);
+	bool FindClosestDepot(ExtendedTileIndex *location, DestinationID *destination, bool *reverse);
 	void UpdateCache();
 	void SetDestTile(TileIndex tile);
 };

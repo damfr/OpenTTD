@@ -31,6 +31,7 @@
 #include "strings_func.h"
 #include "company_gui.h"
 #include "object_map.h"
+#include "elevated.h"
 
 #include "table/strings.h"
 #include "table/railtypes.h"
@@ -234,7 +235,7 @@ static const byte _track_sloped_sprites[14] = {
  * @param track The track.
  * @return Succeeded command (no train found), or a failed command (a train was found).
  */
-static CommandCost EnsureNoTrainOnTrack(TileIndex tile, Track track)
+static CommandCost EnsureNoTrainOnTrack(ExtendedTileIndex tile, Track track)
 {
 	TrackBits rail_bits = TrackToTrackBits(track);
 	return EnsureNoTrainOnTrackBits(tile, rail_bits);
@@ -247,7 +248,7 @@ static CommandCost EnsureNoTrainOnTrack(TileIndex tile, Track track)
  * @param flags    Flags of the operation.
  * @return Succeeded or failed command.
  */
-static CommandCost CheckTrackCombination(TileIndex tile, TrackBits to_build, uint flags)
+static CommandCost CheckTrackCombination(ExtendedTileIndex tile, TrackBits to_build, uint flags)
 {
 	if (!IsPlainRail(tile)) return_cmd_error(STR_ERROR_IMPOSSIBLE_TRACK_COMBINATION);
 
@@ -1050,6 +1051,7 @@ CommandCost CmdBuildTrainDepot(TileIndex tile, DoCommandFlag flags, uint32 p1, u
  * - p1 = (bit 12-14)-wrap around after this signal type
  * - p1 = (bit 15-16)-cycle the signal direction this many times
  * - p1 = (bit 17)  - 1 = don't modify an existing signal but don't fail either, 0 = always set new signal type
+ * - p1 = (bit 18-26) - height level to build signals on
  * @param p2 used for CmdBuildManySignals() to copy direction of first signal
  * @param text unused
  * @return the cost of this operation or an error
@@ -1066,6 +1068,14 @@ CommandCost CmdBuildSingleSignal(TileIndex tile, DoCommandFlag flags, uint32 p1,
 	SignalType cycle_stop = Extract<SignalType, 12, 3>(p1);
 	uint num_dir_cycle = GB(p1, 15, 2);
 
+	//TODO elevated signals
+	/*
+	Height height = Extract<Height, 18, 8>(p1);
+	ExtendedTileIndex tile(ground_tile);
+	tile.height = height;
+	*/
+	TileIndex& ground_tile = tile;
+
 	if (sigtype > SIGTYPE_LAST) return CMD_ERROR;
 	if (cycle_start > cycle_stop || cycle_stop > SIGTYPE_LAST) return CMD_ERROR;
 
@@ -1077,7 +1087,7 @@ CommandCost CmdBuildSingleSignal(TileIndex tile, DoCommandFlag flags, uint32 p1,
 	/* Protect against invalid signal copying */
 	if (p2 != 0 && (p2 & SignalOnTrack(track)) == 0) return CMD_ERROR;
 
-	CommandCost ret = CheckTileOwnership(tile);
+	CommandCost ret = CheckTileOwnership(ground_tile); //TODO ownership under elevated tracks
 	if (ret.Failed()) return ret;
 
 	/* See if this is a valid track combination for signals (no overlap) */
@@ -1119,10 +1129,13 @@ CommandCost CmdBuildSingleSignal(TileIndex tile, DoCommandFlag flags, uint32 p1,
 		/* The new/changed signal could block our path. As this can lead to
 		 * stale reservations, we clear the path reservation here and try
 		 * to redo it later on. */
+		//TODO PBS
+		/*
 		if (HasReservedTracks(tile, TrackToTrackBits(track))) {
 			v = GetTrainForReservation(tile, track);
 			if (v != nullptr) FreeTrainTrackReservation(v);
 		}
+		*/
 
 		if (!HasSignals(tile)) {
 			/* there are no signals at all on this tile yet */
@@ -1546,6 +1559,151 @@ CommandCost CmdRemoveSingleSignal(TileIndex tile, DoCommandFlag flags, uint32 p1
 CommandCost CmdRemoveSignalTrack(TileIndex tile, DoCommandFlag flags, uint32 p1, uint32 p2, const char *text)
 {
 	return CmdSignalTrackHelper(tile, flags, p1, SetBit(p2, 5), text); // bit 5 is remove bit
+}
+
+
+/**
+ * Build a single piece of elevated rail
+ * @param tile tile  to build on
+ * @param flags operation to perform
+ * @param p1 railtype of being built piece (normal, mono, maglev)
+ * @param p2 various bitstuffed elements
+ *           - (bit  0- 2) - track-orientation, valid values: 0-5 (@see Track)
+ *           - (bit  3)    - 0 = error on signal in the way, 1 = auto remove signals when in the way
+ *           - (bit  4 - 20) - height to build elevated track
+ * @param text unused
+ * @return the cost of this operation or an error
+ */
+CommandCost CmdBuildSingleRailElevated(TileIndex ground_tile, DoCommandFlag flags, uint32 p1, uint32 p2, const char *text)
+{
+    RailType railtype = Extract<RailType, 0, 6>(p1);
+	Track track = Extract<Track, 0, 3>(p2);
+	bool auto_remove_signals = HasBit(p2, 3);
+    Height height = GB(p2, 4, 16); //Extract<Height, 4, 16>(p2);
+	CommandCost cost(EXPENSES_CONSTRUCTION);
+
+	//if (!ValParamRailtype(railtype) || !ValParamTrackOrientation(track)) return CMD_ERROR;
+
+	//Slope tileh = GetTileSlope(tile);
+	TrackBits trackbit = TrackToTrackBits(track);
+
+	ExtendedTileIndex elevated_tile(ground_tile);
+	elevated_tile.height = height;
+
+    ElevatedIndex::iterator elevated_track;
+    bool overbuild = false;
+    if (IsBridgeAbove(ground_tile)) {
+        auto range = GetElevatedTrackIterator(ground_tile);
+        for (ElevatedIndex::iterator it = range.first; it != range.second; ++it) {
+            if (it->tile.height == TileHeight(ground_tile)) {
+                //Building over an existing elevated track
+                elevated_track = it;
+                overbuild = true;
+            }
+        } 
+    }
+
+    if (overbuild) {
+        CommandCost ret = CheckTileOwnership(ground_tile);
+        if (ret.Failed()) return ret;
+
+        if (!IsPlainRail(elevated_tile)) return_cmd_error(STR_ERROR_CAN_T_BUILD_HERE);//TODO error message
+        //return DoCommand(tile, 0, 0, flags, CMD_LANDSCAPE_CLEAR); // just get appropriate error message
+
+        if (!IsCompatibleRail(GetRailType(elevated_tile), railtype)) return_cmd_error(STR_ERROR_IMPOSSIBLE_TRACK_COMBINATION);
+
+        ret = CheckTrackCombination(elevated_tile, trackbit, flags);
+        if (ret.Succeeded()) ret = EnsureNoTrainOnTrack(elevated_tile, track);
+        if (ret.Failed()) return ret;
+
+		//TODO : check height, foundations, etc
+		/*
+        ret = CheckRailSlope(tileh, trackbit, GetTrackBits(tile), tile);
+        if (ret.Failed()) return ret;
+        cost.AddCost(ret);
+		*/
+
+        if (HasSignals(elevated_tile) && TracksOverlap(GetTrackBits(elevated_tile) | TrackToTrackBits(track))) {
+            /* If adding the new track causes any overlap, all signals must be removed first */
+            if (!auto_remove_signals) return_cmd_error(STR_ERROR_MUST_REMOVE_SIGNALS_FIRST);
+
+            for (Track track_it = TRACK_BEGIN; track_it < TRACK_END; track_it++) {
+                if (HasTrack(elevated_tile, track_it) && HasSignalOnTrack(elevated_tile, track_it)) {
+					//TODO Handle signals
+					assert(false);
+                    CommandCost ret_remove_signals = DoCommand(ground_tile, track_it, 0, flags, CMD_REMOVE_SIGNALS);
+                    if (ret_remove_signals.Failed()) return ret_remove_signals;
+                    cost.AddCost(ret_remove_signals);
+                }
+            }
+        }
+
+        /* If the rail types don't match, try to convert only if engines of
+            * the new rail type are not powered on the present rail type and engines of
+            * the present rail type are powered on the new rail type. */
+        if (GetRailType(elevated_tile) != railtype && !HasPowerOnRail(railtype, GetRailType(elevated_tile))) {
+            if (HasPowerOnRail(GetRailType(elevated_tile), railtype)) {
+				//TODO handle rail conversion
+				assert(false);
+                //ret = DoCommand(ground_tile, tile, railtype, flags, CMD_CONVERT_RAIL);
+                if (ret.Failed()) return ret;
+                cost.AddCost(ret);
+            } else {
+                return CMD_ERROR;
+            }
+        }
+
+        if (flags & DC_EXEC) {
+            //SetRailGroundType(tile, RAIL_GROUND_BARREN);
+
+            TrackBits bits = GetTrackBits(elevated_tile);
+            SetTrackBits(elevated_tile, bits | trackbit);
+            /* Subtract old infrastructure count. */
+            uint pieces = CountBits(bits);
+            if (TracksOverlap(bits)) pieces *= pieces;
+            Company::Get(GetTileOwner(elevated_tile))->infrastructure.rail[GetRailType(elevated_tile)] -= pieces;
+            /* Add new infrastructure count. */
+            pieces = CountBits(bits | trackbit);
+            if (TracksOverlap(bits | trackbit)) pieces *= pieces;
+            Company::Get(GetTileOwner(elevated_tile))->infrastructure.rail[GetRailType(elevated_tile)] += pieces;
+            DirtyCompanyInfrastructureWindows(GetTileOwner(elevated_tile));
+        }
+    }
+	else /* new build */ {
+		//TODO : check height, foundations, water etc
+		/*
+		CommandCost ret = CheckRailSlope(tile, trackbit, TRACK_BIT_NONE, tile);
+		if (ret.Failed()) return ret;
+		cost.AddCost(ret);
+		*/
+
+		if (GetTileType(ground_tile) != MP_CLEAR) { //Try to clear trees, objects, etc under elevated track
+			CommandCost ret = DoCommand(ground_tile, 0, 0, flags, CMD_LANDSCAPE_CLEAR);
+			if (ret.Failed()) return ret;
+			cost.AddCost(ret);
+		}
+
+		if (flags & DC_EXEC) {
+			InsertElevatedTile(elevated_tile); //Create a new elevated tile
+			MakeRailNormal(elevated_tile, _current_company, trackbit, railtype);
+
+			Company::Get(_current_company)->infrastructure.rail[railtype]++;
+			DirtyCompanyInfrastructureWindows(_current_company);
+		}
+	}
+
+	if (flags & DC_EXEC) {
+		MarkTileDirtyByTile(ground_tile, height);
+
+		//TODO signals update and yapf
+		/*
+		AddTrackToSignalBuffer(tile, track, _current_company);
+		YapfNotifyTrackLayoutChange(tile, track);
+		*/
+	}
+
+	cost.AddCost(RailBuildCost(railtype)); //TODO cost
+	return cost;
 }
 
 /** Update power of train under which is the railtype being converted */
@@ -2592,6 +2750,7 @@ void DrawTrainDepotSprite(int x, int y, int dir, RailType railtype)
 	DrawRailTileSeqInGUI(x, y, dts, offset, 0, palette);
 }
 
+//TODO Elevated
 static int GetSlopePixelZ_Track(TileIndex tile, uint x, uint y)
 {
 	if (IsPlainRail(tile)) {
@@ -2735,10 +2894,12 @@ set_ground:
 }
 
 
-static TrackStatus GetTileTrackStatus_Track(TileIndex tile, TransportType mode, uint sub_mode, DiagDirection side)
+static TrackStatus GetTileTrackStatus_Track(ExtendedTileIndex tile, TransportType mode, uint sub_mode, DiagDirection side)
 {
-	/* Case of half tile slope with water. */
-	if (mode == TRANSPORT_WATER && IsPlainRail(tile) && GetRailGroundType(tile) == RAIL_GROUND_WATER && IsSlopeWithOneCornerRaised(GetTileSlope(tile))) {
+	TileIndex ground_tile = tile.index;
+	bool ground = IsIndexGroundTile(tile);
+	/* Case of half tile slope with water. (in this case we are on the ground) */
+	if (ground && mode == TRANSPORT_WATER && IsPlainRail(tile) && GetRailGroundType(ground_tile) == RAIL_GROUND_WATER && IsSlopeWithOneCornerRaised(GetTileSlope(ground_tile))) {
 		TrackBits tb = GetTrackBits(tile);
 		switch (tb) {
 			default: NOT_REACHED();
@@ -2958,7 +3119,7 @@ int TicksToLeaveDepot(const Train *v)
  * Tile callback routine when vehicle enters tile
  * @see vehicle_enter_tile_proc
  */
-static VehicleEnterTileStatus VehicleEnter_Track(Vehicle *u, TileIndex tile, int x, int y)
+static VehicleEnterTileStatus VehicleEnter_Track(Vehicle *u, ExtendedTileIndex tile, int x, int y)
 {
 	/* This routine applies only to trains in depot tiles. */
 	if (u->type != VEH_TRAIN || !IsRailDepotTile(tile)) return VETSB_CONTINUE;
@@ -2998,7 +3159,7 @@ static VehicleEnterTileStatus VehicleEnter_Track(Vehicle *u, TileIndex tile, int
 		v->vehstatus |= VS_HIDDEN;
 		v->direction = ReverseDir(v->direction);
 		if (v->Next() == nullptr) VehicleEnterDepot(v->First());
-		v->tile = tile;
+		v->tile = tile.index;
 
 		InvalidateWindowData(WC_VEHICLE_DEPOT, v->tile);
 		return VETSB_ENTERED_WORMHOLE;

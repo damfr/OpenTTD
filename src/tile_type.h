@@ -87,4 +87,6 @@ typedef uint32 TileIndex;
  */
 static const TileIndex INVALID_TILE = (TileIndex)-1;
 
+
+
 #endif /* TILE_TYPE_H */

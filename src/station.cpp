@@ -241,13 +241,13 @@ void Station::MarkTilesDirty(bool cargo_change) const
 	}
 }
 
-/* virtual */ uint Station::GetPlatformLength(TileIndex tile) const
+/* virtual */ uint Station::GetPlatformLength(ExtendedTileIndex tile) const
 {
 	assert(this->TileBelongsToRailStation(tile));
 
 	TileIndexDiff delta = (GetRailStationAxis(tile) == AXIS_X ? TileDiffXY(1, 0) : TileDiffXY(0, 1));
 
-	TileIndex t = tile;
+	ExtendedTileIndex t = tile;
 	uint len = 0;
 	do {
 		t -= delta;
@@ -263,9 +263,9 @@ void Station::MarkTilesDirty(bool cargo_change) const
 	return len - 1;
 }
 
-/* virtual */ uint Station::GetPlatformLength(TileIndex tile, DiagDirection dir) const
+/* virtual */ uint Station::GetPlatformLength(ExtendedTileIndex tile, DiagDirection dir) const
 {
-	TileIndex start_tile = tile;
+	ExtendedTileIndex start_tile = tile;
 	uint length = 0;
 	assert(IsRailStationTile(tile));
 	assert(dir < DIAGDIR_END);

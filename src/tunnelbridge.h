@@ -17,6 +17,7 @@ void MarkBridgeDirty(TileIndex begin, TileIndex end, DiagDirection direction, ui
 void MarkBridgeDirty(TileIndex tile);
 
 /**
+ * DEPRECATED
  * Calculates the length of a tunnel or a bridge (without end tiles)
  * @param begin The begin of the tunnel or bridge.
  * @param end   The end of the tunnel or bridge.
@@ -24,6 +25,7 @@ void MarkBridgeDirty(TileIndex tile);
  */
 static inline uint GetTunnelBridgeLength(TileIndex begin, TileIndex end)
 {
+	assert(false);
 	int x1 = TileX(begin);
 	int y1 = TileY(begin);
 	int x2 = TileX(end);

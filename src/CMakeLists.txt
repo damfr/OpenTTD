@@ -137,6 +137,8 @@ add_files(
     effectvehicle.cpp
     effectvehicle_base.h
     effectvehicle_func.h
+    elevated.h
+    elevated.cpp
     elrail.cpp
     elrail_func.h
     engine.cpp

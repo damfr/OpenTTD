@@ -21,10 +21,10 @@
  * @pre IsTileType(t, MP_TUNNELBRIDGE)
  * @return true if the structure is a bridge one
  */
-static inline bool IsBridge(TileIndex t)
+static inline bool IsBridge(ExtendedTileIndex t)
 {
 	assert(IsTileType(t, MP_TUNNELBRIDGE));
-	return HasBit(_m[t].m5, 7);
+	return HasBit(GetElevatedTile(t).m5, 7);
 }
 
 /**
@@ -32,7 +32,7 @@ static inline bool IsBridge(TileIndex t)
  * @param t The tile to analyze
  * @return true if a bridge is present
  */
-static inline bool IsBridgeTile(TileIndex t)
+static inline bool IsBridgeTile(ExtendedTileIndex t)
 {
 	return IsTileType(t, MP_TUNNELBRIDGE) && IsBridge(t);
 }
@@ -53,10 +53,12 @@ static inline bool IsBridgeAbove(TileIndex t)
  * @pre IsBridgeTile(t)
  * @return The bridge type
  */
-static inline BridgeType GetBridgeType(TileIndex t)
+static inline BridgeType GetBridgeType(ExtendedTileIndex t)
 {
-	assert(IsBridgeTile(t));
-	return GB(_me[t].m6, 2, 4);
+	//assert(IsBridgeTile(t));
+	//return GB(_me[t].m6, 2, 4);
+	//TODO elevated bridge types
+	return (BridgeType) 1;
 }
 
 /**

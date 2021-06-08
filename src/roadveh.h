@@ -139,7 +139,7 @@ struct RoadVehicle FINAL : public GroundVehicle<RoadVehicle, VEH_ROAD> {
 	uint Crash(bool flooded = false);
 	Trackdir GetVehicleTrackdir() const;
 	TileIndex GetOrderStationLocation(StationID station);
-	bool FindClosestDepot(TileIndex *location, DestinationID *destination, bool *reverse);
+	bool FindClosestDepot(ExtendedTileIndex *location, DestinationID *destination, bool *reverse);
 
 	bool IsBus() const;
 

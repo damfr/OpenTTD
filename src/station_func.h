@@ -43,7 +43,7 @@ void ClearDockingTilesCheckingNeighbours(TileIndex tile);
 bool IsValidDockingDirectionForDock(TileIndex t, DiagDirection d);
 
 /* Check if a rail station tile is traversable. */
-bool IsStationTileBlocked(TileIndex tile);
+bool IsStationTileBlocked(ExtendedTileIndex tile);
 
 bool CanStationTileHavePylons(TileIndex tile);
 bool CanStationTileHaveWires(TileIndex tile);

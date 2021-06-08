@@ -59,6 +59,39 @@ struct TileIndexDiffC {
 	int16 y;        ///< The y value of the coordinate
 };
 
+
+struct VirtualElevatedTile {
+    Tile tile;
+    TileExtended ext;
+};
+
+
+typedef byte Height;
+//static const Height GROUND_HEIGHT = -1;
+
+struct ExtendedTileIndex {
+    TileIndex index;
+    Height height;
+
+    ExtendedTileIndex(TileIndex ground_index = INVALID_TILE);
+	ExtendedTileIndex(TileIndex ground_index, Height height_param) : index(ground_index), height(height_param) {}
+
+	inline ExtendedTileIndex operator+(TileIndexDiff diff) const { return ExtendedTileIndex(this->index + diff, this->height); }
+	inline ExtendedTileIndex operator-(TileIndexDiff diff) const { return ExtendedTileIndex(this->index - diff, this->height); }
+
+	inline void operator+=(TileIndexDiff diff) { this->index += diff; }
+	inline void operator-=(TileIndexDiff diff) { this->index -= diff; }
+
+	bool operator==(ExtendedTileIndex other_tile) const; ///< Checks equality considering equal two ground tiles with different height
+	inline bool operator!=(ExtendedTileIndex other_tile) const { return !(*this == other_tile); }
+
+	inline bool IsValid() const { return this->index != INVALID_TILE; }
+};
+
+
+static const ExtendedTileIndex INVALID_EXTENDED_TILE = ExtendedTileIndex(INVALID_TILE, 0);
+
+
 /** Minimal and maximal map width and height */
 static const uint MIN_MAP_SIZE_BITS = 6;                      ///< Minimal size of map is equal to 2 ^ MIN_MAP_SIZE_BITS
 static const uint MAX_MAP_SIZE_BITS = 12;                     ///< Maximal size of map is equal to 2 ^ MAX_MAP_SIZE_BITS

@@ -886,13 +886,13 @@ CommandCost CmdBuildShip(TileIndex tile, DoCommandFlag flags, const Engine *e, u
 	return CommandCost();
 }
 
-bool Ship::FindClosestDepot(TileIndex *location, DestinationID *destination, bool *reverse)
+bool Ship::FindClosestDepot(ExtendedTileIndex *location, DestinationID *destination, bool *reverse)
 {
 	const Depot *depot = FindClosestShipDepot(this, 0);
 
 	if (depot == nullptr) return false;
 
-	if (location    != nullptr) *location    = depot->xy;
+	if (location    != nullptr) *location    = ExtendedTileIndex(depot->xy);
 	if (destination != nullptr) *destination = depot->index;
 
 	return true;

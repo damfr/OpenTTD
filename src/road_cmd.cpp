@@ -2024,44 +2024,49 @@ static const TrackBits _road_trackbits[16] = {
 	TRACK_BIT_ALL,                                   // ROAD_ALL
 };
 
-static TrackStatus GetTileTrackStatus_Road(TileIndex tile, TransportType mode, uint sub_mode, DiagDirection side)
+static TrackStatus GetTileTrackStatus_Road(ExtendedTileIndex tile, TransportType mode, uint sub_mode, DiagDirection side)
 {
+	TileIndex ground_tile = tile.index;
+	bool ground = IsIndexGroundTile(tile);
+
 	TrackdirBits trackdirbits = TRACKDIR_BIT_NONE;
 	TrackdirBits red_signals = TRACKDIR_BIT_NONE; // crossing barred
 	switch (mode) {
 		case TRANSPORT_RAIL:
-			if (IsLevelCrossing(tile)) trackdirbits = TrackBitsToTrackdirBits(GetCrossingRailBits(tile));
+			if (IsLevelCrossing(tile)) trackdirbits = TrackBitsToTrackdirBits(GetCrossingRailBits(ground_tile)); //TODO elevated level crossings
 			break;
 
 		case TRANSPORT_ROAD: {
+			//TODO elevated roads
+			assert(IsIndexGroundTile(tile));
 			RoadTramType rtt = (RoadTramType)sub_mode;
-			if (!HasTileRoadType(tile, rtt)) break;
-			switch (GetRoadTileType(tile)) {
+			if (!HasTileRoadType(ground_tile, rtt)) break;
+			switch (GetRoadTileType(ground_tile)) {
 				case ROAD_TILE_NORMAL: {
 					const uint drd_to_multiplier[DRD_END] = { 0x101, 0x100, 0x1, 0x0 };
-					RoadBits bits = GetRoadBits(tile, rtt);
+					RoadBits bits = GetRoadBits(ground_tile, rtt);
 
 					/* no roadbit at this side of tile, return 0 */
 					if (side != INVALID_DIAGDIR && (DiagDirToRoadBits(side) & bits) == 0) break;
 
-					uint multiplier = drd_to_multiplier[(rtt == RTT_TRAM) ? DRD_NONE : GetDisallowedRoadDirections(tile)];
-					if (!HasRoadWorks(tile)) trackdirbits = (TrackdirBits)(_road_trackbits[bits] * multiplier);
+					uint multiplier = drd_to_multiplier[(rtt == RTT_TRAM) ? DRD_NONE : GetDisallowedRoadDirections(ground_tile)];
+					if (!HasRoadWorks(ground_tile)) trackdirbits = (TrackdirBits)(_road_trackbits[bits] * multiplier);
 					break;
 				}
 
 				case ROAD_TILE_CROSSING: {
-					Axis axis = GetCrossingRoadAxis(tile);
+					Axis axis = GetCrossingRoadAxis(ground_tile);
 
 					if (side != INVALID_DIAGDIR && axis != DiagDirToAxis(side)) break;
 
 					trackdirbits = TrackBitsToTrackdirBits(AxisToTrackBits(axis));
-					if (IsCrossingBarred(tile)) red_signals = trackdirbits;
+					if (IsCrossingBarred(ground_tile)) red_signals = trackdirbits;
 					break;
 				}
 
 				default:
 				case ROAD_TILE_DEPOT: {
-					DiagDirection dir = GetRoadDepotDirection(tile);
+					DiagDirection dir = GetRoadDepotDirection(ground_tile);
 
 					if (side != INVALID_DIAGDIR && side != dir) break;
 
@@ -2162,20 +2167,21 @@ static const byte _roadveh_enter_depot_dir[4] = {
 	TRACKDIR_X_SW, TRACKDIR_Y_NW, TRACKDIR_X_NE, TRACKDIR_Y_SE
 };
 
-static VehicleEnterTileStatus VehicleEnter_Road(Vehicle *v, TileIndex tile, int x, int y)
+static VehicleEnterTileStatus VehicleEnter_Road(Vehicle *v, ExtendedTileIndex tile, int x, int y)
 {
-	switch (GetRoadTileType(tile)) {
+	assert(IsIndexGroundTile(tile)); //TODO elevated roads
+	switch (GetRoadTileType(tile.index)) {
 		case ROAD_TILE_DEPOT: {
 			if (v->type != VEH_ROAD) break;
 
 			RoadVehicle *rv = RoadVehicle::From(v);
 			if (rv->frame == RVC_DEPOT_STOP_FRAME &&
-					_roadveh_enter_depot_dir[GetRoadDepotDirection(tile)] == rv->state) {
+					_roadveh_enter_depot_dir[GetRoadDepotDirection(tile.index)] == rv->state) {
 				rv->state = RVSB_IN_DEPOT;
 				rv->vehstatus |= VS_HIDDEN;
 				rv->direction = ReverseDir(rv->direction);
 				if (rv->Next() == nullptr) VehicleEnterDepot(rv->First());
-				rv->tile = tile;
+				rv->tile = tile.index;
 
 				InvalidateWindowData(WC_VEHICLE_DEPOT, rv->tile);
 				return VETSB_ENTERED_WORMHOLE;

@@ -91,6 +91,20 @@ static inline void MarkTileDirtyByTile(TileIndex tile, int bridge_level_offset =
 	MarkTileDirtyByTile(tile, bridge_level_offset, TileHeight(tile));
 }
 
+/**
+ * Version taking care of elevated tracks
+ */
+static inline void MarkTileDirtyByTile(ExtendedTileIndex tile)
+{
+	if (IsIndexGroundTile(tile)) {
+		MarkTileDirtyByTile(tile.index);
+	} else {
+		//TODO underground
+		MarkTileDirtyByTile(tile.index, tile.height - TileHeight(tile.index), TileHeight(tile.index));
+	}
+	
+}
+
 Point GetViewportStationMiddle(const Viewport *vp, const Station *st);
 
 struct Station;

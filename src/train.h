@@ -61,7 +61,7 @@ void CheckTrainsLengths();
 void FreeTrainTrackReservation(const Train *v);
 bool TryPathReserve(Train *v, bool mark_as_stuck = false, bool first_tile_okay = false);
 
-int GetTrainStopLocation(StationID station_id, TileIndex tile, const Train *v, int *station_ahead, int *station_length);
+int GetTrainStopLocation(StationID station_id, ExtendedTileIndex tile, const Train *v, int *station_ahead, int *station_length);
 
 void GetTrainSpriteSize(EngineID engine, uint &width, uint &height, int &xoffs, int &yoffs, EngineImageType image_type);
 
@@ -122,7 +122,7 @@ struct Train FINAL : public GroundVehicle<Train, VEH_TRAIN> {
 	uint Crash(bool flooded = false);
 	Trackdir GetVehicleTrackdir() const;
 	TileIndex GetOrderStationLocation(StationID station);
-	bool FindClosestDepot(TileIndex *location, DestinationID *destination, bool *reverse);
+	bool FindClosestDepot(ExtendedTileIndex *location, DestinationID *destination, bool *reverse);
 
 	void ReserveTrackUnderConsist() const;
 

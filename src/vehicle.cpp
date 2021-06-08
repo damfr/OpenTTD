@@ -37,6 +37,7 @@
 #include "economy_base.h"
 #include "articulated_vehicles.h"
 #include "roadstop_base.h"
+#include "core/math_func.hpp"
 #include "core/random_func.hpp"
 #include "core/backup_type.hpp"
 #include "order_backup.h"
@@ -466,14 +467,17 @@ bool HasVehicleOnPosXY(int x, int y, void *data, VehicleFromPosProc *proc)
  *                   all vehicles
  * @return the best matching or first vehicle (depending on find_first).
  */
-static Vehicle *VehicleFromPos(TileIndex tile, void *data, VehicleFromPosProc *proc, bool find_first)
+static Vehicle *VehicleFromPos(ExtendedTileIndex tile, void *data, VehicleFromPosProc *proc, bool find_first)
 {
-	int x = GB(TileX(tile), HASH_RES, HASH_BITS);
-	int y = GB(TileY(tile), HASH_RES, HASH_BITS) << HASH_BITS;
+	int x = GB(TileX(tile.index), HASH_RES, HASH_BITS);
+	int y = GB(TileY(tile.index), HASH_RES, HASH_BITS) << HASH_BITS;
 
 	Vehicle *v = _vehicle_tile_hash[(x + y) & TOTAL_HASH_MASK];
 	for (; v != nullptr; v = v->hash_tile_next) {
-		if (v->tile != tile) continue;
+		if (v->tile != tile.index) continue;
+
+		//Check if the vehicles are at the same height level
+		if (!IsAtSameHeightLevel(tile, v->z_pos)) continue;
 
 		Vehicle *a = proc(v, data);
 		if (find_first && a != nullptr) return a;
@@ -495,7 +499,7 @@ static Vehicle *VehicleFromPos(TileIndex tile, void *data, VehicleFromPosProc *p
  * @param data Arbitrary data passed to \a proc.
  * @param proc The proc that determines whether a vehicle will be "found".
  */
-void FindVehicleOnPos(TileIndex tile, void *data, VehicleFromPosProc *proc)
+void FindVehicleOnPos(ExtendedTileIndex tile, void *data, VehicleFromPosProc *proc)
 {
 	VehicleFromPos(tile, data, proc, false);
 }
@@ -511,6 +515,15 @@ void FindVehicleOnPos(TileIndex tile, void *data, VehicleFromPosProc *proc)
  * @return True if proc returned non-nullptr.
  */
 bool HasVehicleOnPos(TileIndex tile, void *data, VehicleFromPosProc *proc)
+{
+	return VehicleFromPos(tile, data, proc, true) != nullptr;
+}
+
+/**
+ * Version with ExtendedTileIndex
+ * //TODO merge with previous
+ */
+bool HasVehicleOnPos(ExtendedTileIndex tile, void *data, VehicleFromPosProc *proc)
 {
 	return VehicleFromPos(tile, data, proc, true) != nullptr;
 }
@@ -578,14 +591,26 @@ CommandCost TunnelBridgeIsFree(TileIndex tile, TileIndex endtile, const Vehicle 
 	return CommandCost();
 }
 
+
+struct TrackBitsTileIndex {
+	TrackBits track_bits;
+	ExtendedTileIndex tile;
+};
 static Vehicle *EnsureNoTrainOnTrackProc(Vehicle *v, void *data)
 {
-	TrackBits rail_bits = *(TrackBits *)data;
+	//TrackBits rail_bits = *(TrackBits *)data;
+	TrackBitsTileIndex track_bits_tile_index = *(TrackBitsTileIndex *) data;
+	TrackBits rail_bits = track_bits_tile_index.track_bits;
 
 	if (v->type != VEH_TRAIN) return nullptr;
 
 	Train *t = Train::From(v);
+
+	//Check if the vehicle is on the same level 
+	if (!IsAtSameHeightLevel(track_bits_tile_index.tile, v->z_pos)) return nullptr;
+
 	if ((t->track != rail_bits) && !TracksOverlap(t->track | rail_bits)) return nullptr;
+
 
 	return v;
 }
@@ -598,13 +623,16 @@ static Vehicle *EnsureNoTrainOnTrackProc(Vehicle *v, void *data)
  * @param track_bits The track bits.
  * @return \c true if no train that interacts, is found. \c false if a train is found.
  */
-CommandCost EnsureNoTrainOnTrackBits(TileIndex tile, TrackBits track_bits)
+CommandCost EnsureNoTrainOnTrackBits(ExtendedTileIndex tile, TrackBits track_bits)
 {
+	TrackBitsHeight data;
+	data.track_bits = track_bits;
+	data.tile = tile;
 	/* Value v is not safe in MP games, however, it is used to generate a local
 	 * error message only (which may be different for different machines).
 	 * Such a message does not affect MP synchronisation.
 	 */
-	Vehicle *v = VehicleFromPos(tile, &track_bits, &EnsureNoTrainOnTrackProc, true);
+	Vehicle *v = VehicleFromPos(tile.index, &data, &EnsureNoTrainOnTrackProc, true);
 	if (v != nullptr) return_cmd_error(STR_ERROR_TRAIN_IN_THE_WAY + v->type);
 	return CommandCost();
 }
@@ -1740,7 +1768,7 @@ Direction GetDirectionTowards(const Vehicle *v, int x, int y)
  * @return Some meta-data over the to be entered tile.
  * @see VehicleEnterTileStatus to see what the bits in the return value mean.
  */
-VehicleEnterTileStatus VehicleEnterTile(Vehicle *v, TileIndex tile, int x, int y)
+VehicleEnterTileStatus VehicleEnterTile(Vehicle *v, ExtendedTileIndex tile, int x, int y)
 {
 	return _tile_type_procs[GetTileType(tile)]->vehicle_enter_tile_proc(v, tile, x, y);
 }

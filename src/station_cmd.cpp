@@ -2007,7 +2007,7 @@ static CommandCost RemoveRoadStop(TileIndex tile, DoCommandFlag flags)
 	/* don't do the check for drive-through road stops when company bankrupts */
 	if (IsDriveThroughStopTile(tile) && (flags & DC_BANKRUPT)) {
 		/* remove the 'going through road stop' status from all vehicles on that tile */
-		if (flags & DC_EXEC) FindVehicleOnPos(tile, nullptr, &ClearRoadStopStatusEnum);
+		if (flags & DC_EXEC) FindVehicleOnPos(tile, nullptr, &ClearRoadStopStatusEnum); //TODO elevated roads
 	} else {
 		CommandCost ret = EnsureNoVehicleOnGround(tile);
 		if (ret.Failed()) return ret;
@@ -2340,7 +2340,7 @@ CommandCost CmdBuildAirport(TileIndex tile, DoCommandFlag flags, uint32 p1, uint
 
 		for (AirportTileTableIterator iter(as->table[layout], tile); iter != INVALID_TILE; ++iter) {
 			MakeAirport(iter, st->owner, st->index, iter.GetStationGfx(), WATER_CLASS_INVALID);
-			SetStationTileRandomBits(iter, GB(Random(), 0, 4));
+			SetStationTileRandomBits(TileIndex(iter), GB(Random(), 0, 4));
 			st->airport.Add(iter);
 
 			if (AirportTileSpec::Get(GetTranslatedAirportTileID(iter.GetStationGfx()))->animation.status != ANIM_STATUS_NO_ANIMATION) AddAnimatedTile(iter);
@@ -3235,9 +3235,11 @@ static void GetTileDesc_Station(TileIndex tile, TileDesc *td)
 }
 
 
-static TrackStatus GetTileTrackStatus_Station(TileIndex tile, TransportType mode, uint sub_mode, DiagDirection side)
+static TrackStatus GetTileTrackStatus_Station(ExtendedTileIndex tile, TransportType mode, uint sub_mode, DiagDirection side)
 {
 	TrackBits trackbits = TRACK_BIT_NONE;
+	TileIndex ground_tile = tile.index;
+	bool ground = IsIndexGroundTile(tile);
 
 	switch (mode) {
 		case TRANSPORT_RAIL:
@@ -3248,25 +3250,27 @@ static TrackStatus GetTileTrackStatus_Station(TileIndex tile, TransportType mode
 
 		case TRANSPORT_WATER:
 			/* buoy is coded as a station, it is always on open water */
-			if (IsBuoy(tile)) {
+			assert(ground); /* buoy are always on the ground */
+			if (IsBuoy(ground_tile)) {
 				trackbits = TRACK_BIT_ALL;
 				/* remove tracks that connect NE map edge */
-				if (TileX(tile) == 0) trackbits &= ~(TRACK_BIT_X | TRACK_BIT_UPPER | TRACK_BIT_RIGHT);
+				if (TileX(ground_tile) == 0) trackbits &= ~(TRACK_BIT_X | TRACK_BIT_UPPER | TRACK_BIT_RIGHT);
 				/* remove tracks that connect NW map edge */
-				if (TileY(tile) == 0) trackbits &= ~(TRACK_BIT_Y | TRACK_BIT_LEFT | TRACK_BIT_UPPER);
+				if (TileY(ground_tile) == 0) trackbits &= ~(TRACK_BIT_Y | TRACK_BIT_LEFT | TRACK_BIT_UPPER);
 			}
 			break;
 
 		case TRANSPORT_ROAD:
-			if (IsRoadStop(tile)) {
+			assert(ground); //TODO elevated road
+			if (IsRoadStop(ground_tile)) {
 				RoadTramType rtt = (RoadTramType)sub_mode;
-				if (!HasTileRoadType(tile, rtt)) break;
+				if (!HasTileRoadType(ground_tile, rtt)) break;
 
-				DiagDirection dir = GetRoadStopDir(tile);
+				DiagDirection dir = GetRoadStopDir(ground_tile);
 				Axis axis = DiagDirToAxis(dir);
 
 				if (side != INVALID_DIAGDIR) {
-					if (axis != DiagDirToAxis(side) || (IsStandardRoadStopTile(tile) && dir != side)) break;
+					if (axis != DiagDirToAxis(side) || (IsStandardRoadStopTile(ground_tile) && dir != side)) break;
 				}
 
 				trackbits = AxisToTrackBits(axis);
@@ -3332,7 +3336,7 @@ static bool ClickTile_Station(TileIndex tile)
 	return true;
 }
 
-static VehicleEnterTileStatus VehicleEnter_Station(Vehicle *v, TileIndex tile, int x, int y)
+static VehicleEnterTileStatus VehicleEnter_Station(Vehicle *v, ExtendedTileIndex tile, int x, int y)
 {
 	if (v->type == VEH_TRAIN) {
 		StationID station_id = GetStationIndex(tile);
@@ -3371,8 +3375,9 @@ static VehicleEnterTileStatus VehicleEnter_Station(Vehicle *v, TileIndex tile, i
 		RoadVehicle *rv = RoadVehicle::From(v);
 		if (rv->state < RVSB_IN_ROAD_STOP && !IsReversingRoadTrackdir((Trackdir)rv->state) && rv->frame == 0) {
 			if (IsRoadStop(tile) && rv->IsFrontEngine()) {
+				assert(IsIndexGroundTile(tile)); //TODO elevated roads
 				/* Attempt to allocate a parking bay in a road stop */
-				return RoadStop::GetByTile(tile, GetRoadStopType(tile))->Enter(rv) ? VETSB_CONTINUE : VETSB_CANNOT_ENTER;
+				return RoadStop::GetByTile(tile.index, GetRoadStopType(tile))->Enter(rv) ? VETSB_CONTINUE : VETSB_CANNOT_ENTER;
 			}
 		}
 	}

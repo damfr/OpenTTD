@@ -96,6 +96,38 @@ TileIndex TileAdd(TileIndex tile, TileIndexDiff add,
 
 	return TileXY(x, y);
 }
+
+ExtendedTileIndex TileAdd(ExtendedTileIndex tile, TileIndexDiff add,
+	const char *exp, const char *file, int line)
+{
+	int dx;
+	int dy;
+	uint x;
+	uint y;
+
+	dx = add & MapMaxX();
+	if (dx >= (int)MapSizeX() / 2) dx -= MapSizeX();
+	dy = (add - dx) / (int)MapSizeX();
+
+	x = TileX(tile.index) + dx;
+	y = TileY(tile.index) + dy;
+
+	if (x >= MapSizeX() || y >= MapSizeY()) {
+		char buf[512];
+
+		seprintf(buf, lastof(buf), "TILE_ADD(%s) when adding 0x%.4X and 0x%.4X failed",
+			exp, tile.index, add);
+#if !defined(_MSC_VER)
+		fprintf(stderr, "%s:%d %s\n", file, line, buf);
+#else
+		_assert(buf, (char*)file, line);
+#endif
+	}
+
+	assert(TileXY(x, y) == TILE_MASK(tile.index + add));
+
+	return ExtendedTileIndex(TileXY(x, y), tile.height);
+}
 #endif
 
 /**

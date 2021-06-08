@@ -104,7 +104,7 @@ typedef void GetTileDescProc(TileIndex tile, TileDesc *td);
  * @param sub_mode used to differentiate between different kinds within the mode
  * @return the track status information
  */
-typedef TrackStatus GetTileTrackStatusProc(TileIndex tile, TransportType mode, uint sub_mode, DiagDirection side);
+typedef TrackStatus GetTileTrackStatusProc(ExtendedTileIndex tile, TransportType mode, uint sub_mode, DiagDirection side);
 
 /**
  * Tile callback function signature for obtaining the produced cargo of a tile.
@@ -118,7 +118,7 @@ typedef void TileLoopProc(TileIndex tile);
 typedef void ChangeTileOwnerProc(TileIndex tile, Owner old_owner, Owner new_owner);
 
 /** @see VehicleEnterTileStatus to see what the return values mean */
-typedef VehicleEnterTileStatus VehicleEnterTileProc(Vehicle *v, TileIndex tile, int x, int y);
+typedef VehicleEnterTileStatus VehicleEnterTileProc(Vehicle *v, ExtendedTileIndex tile, int x, int y);
 typedef Foundation GetFoundationProc(TileIndex tile, Slope tileh);
 
 /**
@@ -161,8 +161,8 @@ struct TileTypeProcs {
 
 extern const TileTypeProcs * const _tile_type_procs[16];
 
-TrackStatus GetTileTrackStatus(TileIndex tile, TransportType mode, uint sub_mode, DiagDirection side = INVALID_DIAGDIR);
-VehicleEnterTileStatus VehicleEnterTile(Vehicle *v, TileIndex tile, int x, int y);
+TrackStatus GetTileTrackStatus(ExtendedTileIndex tile, TransportType mode, uint sub_mode, DiagDirection side = INVALID_DIAGDIR);
+VehicleEnterTileStatus VehicleEnterTile(Vehicle *v, ExtendedTileIndex tile, int x, int y);
 void ChangeTileOwner(TileIndex tile, Owner old_owner, Owner new_owner);
 void GetTileDesc(TileIndex tile, TileDesc *td);
 

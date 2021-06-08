@@ -48,10 +48,10 @@ static inline bool MayHaveRoad(TileIndex t)
  * @pre IsTileType(t, MP_ROAD)
  * @return The road tile type.
  */
-static inline RoadTileType GetRoadTileType(TileIndex t)
+static inline RoadTileType GetRoadTileType(ExtendedTileIndex t)
 {
 	assert(IsTileType(t, MP_ROAD));
-	return (RoadTileType)GB(_m[t].m5, 6, 2);
+	return (RoadTileType)GB(GetElevatedTile(t).m5, 6, 2);
 }
 
 /**
@@ -81,9 +81,10 @@ static inline bool IsNormalRoadTile(TileIndex t)
  * @pre IsTileType(t, MP_ROAD)
  * @return True if level crossing.
  */
-static inline bool IsLevelCrossing(TileIndex t)
+static inline bool IsLevelCrossing(ExtendedTileIndex t)
 {
-	return GetRoadTileType(t) == ROAD_TILE_CROSSING;
+	//TODO elevated level crossings
+	return IsIndexGroundTile(t) && GetRoadTileType(t.index) == ROAD_TILE_CROSSING;
 }
 
 /**
@@ -102,7 +103,7 @@ static inline bool IsLevelCrossingTile(TileIndex t)
  * @pre IsTileType(t, MP_ROAD)
  * @return True if road depot.
  */
-static inline bool IsRoadDepot(TileIndex t)
+static inline bool IsRoadDepot(ExtendedTileIndex t)
 {
 	return GetRoadTileType(t) == ROAD_TILE_DEPOT;
 }
@@ -112,7 +113,7 @@ static inline bool IsRoadDepot(TileIndex t)
  * @param t Tile to query.
  * @return True if road depot tile.
  */
-static inline bool IsRoadDepotTile(TileIndex t)
+static inline bool IsRoadDepotTile(ExtendedTileIndex t)
 {
 	return IsTileType(t, MP_ROAD) && IsRoadDepot(t);
 }
@@ -402,9 +403,10 @@ static inline void SetCrossingReservation(TileIndex t, bool b)
  * @pre IsLevelCrossingTile(t)
  * @return reserved track bits
  */
-static inline TrackBits GetCrossingReservationTrackBits(TileIndex t)
+static inline TrackBits GetCrossingReservationTrackBits(ExtendedTileIndex t)
 {
-	return HasCrossingReservation(t) ? GetCrossingRailBits(t) : TRACK_BIT_NONE;
+	assert(IsIndexGroundTile(t)); //TODO elevated crossings
+	return HasCrossingReservation(t.index) ? GetCrossingRailBits(t.index) : TRACK_BIT_NONE;
 }
 
 /**
@@ -562,10 +564,10 @@ static inline void TerminateRoadWorks(TileIndex t)
  * @param t The tile to query.
  * @return Diagonal direction of the depot exit.
  */
-static inline DiagDirection GetRoadDepotDirection(TileIndex t)
+static inline DiagDirection GetRoadDepotDirection(ExtendedTileIndex t)
 {
 	assert(IsRoadDepot(t));
-	return (DiagDirection)GB(_m[t].m5, 0, 2);
+	return (DiagDirection)GB(GetElevatedTile(t).m5, 0, 2);
 }
 
 

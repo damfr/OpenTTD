@@ -54,6 +54,8 @@ static bool _convert_signal_button;          ///< convert signal button in the s
 static SignalVariant _cur_signal_variant;    ///< set the signal variant (for signal GUI)
 static SignalType _cur_signal_type;          ///< set the signal type (for signal GUI)
 
+static int _cur_build_height = 1; ///< Build height for elevated track, default 1 (above ground)
+
 /* Map the setting: default_signal_type to the corresponding signal type */
 static const SignalType _default_signal_type[] = {SIGTYPE_NORMAL, SIGTYPE_PBS, SIGTYPE_PBS_ONEWAY};
 
@@ -70,6 +72,7 @@ static RailStationGUISettings _railstation; ///< Settings of the station builder
 
 static void HandleStationPlacement(TileIndex start, TileIndex end);
 static void ShowBuildTrainDepotPicker(Window *parent);
+static void ShowBuildElevatedRampPicker(Window *parent);
 static void ShowBuildWaypointPicker(Window *parent);
 static Window *ShowStationBuilder(Window *parent);
 static void ShowSignalBuilder(Window *parent);
@@ -95,11 +98,20 @@ void CcPlaySound_CONSTRUCTION_RAIL(const CommandCost &result, TileIndex tile, ui
 
 static void GenericPlaceRail(TileIndex tile, int cmd)
 {
-	DoCommandP(tile, _cur_railtype, cmd | (_settings_client.gui.auto_remove_signals << 3),
-			_remove_button_clicked ?
-			CMD_REMOVE_SINGLE_RAIL | CMD_MSG(STR_ERROR_CAN_T_REMOVE_RAILROAD_TRACK) :
-			CMD_BUILD_SINGLE_RAIL | CMD_MSG(STR_ERROR_CAN_T_BUILD_RAILROAD_TRACK),
-			CcPlaySound_CONSTRUCTION_RAIL);
+	if (_cur_build_height == 0) { //Build on the ground
+		DoCommandP(tile, _cur_railtype, cmd | (_settings_client.gui.auto_remove_signals << 3),
+				_remove_button_clicked ?
+				CMD_REMOVE_SINGLE_RAIL | CMD_MSG(STR_ERROR_CAN_T_REMOVE_RAILROAD_TRACK) :
+				CMD_BUILD_SINGLE_RAIL | CMD_MSG(STR_ERROR_CAN_T_BUILD_RAILROAD_TRACK),
+				CcPlaySound_CONSTRUCTION_RAIL);
+	}
+	else {
+		//Build elevated
+		Height real_height = _cur_build_height + GetTileMaxZ(tile);
+		DoCommandP(tile, _cur_railtype, cmd | (_settings_client.gui.auto_remove_signals << 3) | (real_height << 4),
+				CMD_BUILD_SINGLE_RAIL_ELEVATED | CMD_MSG(STR_ERROR_CAN_T_BUILD_RAILROAD_TRACK),
+				CcPlaySound_CONSTRUCTION_RAIL);
+	}
 }
 
 /**
@@ -586,6 +598,13 @@ struct BuildRailToolbarWindow : Window {
 				this->last_user_action = widget;
 				break;
 
+			case WID_RAT_BUILD_ELEVATED_TRACK:
+				if (HandlePlacePushButton(this, WID_RAT_BUILD_ELEVATED_TRACK, GetRailTypeInfo(_cur_railtype)->cursor.depot, HT_RECT)) {
+					ShowBuildElevatedRampPicker(this);
+					this->last_user_action = widget;
+				}
+				break;
+
 			case WID_RAT_BUILD_TUNNEL:
 				HandlePlacePushButton(this, WID_RAT_BUILD_TUNNEL, GetRailTypeInfo(_cur_railtype)->cursor.tunnel, HT_SPECIAL);
 				this->last_user_action = widget;
@@ -659,6 +678,12 @@ struct BuildRailToolbarWindow : Window {
 
 			case WID_RAT_BUILD_BRIDGE:
 				PlaceRail_Bridge(tile, this);
+				break;
+
+			case WID_RAT_BUILD_ELEVATED_TRACK:
+				DoCommandP(tile, _cur_railtype, _build_depot_direction,
+						CMD_BUILD_ELEVATED_RAMP | CMD_MSG(STR_ERROR_CAN_T_BUILD_TRAIN_DEPOT),
+						nullptr); //TODO callback
 				break;
 
 			case WID_RAT_BUILD_TUNNEL:
@@ -748,6 +773,7 @@ struct BuildRailToolbarWindow : Window {
 		DeleteWindowById(WC_BUILD_WAYPOINT, TRANSPORT_RAIL);
 		DeleteWindowById(WC_SELECT_STATION, 0);
 		DeleteWindowByClass(WC_BUILD_BRIDGE);
+		DeleteWindowByClass(WC_BUILD_ELEVATED_RAMP); //TODO 
 	}
 
 	void OnPlacePresize(Point pt, TileIndex tile) override
@@ -833,6 +859,8 @@ static const NWidgetPart _nested_build_rail_widgets[] = {
 						SetFill(0, 1), SetMinimalSize(22, 22), SetDataTip(SPR_IMG_RAIL_SIGNALS, STR_RAIL_TOOLBAR_TOOLTIP_BUILD_RAILROAD_SIGNALS),
 		NWidget(WWT_IMGBTN, COLOUR_DARK_GREEN, WID_RAT_BUILD_BRIDGE),
 						SetFill(0, 1), SetMinimalSize(42, 22), SetDataTip(SPR_IMG_BRIDGE, STR_RAIL_TOOLBAR_TOOLTIP_BUILD_RAILROAD_BRIDGE),
+		NWidget(WWT_IMGBTN, COLOUR_DARK_GREEN, WID_RAT_BUILD_ELEVATED_TRACK),
+						SetFill(0, 1), SetMinimalSize(42, 22), SetDataTip(SPR_IMG_BRIDGE, STR_RAIL_TOOLBAR_TOOLTIP_BUILD_RAILROAD_BRIDGE),		
 		NWidget(WWT_IMGBTN, COLOUR_DARK_GREEN, WID_RAT_BUILD_TUNNEL),
 						SetFill(0, 1), SetMinimalSize(20, 22), SetDataTip(SPR_IMG_TUNNEL_RAIL, STR_RAIL_TOOLBAR_TOOLTIP_BUILD_RAILROAD_TUNNEL),
 		NWidget(WWT_IMGBTN, COLOUR_DARK_GREEN, WID_RAT_REMOVE),
@@ -1954,6 +1982,121 @@ static WindowDesc _build_depot_desc(
 static void ShowBuildTrainDepotPicker(Window *parent)
 {
 	new BuildRailDepotWindow(&_build_depot_desc, parent);
+}
+
+
+struct BuildElevatedTrackWindow : public PickerWindowBase {
+	BuildElevatedTrackWindow(WindowDesc *desc, Window *parent) : PickerWindowBase(desc, parent)
+	{
+		this->InitNested(TRANSPORT_RAIL);
+		//this->LowerWidget(_build_depot_direction + WID_BRAD_DEPOT_NE);
+		//this->LowerWidget(_build_depot_direction + WID_BET_RAMP_NE); //TODO
+	}
+
+	void UpdateWidgetSize(int widget, Dimension *size, const Dimension &padding, Dimension *fill, Dimension *resize) override
+	{
+		if (!IsInsideMM(widget, WID_BET_RAMP_NE, WID_BET_RAMP_NW + 1)) return;
+
+		size->width  = ScaleGUITrad(64) + 2;
+		size->height = ScaleGUITrad(48) + 2;
+	}
+
+	void DrawWidget(const Rect &r, int widget) const override
+	{
+		if (!IsInsideMM(widget, WID_BET_RAMP_NE, WID_BET_RAMP_NW + 1)) return;
+
+		DrawTrainDepotSprite(r.left + 1 + ScaleGUITrad(31), r.bottom - ScaleGUITrad(31), widget - WID_BET_RAMP_NE + DIAGDIR_NE, _cur_railtype);
+	}
+
+	void SetStringParameters(int widget) const override
+	{
+		switch (widget) {
+			case WID_BET_BUILD_HEIGHT_LABEL:
+				SetDParam(0, _cur_build_height); //Default build height = 1
+				break;
+		}
+	}
+
+	void OnClick(Point pt, int widget, int click_count) override
+	{
+		switch (widget) {
+			case WID_BET_RAMP_NE:
+			case WID_BET_RAMP_SE:
+			case WID_BET_RAMP_SW:
+			case WID_BET_RAMP_NW:
+				this->RaiseWidget(_build_depot_direction + WID_BET_RAMP_NE);
+				_build_depot_direction = (DiagDirection)(widget - WID_BET_RAMP_NE);
+				this->LowerWidget(_build_depot_direction + WID_BET_RAMP_NE);
+				if (_settings_client.sound.click_beep) SndPlayFx(SND_15_BEEP);
+				this->SetDirty();
+				break;
+
+			case WID_BET_BUILD_HEIGHT_DECREASE:
+				_cur_build_height--;
+				this->InvalidateData();
+				break;
+
+			case WID_BET_BUILD_HEIGHT_INCREASE:
+				_cur_build_height++;
+				this->InvalidateData();
+				break;
+		}
+	}
+};
+
+/** Nested widget definition of the build elevated ramp window */
+static const NWidgetPart _nested_build_elevated_ramp_widgets[] = { //TODO tooltips and graphics
+	NWidget(NWID_HORIZONTAL),
+		NWidget(WWT_CLOSEBOX, COLOUR_DARK_GREEN),
+		NWidget(WWT_CAPTION, COLOUR_DARK_GREEN), SetDataTip(STR_BUILD_DEPOT_TRAIN_ORIENTATION_CAPTION, STR_TOOLTIP_WINDOW_TITLE_DRAG_THIS),
+	EndContainer(),
+	NWidget(WWT_PANEL, COLOUR_DARK_GREEN),
+		NWidget(NWID_SPACER), SetMinimalSize(0, 3),
+		NWidget(NWID_HORIZONTAL_LTR),
+			NWidget(NWID_SPACER), SetMinimalSize(3, 0), SetFill(1, 0),
+			NWidget(NWID_VERTICAL),
+				NWidget(WWT_PANEL, COLOUR_GREY, WID_BET_RAMP_NW), SetMinimalSize(66, 50), SetDataTip(0x0, STR_BUILD_DEPOT_TRAIN_ORIENTATION_TOOLTIP),
+				EndContainer(),
+				NWidget(NWID_SPACER), SetMinimalSize(0, 2),
+				NWidget(WWT_PANEL, COLOUR_GREY, WID_BET_RAMP_SW), SetMinimalSize(66, 50), SetDataTip(0x0, STR_BUILD_DEPOT_TRAIN_ORIENTATION_TOOLTIP),
+				EndContainer(),
+			EndContainer(),
+			NWidget(NWID_SPACER), SetMinimalSize(2, 0),
+			NWidget(NWID_VERTICAL),
+				NWidget(WWT_PANEL, COLOUR_GREY, WID_BET_RAMP_NE), SetMinimalSize(66, 50), SetDataTip(0x0, STR_BUILD_DEPOT_TRAIN_ORIENTATION_TOOLTIP),
+				EndContainer(),
+				NWidget(NWID_SPACER), SetMinimalSize(0, 2),
+				NWidget(WWT_PANEL, COLOUR_GREY, WID_BET_RAMP_SE), SetMinimalSize(66, 50), SetDataTip(0x0, STR_BUILD_DEPOT_TRAIN_ORIENTATION_TOOLTIP),
+				EndContainer(),
+			EndContainer(),
+			NWidget(NWID_SPACER), SetMinimalSize(3, 0), SetFill(1, 0),
+		EndContainer(),
+		NWidget(NWID_SPACER), SetMinimalSize(0, 3),
+
+		//TODO tooltip and label
+		NWidget(WWT_PANEL, COLOUR_DARK_GREEN), SetDataTip(STR_NULL, STR_BUILD_SIGNAL_DRAG_SIGNALS_DENSITY_TOOLTIP), SetFill(1, 1),
+			NWidget(WWT_LABEL, COLOUR_DARK_GREEN, WID_BET_BUILD_HEIGHT_LABEL), SetDataTip(STR_ORANGE_INT, STR_BUILD_SIGNAL_DRAG_SIGNALS_DENSITY_TOOLTIP), SetFill(1, 1),
+			NWidget(NWID_HORIZONTAL), SetPIP(2, 0, 2),
+				NWidget(NWID_SPACER), SetFill(1, 0),
+				NWidget(WWT_PUSHARROWBTN, COLOUR_GREY, WID_BET_BUILD_HEIGHT_DECREASE), SetMinimalSize(9, 12), SetDataTip(AWV_DECREASE, STR_BUILD_SIGNAL_DRAG_SIGNALS_DENSITY_DECREASE_TOOLTIP),
+				NWidget(WWT_PUSHARROWBTN, COLOUR_GREY, WID_BET_BUILD_HEIGHT_INCREASE), SetMinimalSize(9, 12), SetDataTip(AWV_INCREASE, STR_BUILD_SIGNAL_DRAG_SIGNALS_DENSITY_INCREASE_TOOLTIP),
+				NWidget(NWID_SPACER), SetFill(1, 0),
+			EndContainer(),
+			NWidget(NWID_SPACER), SetMinimalSize(0, 2), SetFill(1, 0),
+		EndContainer(),
+	EndContainer(),
+};
+
+static WindowDesc _build_elevated_ramp_desc(
+	WDP_AUTO, nullptr, 0, 0,
+	WC_BUILD_ELEVATED_RAMP, WC_BUILD_TOOLBAR,
+	WDF_CONSTRUCTION,
+	_nested_build_elevated_ramp_widgets, lengthof(_nested_build_elevated_ramp_widgets)
+);
+
+static void ShowBuildElevatedRampPicker(Window *parent)
+{
+	new BuildElevatedTrackWindow(&_build_elevated_ramp_desc, parent);
 }
 
 struct BuildRailWaypointWindow : PickerWindowBase {

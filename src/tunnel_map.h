@@ -20,10 +20,10 @@
  * @pre IsTileType(t, MP_TUNNELBRIDGE)
  * @return true if and only if this tile is a tunnel (entrance)
  */
-static inline bool IsTunnel(TileIndex t)
+static inline bool IsTunnel(ExtendedTileIndex t)
 {
 	assert(IsTileType(t, MP_TUNNELBRIDGE));
-	return !HasBit(_m[t].m5, 7);
+	return !HasBit(GetElevatedTile(t).m5, 7);
 }
 
 /**

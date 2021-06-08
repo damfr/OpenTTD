@@ -34,9 +34,13 @@ CommandProc CmdRemoveRailroadTrack;
 CommandProc CmdBuildSingleRail;
 CommandProc CmdRemoveSingleRail;
 
+CommandProc CmdBuildSingleRailElevated;
+
 CommandProc CmdLandscapeClear;
 
 CommandProc CmdBuildBridge;
+
+CommandProc CmdBuildElevatedRamp;
 
 CommandProc CmdBuildRailStation;
 CommandProc CmdRemoveFromRailStation;
@@ -218,8 +222,10 @@ static const Command _command_proc_table[] = {
 	DEF_CMD(CmdRemoveRailroadTrack,                     CMD_AUTO, CMDT_LANDSCAPE_CONSTRUCTION), // CMD_REMOVE_RAILROAD_TRACK
 	DEF_CMD(CmdBuildSingleRail,          CMD_NO_WATER | CMD_AUTO, CMDT_LANDSCAPE_CONSTRUCTION), // CMD_BUILD_SINGLE_RAIL
 	DEF_CMD(CmdRemoveSingleRail,                        CMD_AUTO, CMDT_LANDSCAPE_CONSTRUCTION), // CMD_REMOVE_SINGLE_RAIL
+	DEF_CMD(CmdBuildSingleRailElevated,  CMD_NO_WATER | CMD_AUTO, CMDT_LANDSCAPE_CONSTRUCTION), // CMD_BUILD_SINGLE_RAIL_ELEVATED
 	DEF_CMD(CmdLandscapeClear,                         CMD_DEITY, CMDT_LANDSCAPE_CONSTRUCTION), // CMD_LANDSCAPE_CLEAR
 	DEF_CMD(CmdBuildBridge,  CMD_DEITY | CMD_NO_WATER | CMD_AUTO, CMDT_LANDSCAPE_CONSTRUCTION), // CMD_BUILD_BRIDGE
+	DEF_CMD(CmdBuildElevatedRamp,        CMD_NO_WATER | CMD_AUTO, CMDT_LANDSCAPE_CONSTRUCTION), // CMD_BUILD_ELEVATED_RAMP
 	DEF_CMD(CmdBuildRailStation,         CMD_NO_WATER | CMD_AUTO, CMDT_LANDSCAPE_CONSTRUCTION), // CMD_BUILD_RAIL_STATION
 	DEF_CMD(CmdBuildTrainDepot,          CMD_NO_WATER | CMD_AUTO, CMDT_LANDSCAPE_CONSTRUCTION), // CMD_BUILD_TRAIN_DEPOT
 	DEF_CMD(CmdBuildSingleSignal,                       CMD_AUTO, CMDT_LANDSCAPE_CONSTRUCTION), // CMD_BUILD_SIGNALS

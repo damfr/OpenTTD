@@ -245,6 +245,8 @@ static inline TileIndexDiff ToTileIndexDiff(TileIndexDiffC tidc)
 #else
 	extern TileIndex TileAdd(TileIndex tile, TileIndexDiff add,
 		const char *exp, const char *file, int line);
+	extern ExtendedTileIndex TileAdd(ExtendedTileIndex tile, TileIndexDiff add,
+		const char *exp, const char *file, int line);
 #	define TILE_ADD(x, y) (TileAdd((x), (y), #x " + " #y, __FILE__, __LINE__))
 #endif
 
@@ -382,6 +384,37 @@ static inline TileIndex TileAddByDir(TileIndex tile, Direction dir)
 static inline TileIndex TileAddByDiagDir(TileIndex tile, DiagDirection dir)
 {
 	return TILE_ADD(tile, TileOffsByDiagDir(dir));
+}
+
+/**
+ * Gets an adjacent ExtendedTileIndex moved alon DiagDirection dir
+ * If @a tile is a ground tile, then update the height to still be on the ground.
+ * Otherwise (if @a tile is elevated or underground) stay at the same height
+ * @param tile the start tile
+ * @param dir the DiagDirection to move along
+ * @return the new ExtendedTileIndex
+ */
+static ExtendedTileIndex ExtendedTileAddByDiagDirFollowGround(ExtendedTileIndex tile, DiagDirection dir)
+{
+	if (IsIndexGroundTile(tile)) {
+		ExtendedTileIndex new_tile(tile.index + TileOffsByDiagDir(dir));
+		new_tile.height = TileHeight(tile.index);
+		return new_tile;
+	} else {
+		return ExtendedTileIndex(tile.index + TileOffsByDiagDir(dir), tile.height);
+	}
+}
+
+/**
+ * Gets an adjacent ExtendedTileIndex moved along DiagDirection dir at the same height
+ * Otherwise (if @a tile is elevated or underground) stay at the same height
+ * @param tile the start tile
+ * @param dir the DiagDirection to move along
+ * @return the new ExtendedTileIndex
+ */
+static ExtendedTileIndex ExtendedTileAddByDiagDirSameHeight(ExtendedTileIndex tile, DiagDirection dir)
+{
+	return ExtendedTileIndex(tile.index + TileOffsByDiagDir(dir), tile.height);
 }
 
 /**

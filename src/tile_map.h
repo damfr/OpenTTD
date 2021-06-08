@@ -15,6 +15,13 @@
 #include "core/bitmath_func.hpp"
 #include "settings_type.h"
 
+
+Tile& GetElevatedTile(ExtendedTileIndex tile);
+TileExtended& GetElevatedTileExt(ExtendedTileIndex tile);
+bool HasElevatedTrack(ExtendedTileIndex tile);
+void InsertElevatedTile(ExtendedTileIndex tile);
+
+
 /**
  * Returns the height of a tile
  *
@@ -93,10 +100,10 @@ static inline uint TilePixelHeightOutsideMap(int x, int y)
  * @return The tiletype of the tile
  * @pre tile < MapSize()
  */
-static inline TileType GetTileType(TileIndex tile)
+static inline TileType GetTileType(ExtendedTileIndex tile)
 {
-	assert(tile < MapSize());
-	return (TileType)GB(_m[tile].type, 4, 4);
+	assert(tile.index < MapSize());
+	return (TileType)GB(GetElevatedTile(tile).type, 4, 4);
 }
 
 /**
@@ -128,14 +135,14 @@ static inline bool IsInnerTile(TileIndex tile)
  * @pre tile < MapSize()
  * @pre type MP_VOID <=> tile is on the south-east or south-west edge.
  */
-static inline void SetTileType(TileIndex tile, TileType type)
+static inline void SetTileType(ExtendedTileIndex tile, TileType type)
 {
-	assert(tile < MapSize());
+	assert(tile.index < MapSize());
 	/* VOID tiles (and no others) are exactly allowed at the lower left and right
 	 * edges of the map. If _settings_game.construction.freeform_edges is true,
 	 * the upper edges of the map are also VOID tiles. */
-	assert(IsInnerTile(tile) == (type != MP_VOID));
-	SB(_m[tile].type, 4, 4, type);
+	assert(IsInnerTile(tile.index) == (type != MP_VOID));
+	SB(GetElevatedTile(tile).type, 4, 4, type);
 }
 
 /**
@@ -147,7 +154,7 @@ static inline void SetTileType(TileIndex tile, TileType type)
  * @param type The type to check against
  * @return true If the type matches against the type of the tile
  */
-static inline bool IsTileType(TileIndex tile, TileType type)
+static inline bool IsTileType(ExtendedTileIndex tile, TileType type)
 {
 	return GetTileType(tile) == type;
 }
@@ -158,9 +165,9 @@ static inline bool IsTileType(TileIndex tile, TileType type)
  * @param tile The tile to check
  * @return True if the tile is on the map and not one of MP_VOID.
  */
-static inline bool IsValidTile(TileIndex tile)
+static inline bool IsValidTile(ExtendedTileIndex tile)
 {
-	return tile < MapSize() && !IsTileType(tile, MP_VOID);
+	return tile.index < MapSize() && !IsTileType(tile, MP_VOID);
 }
 
 /**
@@ -175,13 +182,13 @@ static inline bool IsValidTile(TileIndex tile)
  * @pre IsValidTile(tile)
  * @pre The type of the tile must not be MP_HOUSE and MP_INDUSTRY
  */
-static inline Owner GetTileOwner(TileIndex tile)
+static inline Owner GetTileOwner(ExtendedTileIndex tile)
 {
-	assert(IsValidTile(tile));
+	assert(IsValidTile(tile.index));
 	assert(!IsTileType(tile, MP_HOUSE));
 	assert(!IsTileType(tile, MP_INDUSTRY));
 
-	return (Owner)GB(_m[tile].m1, 0, 5);
+	return (Owner)GB(GetElevatedTile(tile).m1, 0, 5);
 }
 
 /**
@@ -195,13 +202,13 @@ static inline Owner GetTileOwner(TileIndex tile)
  * @pre IsValidTile(tile)
  * @pre The type of the tile must not be MP_HOUSE and MP_INDUSTRY
  */
-static inline void SetTileOwner(TileIndex tile, Owner owner)
+static inline void SetTileOwner(ExtendedTileIndex tile, Owner owner)
 {
 	assert(IsValidTile(tile));
 	assert(!IsTileType(tile, MP_HOUSE));
 	assert(!IsTileType(tile, MP_INDUSTRY));
 
-	SB(_m[tile].m1, 0, 5, owner);
+	SB(GetElevatedTile(tile).m1, 0, 5, owner);
 }
 
 /**
@@ -211,7 +218,7 @@ static inline void SetTileOwner(TileIndex tile, Owner owner)
  * @param owner The owner to check against
  * @return True if a tile belongs the the given owner
  */
-static inline bool IsTileOwner(TileIndex tile, Owner owner)
+static inline bool IsTileOwner(ExtendedTileIndex tile, Owner owner)
 {
 	return GetTileOwner(tile) == owner;
 }
@@ -305,6 +312,61 @@ static inline int GetTileMaxPixelZ(TileIndex tile)
 {
 	return GetTileMaxZ(tile) * TILE_HEIGHT;
 }
+
+/**
+ * Get Height from a pixel z value (from a vehicle for example)
+ * @param ground_tile the ground tile of the vehicle (to check special case of vehicle on ground)
+ * @param z pixel z value
+ * @return Height 
+ */
+static inline Height GetHeightFromPixelZ(TileIndex ground_tile, int z)
+{
+	if (IsInsideMM(z, GetTilePixelZ(ground_tile), GetTileMaxPixelZ(ground_tile) + TILE_HEIGHT)) {
+		return _m[ground_tile].height;
+	} else {
+		return (Height) z / TILE_HEIGHT;
+	}
+}
+
+/**
+ * Check if an ExtendedTileIndex corresponds to a ground tile or not.
+ * @param tile the ExtendedTileIndes to check
+ * @return Wether it is a ground tile
+ */
+static inline bool IsIndexGroundTile(ExtendedTileIndex tile)
+{
+	return IsInsideMM(tile.height, GetTileZ(tile.index), GetTileMaxZ(tile.index)+1);
+}
+
+
+/**
+ * Check wether two height level of the same tile are in fact the same
+ * (on the ground, different height levels designate the same thing)
+ */
+static inline bool IsSameHeightLevel(TileIndex ground_tile, Height h1, Height h2)
+{
+	if (IsIndexGroundTile(tile_1) && IsIndexGroundTile(tile_2)) {
+		return IsInsideMM(tile_2.height, GetTileZ(tile_1.index), GetTileMaxZ(tile_1.index) + 1);
+	} else {
+		return tile_1.height == tile_2.height;
+	}
+}
+
+/**
+ * Check if a vehicle at z position is at the same height level as the ExtendedTileIndex
+ * @param tile ExtendedTileIndex to consider
+ * @param z pixel height of vehicle to check
+ * @return true if the vehicle is at the height level considered
+ */
+static inline bool IsAtSameHeightLevel(ExtendedTileIndex tile, int z)
+{
+	if (IsIndexGroundTile(tile)) {
+		return IsInsideMM(z, GetTileZ(tile.index) * TILE_HEIGHT, (GetTileMaxZ(tile.index) + 1)*TILE_HEIGHT);
+	} else {
+		return IsInsideMM(z, tile.height * TILE_HEIGHT, (tile.height +1) * TILE_HEIGHT);
+	}
+}
+
 
 /**
  * Calculate a hash value from a tile position

@@ -19,6 +19,7 @@
 #include "newgrf_config.h"
 #include "track_type.h"
 #include "livery.h"
+#include "map_type.h"
 
 #define is_custom_sprite(x) (x >= 0xFD)
 #define IS_CUSTOM_FIRSTHEAD_SPRITE(x) (x == 0xFD)
@@ -40,9 +41,10 @@ typedef Vehicle *VehicleFromPosProc(Vehicle *v, void *data);
 
 void VehicleServiceInDepot(Vehicle *v);
 uint CountVehiclesInChain(const Vehicle *v);
-void FindVehicleOnPos(TileIndex tile, void *data, VehicleFromPosProc *proc);
+void FindVehicleOnPos(ExtendedTileIndex tile, void *data, VehicleFromPosProc *proc);
 void FindVehicleOnPosXY(int x, int y, void *data, VehicleFromPosProc *proc);
 bool HasVehicleOnPos(TileIndex tile, void *data, VehicleFromPosProc *proc);
+bool HasVehicleOnPos(ExtendedTileIndex tile, void *data, VehicleFromPosProc *proc);
 bool HasVehicleOnPosXY(int x, int y, void *data, VehicleFromPosProc *proc);
 void CallVehicleTicks();
 uint8 CalcPercentVehicleFilled(const Vehicle *v, StringID *colour);
@@ -162,7 +164,7 @@ static inline uint32 GetCmdSendToDepot(const BaseVehicle *v)
 }
 
 CommandCost EnsureNoVehicleOnGround(TileIndex tile);
-CommandCost EnsureNoTrainOnTrackBits(TileIndex tile, TrackBits track_bits);
+CommandCost EnsureNoTrainOnTrackBits(ExtendedTileIndex tile, TrackBits track_bits);
 
 extern VehicleID _new_vehicle_id;
 extern uint _returned_refit_capacity;

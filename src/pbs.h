@@ -15,23 +15,23 @@
 #include "track_type.h"
 #include "vehicle_type.h"
 
-TrackBits GetReservedTrackbits(TileIndex t);
+TrackBits GetReservedTrackbits(ExtendedTileIndex t);
 
-void SetRailStationPlatformReservation(TileIndex start, DiagDirection dir, bool b);
+void SetRailStationPlatformReservation(ExtendedTileIndex start, DiagDirection dir, bool b);
 
-bool TryReserveRailTrack(TileIndex tile, Track t, bool trigger_stations = true);
-void UnreserveRailTrack(TileIndex tile, Track t);
+bool TryReserveRailTrack(ExtendedTileIndex tile, Track t, bool trigger_stations = true);
+void UnreserveRailTrack(ExtendedTileIndex tile, Track t);
 
 /** This struct contains information about the end of a reserved path. */
 struct PBSTileInfo {
-	TileIndex tile;      ///< Tile the path ends, INVALID_TILE if no valid path was found.
+	ExtendedTileIndex tile;      ///< Tile the path ends, INVALID_TILE if no valid path was found.
 	Trackdir  trackdir;  ///< The reserved trackdir on the tile.
 	bool      okay;      ///< True if tile is a safe waiting position, false otherwise.
 
 	/**
 	 * Create an empty PBSTileInfo.
 	 */
-	PBSTileInfo() : tile(INVALID_TILE), trackdir(INVALID_TRACKDIR), okay(false) {}
+	PBSTileInfo() : tile(INVALID_EXTENDED_TILE), trackdir(INVALID_TRACKDIR), okay(false) {}
 
 	/**
 	 * Create a PBSTileInfo with given tile, track direction and safe waiting position information.
@@ -39,14 +39,14 @@ struct PBSTileInfo {
 	 * @param _td The reserved track dir on the tile.
 	 * @param _okay Whether the tile is a safe waiting point or not.
 	 */
-	PBSTileInfo(TileIndex _t, Trackdir _td, bool _okay) : tile(_t), trackdir(_td), okay(_okay) {}
+	PBSTileInfo(ExtendedTileIndex _t, Trackdir _td, bool _okay) : tile(_t), trackdir(_td), okay(_okay) {}
 };
 
 PBSTileInfo FollowTrainReservation(const Train *v, Vehicle **train_on_res = nullptr);
-bool IsSafeWaitingPosition(const Train *v, TileIndex tile, Trackdir trackdir, bool include_line_end, bool forbid_90deg = false);
-bool IsWaitingPositionFree(const Train *v, TileIndex tile, Trackdir trackdir, bool forbid_90deg = false);
+bool IsSafeWaitingPosition(const Train *v, ExtendedTileIndex tile, Trackdir trackdir, bool include_line_end, bool forbid_90deg = false);
+bool IsWaitingPositionFree(const Train *v, ExtendedTileIndex tile, Trackdir trackdir, bool forbid_90deg = false);
 
-Train *GetTrainForReservation(TileIndex tile, Track track);
+Train *GetTrainForReservation(ExtendedTileIndex tile, Track track);
 
 /**
  * Check whether some of tracks is reserved on a tile.
@@ -55,7 +55,7 @@ Train *GetTrainForReservation(TileIndex tile, Track track);
  * @param tracks the tracks to test
  * @return true if at least on of tracks is reserved
  */
-static inline bool HasReservedTracks(TileIndex tile, TrackBits tracks)
+static inline bool HasReservedTracks(ExtendedTileIndex tile, TrackBits tracks)
 {
 	return (GetReservedTrackbits(tile) & tracks) != TRACK_BIT_NONE;
 }

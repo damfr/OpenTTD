@@ -1300,8 +1300,11 @@ void ConvertGroundTilesIntoWaterTiles()
 	}
 }
 
-static TrackStatus GetTileTrackStatus_Water(TileIndex tile, TransportType mode, uint sub_mode, DiagDirection side)
+static TrackStatus GetTileTrackStatus_Water(ExtendedTileIndex tile, TransportType mode, uint sub_mode, DiagDirection side)
 {
+	assert(IsIndexGroundTile(tile)); //Water is always at ground level
+	TileIndex ground_tile = tile.index;
+
 	static const TrackBits coast_tracks[] = {TRACK_BIT_NONE, TRACK_BIT_RIGHT, TRACK_BIT_UPPER, TRACK_BIT_NONE, TRACK_BIT_LEFT, TRACK_BIT_NONE, TRACK_BIT_NONE,
 		TRACK_BIT_NONE, TRACK_BIT_LOWER, TRACK_BIT_NONE, TRACK_BIT_NONE, TRACK_BIT_NONE, TRACK_BIT_NONE, TRACK_BIT_NONE, TRACK_BIT_NONE, TRACK_BIT_NONE};
 
@@ -1309,18 +1312,18 @@ static TrackStatus GetTileTrackStatus_Water(TileIndex tile, TransportType mode, 
 
 	if (mode != TRANSPORT_WATER) return 0;
 
-	switch (GetWaterTileType(tile)) {
-		case WATER_TILE_CLEAR: ts = IsTileFlat(tile) ? TRACK_BIT_ALL : TRACK_BIT_NONE; break;
-		case WATER_TILE_COAST: ts = coast_tracks[GetTileSlope(tile) & 0xF]; break;
-		case WATER_TILE_LOCK:  ts = DiagDirToDiagTrackBits(GetLockDirection(tile)); break;
-		case WATER_TILE_DEPOT: ts = AxisToTrackBits(GetShipDepotAxis(tile)); break;
+	switch (GetWaterTileType(ground_tile)) {
+		case WATER_TILE_CLEAR: ts = IsTileFlat(ground_tile) ? TRACK_BIT_ALL : TRACK_BIT_NONE; break;
+		case WATER_TILE_COAST: ts = coast_tracks[GetTileSlope(ground_tile) & 0xF]; break;
+		case WATER_TILE_LOCK:  ts = DiagDirToDiagTrackBits(GetLockDirection(ground_tile)); break;
+		case WATER_TILE_DEPOT: ts = AxisToTrackBits(GetShipDepotAxis(ground_tile)); break;
 		default: return 0;
 	}
-	if (TileX(tile) == 0) {
+	if (TileX(ground_tile) == 0) {
 		/* NE border: remove tracks that connects NE tile edge */
 		ts &= ~(TRACK_BIT_X | TRACK_BIT_UPPER | TRACK_BIT_RIGHT);
 	}
-	if (TileY(tile) == 0) {
+	if (TileY(ground_tile) == 0) {
 		/* NW border: remove tracks that connects NW tile edge */
 		ts &= ~(TRACK_BIT_Y | TRACK_BIT_LEFT | TRACK_BIT_UPPER);
 	}
@@ -1372,7 +1375,7 @@ static void ChangeTileOwner_Water(TileIndex tile, Owner old_owner, Owner new_own
 	}
 }
 
-static VehicleEnterTileStatus VehicleEnter_Water(Vehicle *v, TileIndex tile, int x, int y)
+static VehicleEnterTileStatus VehicleEnter_Water(Vehicle *v, ExtendedTileIndex tile, int x, int y)
 {
 	return VETSB_CONTINUE;
 }

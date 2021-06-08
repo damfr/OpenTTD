@@ -382,6 +382,12 @@ enum WindowClass {
 	WC_BUILD_BRIDGE,
 
 	/**
+	 * Build elevated ramp; %Window numbers:
+	 *   - #TransportType = #BuildElevatedRampSelectionWidgets
+	 */
+	WC_BUILD_ELEVATED_RAMP,
+
+	/**
 	 * Build station; %Window numbers:
 	 *   - #TRANSPORT_AIR = #AirportPickerWidgets
 	 *   - #TRANSPORT_WATER = #DockToolbarWidgets

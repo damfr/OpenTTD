@@ -23,10 +23,10 @@
  * @pre IsTileType(t, MP_TUNNELBRIDGE)
  * @return the above mentioned direction
  */
-static inline DiagDirection GetTunnelBridgeDirection(TileIndex t)
+static inline DiagDirection GetTunnelBridgeDirection(ExtendedTileIndex t)
 {
 	assert(IsTileType(t, MP_TUNNELBRIDGE));
-	return (DiagDirection)GB(_m[t].m5, 0, 2);
+	return (DiagDirection)GB(GetElevatedTile(t).m5, 0, 2);
 }
 
 /**
@@ -36,10 +36,10 @@ static inline DiagDirection GetTunnelBridgeDirection(TileIndex t)
  * @pre IsTileType(t, MP_TUNNELBRIDGE)
  * @return the transport type in the tunnel/bridge
  */
-static inline TransportType GetTunnelBridgeTransportType(TileIndex t)
+static inline TransportType GetTunnelBridgeTransportType(ExtendedTileIndex t)
 {
 	assert(IsTileType(t, MP_TUNNELBRIDGE));
-	return (TransportType)GB(_m[t].m5, 2, 2);
+	return (TransportType)GB(GetElevatedTile(t).m5, 2, 2);
 }
 
 /**
@@ -81,31 +81,59 @@ static inline TileIndex GetOtherTunnelBridgeEnd(TileIndex t)
 	return IsTunnel(t) ? GetOtherTunnelEnd(t) : GetOtherBridgeEnd(t);
 }
 
+/**
+ * Determines the tile following the ramp in the direction @dir
+ * The tile returned is adjacent in DiagDirection @a dir, and its height is 
+ * either the same (case of flat bridge ramp or tunnel head) or 1 height level above/below (inclined bridge ramp)
+ * @param ramp the ramp to check (also works for tunnel heads)
+ * @param dir the direction to travel along the ramp
+ * @pre IsTileType(ramp, MP_TUNNELBRIDGE)
+ * @pre ramp's direction is compatible with @a dir
+ * @return the ExtendedTileIndex of the next tile
+ */
+static inline ExtendedTileIndex GetElevatedRampNextTile(ExtendedTileIndex ramp, DiagDirection dir)
+{
+	assert(IsTileType(ramp, MP_TUNNELBRIDGE));
+	DiagDirection ramp_dir = GetTunnelBridgeDirection(ramp);
+	bool flat_ramp = true;
+	if (IsBridgeTile(ramp) && !HasBridgeFlatRamp(ramp)) flat_ramp = false;
+
+	if (ramp_dir == dir) {
+		/* We are going on the ramp, possibly going up */
+		return ExtendedTileIndex(ramp.index + TileOffsByDiagDir(dir), ramp.height + flat_ramp ? 0 : 1);
+	} else if (ramp_dir == ReverseDiagDir(dir)) {
+		/* We are leaving a ramp, possibly going down */
+		return ExtendedTileIndex(ramp.index + TileOffsByDiagDir(dir), ramp.height - flat_ramp ? 0 : 1);
+	} else {
+		NOT_REACHED();
+	}
+}
+
 
 /**
- * Get the reservation state of the rail tunnel/bridge
+ * Get the reservation state of the rail ramp/tunnel head
  * @pre IsTileType(t, MP_TUNNELBRIDGE) && GetTunnelBridgeTransportType(t) == TRANSPORT_RAIL
  * @param t the tile
  * @return reservation state
  */
-static inline bool HasTunnelBridgeReservation(TileIndex t)
+static inline bool HasTunnelBridgeReservation(ExtendedTileIndex t)
 {
 	assert(IsTileType(t, MP_TUNNELBRIDGE));
 	assert(GetTunnelBridgeTransportType(t) == TRANSPORT_RAIL);
-	return HasBit(_m[t].m5, 4);
+	return HasBit(GetElevatedTile(t).m5, 4);
 }
 
 /**
- * Set the reservation state of the rail tunnel/bridge
+ * Set the reservation state of the rail ramp/tunnel head
  * @pre IsTileType(t, MP_TUNNELBRIDGE) && GetTunnelBridgeTransportType(t) == TRANSPORT_RAIL
  * @param t the tile
  * @param b the reservation state
  */
-static inline void SetTunnelBridgeReservation(TileIndex t, bool b)
+static inline void SetTunnelBridgeReservation(ExtendedTileIndex t, bool b)
 {
 	assert(IsTileType(t, MP_TUNNELBRIDGE));
 	assert(GetTunnelBridgeTransportType(t) == TRANSPORT_RAIL);
-	SB(_m[t].m5, 4, 1, b ? 1 : 0);
+	SB(GetElevatedTile(t).m5, 4, 1, b ? 1 : 0);
 }
 
 /**
@@ -114,7 +142,7 @@ static inline void SetTunnelBridgeReservation(TileIndex t, bool b)
  * @param t the tile
  * @return reserved track bits
  */
-static inline TrackBits GetTunnelBridgeReservationTrackBits(TileIndex t)
+static inline TrackBits GetTunnelBridgeReservationTrackBits(ExtendedTileIndex t)
 {
 	return HasTunnelBridgeReservation(t) ? DiagDirToDiagTrackBits(GetTunnelBridgeDirection(t)) : TRACK_BIT_NONE;
 }

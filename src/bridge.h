@@ -54,8 +54,9 @@ struct BridgeSpec {
 
 extern BridgeSpec _bridge[MAX_BRIDGES];
 
+CommandCost CheckBridgeSlope(BridgePieces bridge_piece, Axis axis, Slope *tileh, int *z);
 Foundation GetBridgeFoundation(Slope tileh, Axis axis);
-bool HasBridgeFlatRamp(Slope tileh, Axis axis);
+bool HasBridgeFlatRamp(ExtendedTileIndex tile);
 
 /**
  * Get the specification of a bridge type.

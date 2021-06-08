@@ -152,15 +152,16 @@ extern const TrackdirBits _uphill_trackdirs[] = {
 /**
  * Return the rail type of tile, or INVALID_RAILTYPE if this is no rail tile.
  */
-RailType GetTileRailType(TileIndex tile)
+RailType GetTileRailType(ExtendedTileIndex tile)
 {
 	switch (GetTileType(tile)) {
 		case MP_RAILWAY:
 			return GetRailType(tile);
 
 		case MP_ROAD:
-			/* rail/road crossing */
-			if (IsLevelCrossing(tile)) return GetRailType(tile);
+			/* rail/road crossing */ 
+			//TODO : elevated level crossings
+			if (IsLevelCrossing(tile.index)) return GetRailType(tile);
 			break;
 
 		case MP_STATION:
@@ -168,7 +169,8 @@ RailType GetTileRailType(TileIndex tile)
 			break;
 
 		case MP_TUNNELBRIDGE:
-			if (GetTunnelBridgeTransportType(tile) == TRANSPORT_RAIL) return GetRailType(tile);
+			assert(IsIndexGroundTile(tile)); //TODO : Ramps above ground
+			if (GetTunnelBridgeTransportType(tile.index) == TRANSPORT_RAIL) return GetRailType(tile);
 			break;
 
 		default:

@@ -793,7 +793,7 @@ static void GetTileDesc_Town(TileIndex tile, TileDesc *td)
 	td->owner[0] = OWNER_TOWN;
 }
 
-static TrackStatus GetTileTrackStatus_Town(TileIndex tile, TransportType mode, uint sub_mode, DiagDirection side)
+static TrackStatus GetTileTrackStatus_Town(ExtendedTileIndex tile, TransportType mode, uint sub_mode, DiagDirection side)
 {
 	/* not used */
 	return 0;

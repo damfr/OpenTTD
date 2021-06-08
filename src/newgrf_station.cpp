@@ -849,7 +849,7 @@ bool DrawStationTile(int x, int y, RailType railtype, Axis axis, StationClassID 
 }
 
 
-const StationSpec *GetStationSpec(TileIndex t)
+const StationSpec *GetStationSpec(ExtendedTileIndex t)
 {
 	if (!IsCustomStationSpecIndex(t)) return nullptr;
 
@@ -865,7 +865,7 @@ const StationSpec *GetStationSpec(TileIndex t)
  * @return Station tile is blocked.
  * @note This could be cached (during build) in the map array to save on all the dereferencing.
  */
-bool IsStationTileBlocked(TileIndex tile)
+bool IsStationTileBlocked(ExtendedTileIndex tile)
 {
 	const StationSpec *statspec = GetStationSpec(tile);
 

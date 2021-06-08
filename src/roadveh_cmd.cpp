@@ -346,7 +346,7 @@ static FindDepotData FindClosestRoadDepot(const RoadVehicle *v, int max_distance
 	}
 }
 
-bool RoadVehicle::FindClosestDepot(TileIndex *location, DestinationID *destination, bool *reverse)
+bool RoadVehicle::FindClosestDepot(ExtendedTileIndex *location, DestinationID *destination, bool *reverse)
 {
 	FindDepotData rfdd = FindClosestRoadDepot(this, 0);
 	if (rfdd.best_length == UINT_MAX) return false;
@@ -658,7 +658,7 @@ static RoadVehicle *RoadVehFindCloseTo(RoadVehicle *v, int x, int y, Direction d
 		FindVehicleOnPos(v->tile, &rvf, EnumCheckRoadVehClose);
 		FindVehicleOnPos(GetOtherTunnelBridgeEnd(v->tile), &rvf, EnumCheckRoadVehClose);
 	} else {
-		FindVehicleOnPosXY(x, y, &rvf, EnumCheckRoadVehClose);
+		FindVehicleOnPosXY(x, y, &rvf, EnumCheckRoadVehClose); //TODO elevated
 	}
 
 	/* This code protects a roadvehicle from being blocked for ever

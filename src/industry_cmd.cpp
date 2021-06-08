@@ -939,7 +939,7 @@ static bool ClickTile_Industry(TileIndex tile)
 	return true;
 }
 
-static TrackStatus GetTileTrackStatus_Industry(TileIndex tile, TransportType mode, uint sub_mode, DiagDirection side)
+static TrackStatus GetTileTrackStatus_Industry(ExtendedTileIndex tile, TransportType mode, uint sub_mode, DiagDirection side)
 {
 	return 0;
 }

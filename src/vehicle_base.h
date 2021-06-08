@@ -244,7 +244,7 @@ public:
 	 * For airports and train stations this tile does not necessarily belong to the destination station,
 	 * but it can be used for heuristic purposes to estimate the distance.
 	 */
-	TileIndex dest_tile;
+	ExtendedTileIndex dest_tile;
 
 	Money profit_this_year;             ///< Profit this year << 8, low 8 bits are fract
 	Money profit_last_year;             ///< Profit last year << 8, low 8 bits are fract
@@ -341,6 +341,11 @@ public:
 	mutable MutableSpriteCache sprite_cache; ///< Cache of sprites and values related to recalculating them, see #MutableSpriteCache
 
 	Vehicle(VehicleType type = VEH_INVALID);
+
+
+	//TEMPORARY
+	ExtendedTileIndex ETileIndex() const { return ExtendedTileIndex(this->tile, GetHeightFromPixelZ(this->tile, this->z_pos)); }
+
 
 	void PreDestructor();
 	/** We want to 'destruct' the right class. */
@@ -758,7 +763,7 @@ public:
 	 * @param reverse     should the vehicle be reversed?
 	 * @return true if a depot could be found.
 	 */
-	virtual bool FindClosestDepot(TileIndex *location, DestinationID *destination, bool *reverse) { return false; }
+	virtual bool FindClosestDepot(ExtendedTileIndex *location, DestinationID *destination, bool *reverse) { return false; }
 
 	virtual void SetDestTile(TileIndex tile) { this->dest_tile = tile; }
 
