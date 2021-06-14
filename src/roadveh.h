@@ -273,7 +273,7 @@ protected: // These functions should not be called outside acceleration code.
 	 */
 	inline uint16 GetMaxTrackSpeed() const
 	{
-		return GetRoadTypeInfo(GetRoadType(this->tile, GetRoadTramType(this->roadtype)))->max_speed;
+		return GetRoadTypeInfo(GetRoadType(this->tile.index, GetRoadTramType(this->roadtype)))->max_speed;
 	}
 
 	/**

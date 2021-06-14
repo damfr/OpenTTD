@@ -20,14 +20,14 @@ struct Depot : DepotPool::PoolItem<&_depot_pool> {
 	Town *town;
 	std::string name;
 
-	TileIndex xy;
+	ExtendedTileIndex xy;
 	uint16 town_cn;    ///< The N-1th depot for this town (consecutive number)
 	Date build_date;   ///< Date of construction
 
-	Depot(TileIndex xy = INVALID_TILE) : xy(xy) {}
+	Depot(ExtendedTileIndex xy = INVALID_EXTENDED_TILE) : xy(xy) {}
 	~Depot();
 
-	static inline Depot *GetByTile(TileIndex tile)
+	static inline Depot *GetByTile(ExtendedTileIndex tile)
 	{
 		return Depot::Get(GetDepotIndex(tile));
 	}

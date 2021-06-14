@@ -131,10 +131,10 @@ void OrderBackup::DoRestore(Vehicle *v)
  * @param user The user associated with the OrderBackup.
  * @note Must not be used from the GUI!
  */
-/* static */ void OrderBackup::ResetOfUser(TileIndex tile, uint32 user)
+/* static */ void OrderBackup::ResetOfUser(ExtendedTileIndex tile, uint32 user)
 {
 	for (OrderBackup *ob : OrderBackup::Iterate()) {
-		if (ob->user == user && (ob->tile == tile || tile == INVALID_TILE)) delete ob;
+		if (ob->user == user && (ob->tile == tile || !tile.IsValid())) delete ob;
 	}
 }
 
@@ -150,7 +150,7 @@ void OrderBackup::DoRestore(Vehicle *v)
 CommandCost CmdClearOrderBackup(TileIndex tile, DoCommandFlag flags, uint32 p1, uint32 p2, const char *text)
 {
 	/* No need to check anything. If the tile or user don't exist we just ignore it. */
-	if (flags & DC_EXEC) OrderBackup::ResetOfUser(tile == 0 ? INVALID_TILE : tile, p2);
+	if (flags & DC_EXEC) OrderBackup::ResetOfUser(tile == 0 ? INVALID_EXTENDED_TILE : ExtendedTileIndex(tile), p2);
 
 	return CommandCost();
 }
@@ -180,7 +180,7 @@ CommandCost CmdClearOrderBackup(TileIndex tile, DoCommandFlag flags, uint32 p1, 
  * @param from_gui Whether the call came from the GUI, i.e. whether
  *                 it must be synced over the network.
  */
-/* static */ void OrderBackup::Reset(TileIndex t, bool from_gui)
+/* static */ void OrderBackup::Reset(ExtendedTileIndex t, bool from_gui)
 {
 	/* The user has CLIENT_ID_SERVER as default when network play is not active,
 	 * but compiled it. A network client has its own variable for the unique
@@ -192,7 +192,7 @@ CommandCost CmdClearOrderBackup(TileIndex tile, DoCommandFlag flags, uint32 p1, 
 		/* If it's not a backup of us, ignore it. */
 		if (ob->user != user) continue;
 		/* If it's not for our chosen tile either, ignore it. */
-		if (t != INVALID_TILE && t != ob->tile) continue;
+		if (t.IsValid() && t != ob->tile) continue;
 
 		if (from_gui) {
 			/* We need to circumvent the "prevention" from this command being executed

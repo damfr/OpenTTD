@@ -917,7 +917,7 @@ static bool AircraftController(Aircraft *v)
 			u->cur_speed = 32;
 			int count = UpdateAircraftSpeed(v);
 			if (count > 0) {
-				v->tile = 0;
+				v->tile = 0; //TODO elevated check this
 
 				int z_dest;
 				GetAircraftFlightLevelBounds(v, &z_dest, nullptr);
@@ -1274,7 +1274,7 @@ void HandleMissingAircraftOrders(Aircraft *v)
 	const Station *st = GetTargetAirportIfValid(v);
 	if (st == nullptr) {
 		Backup<CompanyID> cur_company(_current_company, v->owner, FILE_LINE);
-		CommandCost ret = DoCommand(v->tile, v->index, 0, DC_EXEC, CMD_SEND_VEHICLE_TO_DEPOT);
+		CommandCost ret = DoCommand(v->tile.index, v->index, 0, DC_EXEC, CMD_SEND_VEHICLE_TO_DEPOT);
 		cur_company.Restore();
 
 		if (ret.Failed()) CrashAirplane(v);
@@ -1335,7 +1335,7 @@ static void CrashAirplane(Aircraft *v)
 	} else {
 		SetDParam(1, st->index);
 		newsitem = STR_NEWS_AIRCRAFT_CRASH;
-		vt = v->tile;
+		vt = v->tile.index;
 	}
 
 	AI::NewEvent(v->owner, new ScriptEventVehicleCrashed(v->index, vt, st == nullptr ? ScriptEventVehicleCrashed::CRASH_AIRCRAFT_NO_AIRPORT : ScriptEventVehicleCrashed::CRASH_PLANE_LANDING));
@@ -1469,7 +1469,7 @@ void AircraftLeaveHangar(Aircraft *v, Direction exit_dir)
 
 	VehicleServiceInDepot(v);
 	SetAircraftPosition(v, v->x_pos, v->y_pos, v->z_pos);
-	InvalidateWindowData(WC_VEHICLE_DEPOT, v->tile);
+	InvalidateWindowData(WC_VEHICLE_DEPOT, v->tile.index);
 	SetWindowClassesDirty(WC_AIRCRAFT_LIST);
 }
 
@@ -1539,7 +1539,7 @@ static void AircraftEventHandler_InHangar(Aircraft *v, const AirportFTAClass *ap
 		v->state = (v->subtype == AIR_HELICOPTER) ? HELITAKEOFF : TAKEOFF;
 	}
 	const Station *st = Station::GetByTile(v->tile);
-	AircraftLeaveHangar(v, st->airport.GetHangarExitDirection(v->tile));
+	AircraftLeaveHangar(v, st->airport.GetHangarExitDirection(v->tile.index));
 	AirportMove(v, apc);
 }
 
@@ -1632,7 +1632,7 @@ static void AircraftEventHandler_HeliTakeOff(Aircraft *v, const AirportFTAClass 
 	/* Send the helicopter to a hangar if needed for replacement */
 	if (v->NeedsAutomaticServicing()) {
 		Backup<CompanyID> cur_company(_current_company, v->owner, FILE_LINE);
-		DoCommand(v->tile, v->index | DEPOT_SERVICE | DEPOT_LOCATE_HANGAR, 0, DC_EXEC, CMD_SEND_VEHICLE_TO_DEPOT);
+		DoCommand(v->tile.index, v->index | DEPOT_SERVICE | DEPOT_LOCATE_HANGAR, 0, DC_EXEC, CMD_SEND_VEHICLE_TO_DEPOT);
 		cur_company.Restore();
 	}
 }
@@ -1683,7 +1683,7 @@ static void AircraftEventHandler_Landing(Aircraft *v, const AirportFTAClass *apc
 	/* check if the aircraft needs to be replaced or renewed and send it to a hangar if needed */
 	if (v->NeedsAutomaticServicing()) {
 		Backup<CompanyID> cur_company(_current_company, v->owner, FILE_LINE);
-		DoCommand(v->tile, v->index | DEPOT_SERVICE, 0, DC_EXEC, CMD_SEND_VEHICLE_TO_DEPOT);
+		DoCommand(v->tile.index, v->index | DEPOT_SERVICE, 0, DC_EXEC, CMD_SEND_VEHICLE_TO_DEPOT);
 		cur_company.Restore();
 	}
 }

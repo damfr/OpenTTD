@@ -260,7 +260,7 @@
 		return ::TileXY(x, y);
 	}
 
-	return v->tile;
+	return v->tile.index; //TODO elevated tracks and scripts
 }
 
 /* static */ EngineID ScriptVehicle::GetEngineType(VehicleID vehicle_id)

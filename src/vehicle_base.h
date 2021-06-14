@@ -237,7 +237,7 @@ public:
 	friend void AfterLoadVehicles(bool part_of_load);             ///< So we can set the #previous and #first pointers while loading
 	friend bool LoadOldVehicle(LoadgameState *ls, int num);       ///< So we can set the proper next pointer while loading
 
-	TileIndex tile;                     ///< Current tile index
+	ExtendedTileIndex tile;                     ///< Current tile index
 
 	/**
 	 * Heading for this tile.
@@ -344,7 +344,7 @@ public:
 
 
 	//TEMPORARY
-	ExtendedTileIndex ETileIndex() const { return ExtendedTileIndex(this->tile, GetHeightFromPixelZ(this->tile, this->z_pos)); }
+	ExtendedTileIndex ETileIndex() const { return this->index }
 
 
 	void PreDestructor();

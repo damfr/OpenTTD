@@ -986,10 +986,10 @@ static void FloodVehicle(Vehicle *v)
 {
 	uint pass = v->Crash(true);
 
-	AI::NewEvent(v->owner, new ScriptEventVehicleCrashed(v->index, v->tile, ScriptEventVehicleCrashed::CRASH_FLOODED));
-	Game::NewEvent(new ScriptEventVehicleCrashed(v->index, v->tile, ScriptEventVehicleCrashed::CRASH_FLOODED));
+	AI::NewEvent(v->owner, new ScriptEventVehicleCrashed(v->index, v->tile.index, ScriptEventVehicleCrashed::CRASH_FLOODED));
+	Game::NewEvent(new ScriptEventVehicleCrashed(v->index, v->tile.index, ScriptEventVehicleCrashed::CRASH_FLOODED));
 	SetDParam(0, pass);
-	AddTileNewsItem(STR_NEWS_DISASTER_FLOOD_VEHICLE, NT_ACCIDENT, v->tile);
+	AddTileNewsItem(STR_NEWS_DISASTER_FLOOD_VEHICLE, NT_ACCIDENT, v->tile.index);
 	CreateEffectVehicleRel(v, 4, 4, 8, EV_EXPLOSION_LARGE);
 	if (_settings_client.sound.disaster) SndPlayVehicleFx(SND_12_EXPLOSION, v);
 }
@@ -1008,7 +1008,7 @@ static Vehicle *FloodVehicleProc(Vehicle *v, void *data)
 		default: break;
 
 		case VEH_AIRCRAFT: {
-			if (!IsAirportTile(v->tile) || GetTileMaxZ(v->tile) != 0) break;
+			if (!IsAirportTile(v->tile) || GetTileMaxZ(v->tile.index) != 0) break;
 			if (v->subtype == AIR_SHADOW) break;
 
 			/* We compare v->z_pos against delta_z + 1 because the shadow

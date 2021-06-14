@@ -206,6 +206,10 @@ static inline uint TileX(TileIndex tile)
 {
 	return tile & MapMaxX();
 }
+static inline uint TileX(ExtendedTileIndex tile)
+{
+	return TileX(tile.index);
+}
 
 /**
  * Get the Y component of a tile
@@ -215,6 +219,10 @@ static inline uint TileX(TileIndex tile)
 static inline uint TileY(TileIndex tile)
 {
 	return tile >> MapLogX();
+}
+static inline uint TileY(ExtendedTileIndex tile)
+{
+	return TileY(tile.index);
 }
 
 /**
@@ -386,24 +394,8 @@ static inline TileIndex TileAddByDiagDir(TileIndex tile, DiagDirection dir)
 	return TILE_ADD(tile, TileOffsByDiagDir(dir));
 }
 
-/**
- * Gets an adjacent ExtendedTileIndex moved alon DiagDirection dir
- * If @a tile is a ground tile, then update the height to still be on the ground.
- * Otherwise (if @a tile is elevated or underground) stay at the same height
- * @param tile the start tile
- * @param dir the DiagDirection to move along
- * @return the new ExtendedTileIndex
- */
-static ExtendedTileIndex ExtendedTileAddByDiagDirFollowGround(ExtendedTileIndex tile, DiagDirection dir)
-{
-	if (IsIndexGroundTile(tile)) {
-		ExtendedTileIndex new_tile(tile.index + TileOffsByDiagDir(dir));
-		new_tile.height = TileHeight(tile.index);
-		return new_tile;
-	} else {
-		return ExtendedTileIndex(tile.index + TileOffsByDiagDir(dir), tile.height);
-	}
-}
+ExtendedTileIndex ExtendedTileAddByDiagDirFollowGround(ExtendedTileIndex tile, DiagDirection dir);
+
 
 /**
  * Gets an adjacent ExtendedTileIndex moved along DiagDirection dir at the same height
@@ -412,7 +404,7 @@ static ExtendedTileIndex ExtendedTileAddByDiagDirFollowGround(ExtendedTileIndex 
  * @param dir the DiagDirection to move along
  * @return the new ExtendedTileIndex
  */
-static ExtendedTileIndex ExtendedTileAddByDiagDirSameHeight(ExtendedTileIndex tile, DiagDirection dir)
+static inline ExtendedTileIndex ExtendedTileAddByDiagDirSameHeight(ExtendedTileIndex tile, DiagDirection dir)
 {
 	return ExtendedTileIndex(tile.index + TileOffsByDiagDir(dir), tile.height);
 }

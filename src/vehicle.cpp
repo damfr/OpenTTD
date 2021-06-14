@@ -278,7 +278,7 @@ uint Vehicle::Crash(bool flooded)
 	InvalidateWindowClassesData(GetWindowClassForVehicleType(this->type), 0);
 	SetWindowWidgetDirty(WC_VEHICLE_VIEW, this->index, WID_VV_START_STOP);
 	SetWindowDirty(WC_VEHICLE_DETAILS, this->index);
-	SetWindowDirty(WC_VEHICLE_DEPOT, this->tile);
+	SetWindowDirty(WC_VEHICLE_DEPOT, this->tile.index);
 
 	delete this->cargo_payment;
 	assert(this->cargo_payment == nullptr); // cleared by ~CargoPayment
@@ -474,10 +474,7 @@ static Vehicle *VehicleFromPos(ExtendedTileIndex tile, void *data, VehicleFromPo
 
 	Vehicle *v = _vehicle_tile_hash[(x + y) & TOTAL_HASH_MASK];
 	for (; v != nullptr; v = v->hash_tile_next) {
-		if (v->tile != tile.index) continue;
-
-		//Check if the vehicles are at the same height level
-		if (!IsAtSameHeightLevel(tile, v->z_pos)) continue;
+		if (v->tile != tile) continue;
 
 		Vehicle *a = proc(v, data);
 		if (find_first && a != nullptr) return a;
@@ -867,7 +864,7 @@ void Vehicle::PreDestructor()
 	}
 
 	if (this->Previous() == nullptr) {
-		InvalidateWindowData(WC_VEHICLE_DEPOT, this->tile);
+		InvalidateWindowData(WC_VEHICLE_DEPOT, this->tile.index);
 	}
 
 	if (this->IsPrimaryVehicle()) {
@@ -1531,7 +1528,7 @@ void VehicleEnterDepot(Vehicle *v)
 			ship->state = TRACK_BIT_DEPOT;
 			ship->UpdateCache();
 			ship->UpdateViewport(true, true);
-			SetWindowDirty(WC_VEHICLE_DEPOT, v->tile);
+			SetWindowDirty(WC_VEHICLE_DEPOT, v->tile.index);
 			break;
 		}
 
@@ -1546,9 +1543,9 @@ void VehicleEnterDepot(Vehicle *v)
 	if (v->type != VEH_TRAIN) {
 		/* Trains update the vehicle list when the first unit enters the depot and calls VehicleEnterDepot() when the last unit enters.
 		 * We only increase the number of vehicles when the first one enters, so we will not need to search for more vehicles in the depot */
-		InvalidateWindowData(WC_VEHICLE_DEPOT, v->tile);
+		InvalidateWindowData(WC_VEHICLE_DEPOT, v->tile.index);
 	}
-	SetWindowDirty(WC_VEHICLE_DEPOT, v->tile);
+	SetWindowDirty(WC_VEHICLE_DEPOT, v->tile.index);
 
 	v->vehstatus |= VS_HIDDEN;
 	v->cur_speed = 0;
@@ -1577,7 +1574,7 @@ void VehicleEnterDepot(Vehicle *v)
 
 		if (v->current_order.IsRefit()) {
 			Backup<CompanyID> cur_company(_current_company, v->owner, FILE_LINE);
-			CommandCost cost = DoCommand(v->tile, v->index, v->current_order.GetRefitCargo() | 0xFF << 8, DC_EXEC, GetCmdRefitVeh(v));
+			CommandCost cost = DoCommand(v->tile.index, v->index, v->current_order.GetRefitCargo() | 0xFF << 8, DC_EXEC, GetCmdRefitVeh(v));
 			cur_company.Restore();
 
 			if (cost.Failed()) {
@@ -1728,7 +1725,7 @@ GetNewVehiclePosResult GetNewVehiclePos(const Vehicle *v)
 	gp.x = x;
 	gp.y = y;
 	gp.old_tile = v->tile;
-	gp.new_tile = TileVirtXY(x, y);
+	gp.new_tile = ExtendedTileIndex(TileVirtXY(x, y), v->tile.height);//TODO elevated should update height here ?
 	return gp;
 }
 
@@ -2458,7 +2455,7 @@ CommandCost Vehicle::SendToDepot(DoCommandFlag flags, DepotCommand command)
 
 		/* If there is no depot in front and the train is not already reversing, reverse automatically (trains only) */
 		if (this->type == VEH_TRAIN && (reverse ^ HasBit(Train::From(this)->flags, VRF_REVERSING))) {
-			DoCommand(this->tile, this->index, 0, DC_EXEC, CMD_REVERSE_TRAIN_DIRECTION);
+			DoCommand(this->tile.index, this->index, 0, DC_EXEC, CMD_REVERSE_TRAIN_DIRECTION);
 		}
 
 		if (this->type == VEH_AIRCRAFT) {

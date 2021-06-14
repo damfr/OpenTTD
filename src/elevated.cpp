@@ -111,6 +111,27 @@ void InsertElevatedTile(ExtendedTileIndex tile)
     _elevated_index.Insert(tile.index, tile_data);
 }
 
+
+
+/**
+ * Gets an adjacent ExtendedTileIndex moved alon DiagDirection dir
+ * If @a tile is a ground tile, then update the height to still be on the ground.
+ * Otherwise (if @a tile is elevated or underground) stay at the same height
+ * @param tile the start tile
+ * @param dir the DiagDirection to move along
+ * @return the new ExtendedTileIndex
+ */
+ExtendedTileIndex ExtendedTileAddByDiagDirFollowGround(ExtendedTileIndex tile, DiagDirection dir)
+{
+	if (IsIndexGroundTile(tile)) {
+		ExtendedTileIndex new_tile(tile.index + TileOffsByDiagDir(dir));
+		new_tile.height = TileHeight(tile.index);
+		return new_tile;
+	} else {
+		return ExtendedTileIndex(tile.index + TileOffsByDiagDir(dir), tile.height);
+	}
+}
+
 /**
  * Build an elevated ramp
  * @param tile tile to build the ramp on

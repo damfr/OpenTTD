@@ -76,6 +76,8 @@ struct ExtendedTileIndex {
     ExtendedTileIndex(TileIndex ground_index = INVALID_TILE);
 	ExtendedTileIndex(TileIndex ground_index, Height height_param) : index(ground_index), height(height_param) {}
 
+	//void operator=(TileIndex ground_index)
+
 	inline ExtendedTileIndex operator+(TileIndexDiff diff) const { return ExtendedTileIndex(this->index + diff, this->height); }
 	inline ExtendedTileIndex operator-(TileIndexDiff diff) const { return ExtendedTileIndex(this->index - diff, this->height); }
 

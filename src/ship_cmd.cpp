@@ -153,7 +153,7 @@ static const Depot *FindClosestShipDepot(const Vehicle *v, uint max_distance)
 	uint best_dist = max_distance == 0 ? UINT_MAX : max_distance + 1;
 
 	for (const Depot *depot : Depot::Iterate()) {
-		TileIndex tile = depot->xy;
+		ExtendedTileIndex tile = depot->xy;
 		if (IsShipDepotTile(tile) && IsTileOwner(tile, v->owner)) {
 			uint dist = DistanceManhattan(tile, v->tile);
 			if (dist < best_dist) {
@@ -353,13 +353,13 @@ static bool CheckShipLeaveDepot(Ship *v)
 	/* This helps avoid CPU load if many ships are set to start at the same time */
 	if (HasVehicleOnPos(v->tile, nullptr, &EnsureNoMovingShipProc)) return true;
 
-	TileIndex tile = v->tile;
+	ExtendedTileIndex tile = v->tile;
 	Axis axis = GetShipDepotAxis(tile);
 
 	DiagDirection north_dir = ReverseDiagDir(AxisToDiagDir(axis));
-	TileIndex north_neighbour = TILE_ADD(tile, TileOffsByDiagDir(north_dir));
+	ExtendedTileIndex north_neighbour = tile + TileOffsByDiagDir(north_dir);//TileIndex north_neighbour = TILE_ADD(tile, TileOffsByDiagDir(north_dir));
 	DiagDirection south_dir = AxisToDiagDir(axis);
-	TileIndex south_neighbour = TILE_ADD(tile, 2 * TileOffsByDiagDir(south_dir));
+	ExtendedTileIndex south_neighbour = tile + (2 * TileOffsByDiagDir(south_dir));
 
 	TrackBits north_tracks = DiagdirReachesTracks(north_dir) & GetTileShipTrackStatus(north_neighbour);
 	TrackBits south_tracks = DiagdirReachesTracks(south_dir) & GetTileShipTrackStatus(south_neighbour);
@@ -390,11 +390,11 @@ static bool CheckShipLeaveDepot(Ship *v)
 
 	v->cur_speed = 0;
 	v->UpdateViewport(true, true);
-	SetWindowDirty(WC_VEHICLE_DEPOT, v->tile);
+	SetWindowDirty(WC_VEHICLE_DEPOT, v->tile.index);
 
 	PlayShipSound(v);
 	VehicleServiceInDepot(v);
-	InvalidateWindowData(WC_VEHICLE_DEPOT, v->tile);
+	InvalidateWindowData(WC_VEHICLE_DEPOT, v->tile.index);
 	SetWindowClassesDirty(WC_SHIPS_LIST);
 
 	return false;
@@ -558,15 +558,15 @@ static int ShipTestUpDownOnLock(const Ship *v)
 	/* Must be at the centre of the lock */
 	if ((v->x_pos & 0xF) != 8 || (v->y_pos & 0xF) != 8) return 0;
 
-	DiagDirection diagdir = GetInclinedSlopeDirection(GetTileSlope(v->tile));
+	DiagDirection diagdir = GetInclinedSlopeDirection(GetTileSlope(v->tile.index));
 	assert(IsValidDiagDirection(diagdir));
 
 	if (DirToDiagDir(v->direction) == diagdir) {
 		/* Move up */
-		return (v->z_pos < GetTileMaxZ(v->tile) * (int)TILE_HEIGHT) ? 1 : 0;
+		return (v->z_pos < GetTileMaxZ(v->tile.index) * (int)TILE_HEIGHT) ? 1 : 0;
 	} else {
 		/* Move down */
-		return (v->z_pos > GetTileZ(v->tile) * (int)TILE_HEIGHT) ? -1 : 0;
+		return (v->z_pos > GetTileZ(v->tile.index) * (int)TILE_HEIGHT) ? -1 : 0;
 	}
 }
 
@@ -677,7 +677,7 @@ static void ShipController(Ship *v)
 					SetWindowWidgetDirty(WC_VEHICLE_VIEW, v->index, WID_VV_START_STOP);
 					/* Test if continuing forward would lead to a dead-end, moving into the dock. */
 					DiagDirection exitdir = VehicleExitDir(v->direction, v->state);
-					TileIndex tile = TileAddByDiagDir(v->tile, exitdir);
+					ExtendedTileIndex tile = ExtendedTileAddByDiagDirSameHeight(v->tile, exitdir);
 					if (TrackStatusToTrackBits(GetTileTrackStatus(tile, TRANSPORT_WATER, 0, exitdir)) == TRACK_BIT_NONE) goto reverse_direction;
 				} else if (v->dest_tile != 0) {
 					/* We have a target, let's see if we reached it... */

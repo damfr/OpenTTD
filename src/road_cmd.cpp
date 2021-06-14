@@ -2181,9 +2181,9 @@ static VehicleEnterTileStatus VehicleEnter_Road(Vehicle *v, ExtendedTileIndex ti
 				rv->vehstatus |= VS_HIDDEN;
 				rv->direction = ReverseDir(rv->direction);
 				if (rv->Next() == nullptr) VehicleEnterDepot(rv->First());
-				rv->tile = tile.index;
+				rv->tile = tile;
 
-				InvalidateWindowData(WC_VEHICLE_DEPOT, rv->tile);
+				InvalidateWindowData(WC_VEHICLE_DEPOT, rv->tile.index);
 				return VETSB_ENTERED_WORMHOLE;
 			}
 			break;

@@ -37,7 +37,7 @@ private:
 	friend const struct SaveLoad *GetOrderBackupDescription(); ///< Saving and loading of order backups.
 	friend void Load_BKOR();   ///< Creating empty orders upon savegame loading.
 	uint32 user;               ///< The user that requested the backup.
-	TileIndex tile;            ///< Tile of the depot where the order was changed.
+	ExtendedTileIndex tile;    ///< Tile of the depot where the order was changed.
 	GroupID group;             ///< The group the vehicle was part of.
 
 	const Vehicle *clone;      ///< Vehicle this vehicle was a clone of.
@@ -55,9 +55,9 @@ public:
 	static void Backup(const Vehicle *v, uint32 user);
 	static void Restore(Vehicle *v, uint32 user);
 
-	static void ResetOfUser(TileIndex tile, uint32 user);
+	static void ResetOfUser(ExtendedTileIndex tile, uint32 user);
 	static void ResetUser(uint32 user);
-	static void Reset(TileIndex tile = INVALID_TILE, bool from_gui = true);
+	static void Reset(ExtendedTileIndex tile = INVALID_EXTENDED_TILE, bool from_gui = true);
 
 	static void ClearGroup(GroupID group);
 	static void ClearVehicle(const Vehicle *v);

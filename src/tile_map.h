@@ -343,7 +343,7 @@ static inline bool IsIndexGroundTile(ExtendedTileIndex tile)
  * Check wether two height level of the same tile are in fact the same
  * (on the ground, different height levels designate the same thing)
  */
-static inline bool IsSameHeightLevel(TileIndex ground_tile, Height h1, Height h2)
+static inline bool IsSameHeightLevel(ExtendedTileIndex tile_1, ExtendedTileIndex tile_2)
 {
 	if (IsIndexGroundTile(tile_1) && IsIndexGroundTile(tile_2)) {
 		return IsInsideMM(tile_2.height, GetTileZ(tile_1.index), GetTileMaxZ(tile_1.index) + 1);

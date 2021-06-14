@@ -238,13 +238,13 @@ static bool DisasterTick_Zeppeliner(DisasterVehicle *v)
 			if (GB(v->tick_counter, 0, 3) == 0) CreateEffectVehicleRel(v, 0, -17, 2, EV_CRASH_SMOKE);
 
 		} else if (v->current_order.GetDestination() == 0) {
-			if (IsValidTile(v->tile) && IsAirportTile(v->tile)) {
+			if (IsValidTile(v->tile.index) && IsAirportTile(v->tile.index)) {
 				v->current_order.SetDestination(1);
 				v->age = 0;
 
-				SetDParam(0, GetStationIndex(v->tile));
-				AddTileNewsItem(STR_NEWS_DISASTER_ZEPPELIN, NT_ACCIDENT, v->tile);
-				AI::NewEvent(GetTileOwner(v->tile), new ScriptEventDisasterZeppelinerCrashed(GetStationIndex(v->tile)));
+				SetDParam(0, GetStationIndex(v->tile.index));
+				AddTileNewsItem(STR_NEWS_DISASTER_ZEPPELIN, NT_ACCIDENT, v->tile.index);
+				AI::NewEvent(GetTileOwner(v->tile.index), new ScriptEventDisasterZeppelinerCrashed(GetStationIndex(v->tile.index)));
 			}
 		}
 
@@ -259,10 +259,10 @@ static bool DisasterTick_Zeppeliner(DisasterVehicle *v)
 	if (v->current_order.GetDestination() > 2) {
 		if (++v->age <= 13320) return true;
 
-		if (IsValidTile(v->tile) && IsAirportTile(v->tile)) {
+		if (IsValidTile(v->tile.index) && IsAirportTile(v->tile.index)) {
 			Station *st = Station::GetByTile(v->tile);
 			CLRBITS(st->airport.flags, RUNWAY_IN_block);
-			AI::NewEvent(GetTileOwner(v->tile), new ScriptEventDisasterZeppelinerCleared(st->index));
+			AI::NewEvent(GetTileOwner(v->tile.index), new ScriptEventDisasterZeppelinerCleared(st->index));
 		}
 
 		v->UpdatePosition(v->x_pos, v->y_pos, GetAircraftFlightLevel(v));
@@ -297,8 +297,8 @@ static bool DisasterTick_Zeppeliner(DisasterVehicle *v)
 		v->age = 0;
 	}
 
-	if (IsValidTile(v->tile) && IsAirportTile(v->tile)) {
-		SETBITS(Station::GetByTile(v->tile)->airport.flags, RUNWAY_IN_block);
+	if (IsValidTile(v->tile.index) && IsAirportTile(v->tile.index)) {
+		SETBITS(Station::GetByTile(v->tile.index)->airport.flags, RUNWAY_IN_block);
 	}
 
 	return true;
@@ -377,10 +377,10 @@ static bool DisasterTick_Ufo(DisasterVehicle *v)
 			if (u->crashed_ctr == 0) {
 				u->Crash();
 
-				AddTileNewsItem(STR_NEWS_DISASTER_SMALL_UFO, NT_ACCIDENT, u->tile);
+				AddTileNewsItem(STR_NEWS_DISASTER_SMALL_UFO, NT_ACCIDENT, u->tile.index);
 
-				AI::NewEvent(u->owner, new ScriptEventVehicleCrashed(u->index, u->tile, ScriptEventVehicleCrashed::CRASH_RV_UFO));
-				Game::NewEvent(new ScriptEventVehicleCrashed(u->index, u->tile, ScriptEventVehicleCrashed::CRASH_RV_UFO));
+				AI::NewEvent(u->owner, new ScriptEventVehicleCrashed(u->index, u->tile.index, ScriptEventVehicleCrashed::CRASH_RV_UFO));
+				Game::NewEvent(new ScriptEventVehicleCrashed(u->index, u->tile.index, ScriptEventVehicleCrashed::CRASH_RV_UFO));
 			}
 		}
 
@@ -552,7 +552,7 @@ static bool DisasterTick_Big_Ufo(DisasterVehicle *v)
 
 		Town *t = ClosestTownFromTile(v->dest_tile, UINT_MAX);
 		SetDParam(0, t->index);
-		AddTileNewsItem(STR_NEWS_DISASTER_BIG_UFO, NT_ACCIDENT, v->tile);
+		AddTileNewsItem(STR_NEWS_DISASTER_BIG_UFO, NT_ACCIDENT, v->tile.index);
 
 		if (!Vehicle::CanAllocateItem(2)) {
 			delete v;
@@ -630,7 +630,7 @@ static bool DisasterTick_Big_Ufo_Destroyer(DisasterVehicle *v)
 
 		for (int dy = -3; dy < 3; dy++) {
 			for (int dx = -3; dx < 3; dx++) {
-				TileIndex tile = TileAddWrap(v->tile, dx, dy);
+				TileIndex tile = TileAddWrap(v->tile.index, dx, dy);
 				if (tile != INVALID_TILE) DisasterClearSquare(tile);
 			}
 		}

@@ -3159,9 +3159,9 @@ static VehicleEnterTileStatus VehicleEnter_Track(Vehicle *u, ExtendedTileIndex t
 		v->vehstatus |= VS_HIDDEN;
 		v->direction = ReverseDir(v->direction);
 		if (v->Next() == nullptr) VehicleEnterDepot(v->First());
-		v->tile = tile.index;
+		v->tile = tile;
 
-		InvalidateWindowData(WC_VEHICLE_DEPOT, v->tile);
+		InvalidateWindowData(WC_VEHICLE_DEPOT, v->tile.index);
 		return VETSB_ENTERED_WORMHOLE;
 	}
 

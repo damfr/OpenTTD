@@ -386,7 +386,7 @@ CommandCost CmdTurnRoadVeh(TileIndex tile, DoCommandFlag flags, uint32 p1, uint3
 		return CMD_ERROR;
 	}
 
-	if (IsNormalRoadTile(v->tile) && GetDisallowedRoadDirections(v->tile) != DRD_NONE) return CMD_ERROR;
+	if (IsNormalRoadTile(v->tile.index) && GetDisallowedRoadDirections(v->tile.index) != DRD_NONE) return CMD_ERROR;
 
 	if (IsTileType(v->tile, MP_TUNNELBRIDGE) && DirToDiagDir(v->direction) == GetTunnelBridgeDirection(v->tile)) return CMD_ERROR;
 
@@ -548,14 +548,14 @@ static void RoadVehCrash(RoadVehicle *v)
 {
 	uint pass = v->Crash();
 
-	AI::NewEvent(v->owner, new ScriptEventVehicleCrashed(v->index, v->tile, ScriptEventVehicleCrashed::CRASH_RV_LEVEL_CROSSING));
-	Game::NewEvent(new ScriptEventVehicleCrashed(v->index, v->tile, ScriptEventVehicleCrashed::CRASH_RV_LEVEL_CROSSING));
+	AI::NewEvent(v->owner, new ScriptEventVehicleCrashed(v->index, v->tile.index, ScriptEventVehicleCrashed::CRASH_RV_LEVEL_CROSSING));
+	Game::NewEvent(new ScriptEventVehicleCrashed(v->index, v->tile.index, ScriptEventVehicleCrashed::CRASH_RV_LEVEL_CROSSING));
 
 	SetDParam(0, pass);
 	StringID newsitem = (pass == 1) ? STR_NEWS_ROAD_VEHICLE_CRASH_DRIVER : STR_NEWS_ROAD_VEHICLE_CRASH;
-	AddTileNewsItem(newsitem, NT_ACCIDENT, v->tile);
+	AddTileNewsItem(newsitem, NT_ACCIDENT, v->tile.index);
 
-	ModifyStationRatingAround(v->tile, v->owner, -160, 22);
+	ModifyStationRatingAround(v->tile.index, v->owner, -160, 22);
 	if (_settings_client.sound.disaster) SndPlayVehicleFx(SND_12_EXPLOSION, v);
 }
 
@@ -564,7 +564,8 @@ static bool RoadVehCheckTrainCrash(RoadVehicle *v)
 	for (RoadVehicle *u = v; u != nullptr; u = u->Next()) {
 		if (u->state == RVSB_WORMHOLE) continue;
 
-		TileIndex tile = u->tile;
+		if (!IsIndexGroundTile(u->tile)) return; //TODO elevated crossings
+		TileIndex tile = u->tile.index;
 
 		if (!IsLevelCrossingTile(tile)) continue;
 
@@ -832,11 +833,11 @@ static void RoadVehCheckOvertake(RoadVehicle *v, RoadVehicle *u)
 	 *  - No junctions
 	 *  - No barred levelcrossing
 	 *  - No other vehicles in the way
-	 */
-	od.tile = v->tile;
+	 */assert(IsIndexGroundTile(v->tile)); //TODO elevated roads overtaking
+	od.tile = v->tile.index;
 	if (CheckRoadBlockedForOvertaking(&od)) return;
 
-	od.tile = v->tile + TileOffsByDiagDir(DirToDiagDir(v->direction));
+	od.tile = v->tile.index + TileOffsByDiagDir(DirToDiagDir(v->direction));
 	if (CheckRoadBlockedForOvertaking(&od)) return;
 
 	/* When the vehicle in front of us is stopped we may only take
@@ -874,11 +875,11 @@ static int PickRandomBit(uint bits)
  * @param enterdir the direction the vehicle enters the tile from
  * @return the Trackdir to take
  */
-static Trackdir RoadFindPathToDest(RoadVehicle *v, TileIndex tile, DiagDirection enterdir)
+static Trackdir RoadFindPathToDest(RoadVehicle *v, ExtendedTileIndex tile, DiagDirection enterdir)
 {
 #define return_track(x) { best_track = (Trackdir)x; goto found_best_track; }
 
-	TileIndex desttile;
+	ExtendedTileIndex desttile;
 	Trackdir best_track;
 	bool path_found = true;
 
@@ -1014,8 +1015,8 @@ static bool RoadVehLeaveDepot(RoadVehicle *v, bool first)
 	Trackdir tdir = DiagDirToDiagTrackdir(dir);
 	const RoadDriveEntry *rdp = _road_drive_data[GetRoadTramType(v->roadtype)][(_settings_game.vehicle.road_side << RVS_DRIVE_SIDE) + tdir];
 
-	int x = TileX(v->tile) * TILE_SIZE + (rdp[RVC_DEPOT_START_FRAME].x & 0xF);
-	int y = TileY(v->tile) * TILE_SIZE + (rdp[RVC_DEPOT_START_FRAME].y & 0xF);
+	int x = TileX(v->tile.index) * TILE_SIZE + (rdp[RVC_DEPOT_START_FRAME].x & 0xF);
+	int y = TileY(v->tile.index) * TILE_SIZE + (rdp[RVC_DEPOT_START_FRAME].y & 0xF);
 
 	if (first) {
 		/* We are leaving a depot, but have to go to the exact same one; re-enter */
@@ -1024,7 +1025,7 @@ static bool RoadVehLeaveDepot(RoadVehicle *v, bool first)
 			return true;
 		}
 
-		if (RoadVehFindCloseTo(v, x, y, v->direction, false) != nullptr) return true;
+		if (RoadVehFindCloseTo(v, x, y, v->direction, false) != nullptr) return true;//TODO elevated roads change this
 
 		VehicleServiceInDepot(v);
 
@@ -1043,12 +1044,12 @@ static bool RoadVehLeaveDepot(RoadVehicle *v, bool first)
 	v->UpdatePosition();
 	v->UpdateInclination(true, true);
 
-	InvalidateWindowData(WC_VEHICLE_DEPOT, v->tile);
+	InvalidateWindowData(WC_VEHICLE_DEPOT, v->tile.index);
 
 	return true;
 }
 
-static Trackdir FollowPreviousRoadVehicle(const RoadVehicle *v, const RoadVehicle *prev, TileIndex tile, DiagDirection entry_dir, bool already_reversed)
+static Trackdir FollowPreviousRoadVehicle(const RoadVehicle *v, const RoadVehicle *prev, ExtendedTileIndex tile, DiagDirection entry_dir, bool already_reversed)
 {
 	if (prev->tile == v->tile && !already_reversed) {
 		/* If the previous vehicle is on the same tile as this vehicle is
@@ -1090,7 +1091,7 @@ static Trackdir FollowPreviousRoadVehicle(const RoadVehicle *v, const RoadVehicl
 			static const Trackdir reversed_turn_lookup[2][DIAGDIR_END] = {
 				{ TRACKDIR_UPPER_W, TRACKDIR_RIGHT_N, TRACKDIR_LEFT_N,  TRACKDIR_UPPER_E },
 				{ TRACKDIR_RIGHT_S, TRACKDIR_LOWER_W, TRACKDIR_LOWER_E, TRACKDIR_LEFT_S  }};
-			dir = reversed_turn_lookup[prev->tile < tile ? 0 : 1][ReverseDiagDir(entry_dir)];
+			dir = reversed_turn_lookup[prev->tile.index < tile.index ? 0 : 1][ReverseDiagDir(entry_dir)]; //TODO elevated roads check this
 		} else if (HasBit(prev_state, RVS_IN_DT_ROAD_STOP)) {
 			dir = (Trackdir)(prev_state & RVSB_ROAD_STOP_TRACKDIR_MASK);
 		} else if (prev_state < TRACKDIR_END) {
@@ -1190,7 +1191,8 @@ bool IndividualRoadVehicleController(RoadVehicle *v, const RoadVehicle *prev)
 		(_settings_game.vehicle.road_side << RVS_DRIVE_SIDE)) ^ v->overtaking][v->frame + 1];
 
 	if (rd.x & RDE_NEXT_TILE) {
-		TileIndex tile = v->tile + TileOffsByDiagDir((DiagDirection)(rd.x & 3));
+		//TileIndex tile = v->tile + TileOffsByDiagDir((DiagDirection)(rd.x & 3));
+		ExtendedTileIndex tile = ExtendedTileAddByDiagDirFollowGround(v->tile, (DiagDirection)(rd.x & 3));
 		Trackdir dir;
 
 		if (v->IsFrontEngine()) {
@@ -1322,7 +1324,7 @@ again:
 		}
 
 		if (!HasBit(r, VETS_ENTERED_WORMHOLE)) {
-			TileIndex old_tile = v->tile;
+			ExtendedTileIndex old_tile = v->tile;
 
 			v->tile = tile;
 			v->state = (byte)dir;
@@ -1497,7 +1499,7 @@ again:
 			/* Vehicle has arrived at a bay in a road stop */
 
 			if (IsDriveThroughStopTile(v->tile)) {
-				TileIndex next_tile = TileAddByDir(v->tile, v->direction);
+				ExtendedTileIndex next_tile = ExtendedTileAddByDiagDirFollowGround(v->tile, v->direction);
 
 				/* Check if next inline bay is free and has compatible road. */
 				if (RoadStop::IsDriveThroughRoadStopContinuation(v->tile, next_tile) && HasTileAnyRoadType(next_tile, v->compatible_roadtypes)) {
