@@ -96,12 +96,13 @@ struct CFollowTrackT
 	inline static bool DoTrackMasking() { return Tmask_reserved_tracks; }
 
 	/** Tests if a tile is a road tile with a single tramtrack (tram can reverse) */
-	inline DiagDirection GetSingleTramBit(TileIndex tile)
+	inline DiagDirection GetSingleTramBit(ExtendedTileIndex tile)
 	{
 		assert(IsTram()); // this function shouldn't be called in other cases
+		assert(IsIndexGroundTile(tile));
 
-		if (IsNormalRoadTile(tile)) {
-			RoadBits rb = GetRoadBits(tile, RTT_TRAM);
+		if (IsNormalRoadTile(tile.index)) {
+			RoadBits rb = GetRoadBits(tile.index, RTT_TRAM);
 			switch (rb) {
 				case ROAD_NW: return DIAGDIR_NW;
 				case ROAD_SW: return DIAGDIR_SW;
@@ -346,7 +347,7 @@ protected:
 
 		/* road transport is possible only on compatible road types */
 		if (IsRoadTT()) {
-			assert(IsIndexGroundTile(tile)); //TODO elevated roads
+			assert(IsIndexGroundTile(m_new_tile)); //TODO elevated roads
 			const RoadVehicle *v = RoadVehicle::From(m_veh);
 			RoadType roadtype = GetRoadType(m_new_tile.index, GetRoadTramType(v->roadtype));
 			if (!HasBit(v->compatible_roadtypes, roadtype)) {
@@ -414,7 +415,7 @@ protected:
 				m_new_td_bits = TrackdirToTrackdirBits(ReverseTrackdir(m_old_td));
 				m_exitdir = exitdir;
 				m_tiles_skipped = 0;
-				m_is_tunnel = /*m_is_bridge = m_is_station =*/ false;
+				/*m_is_tunnel = m_is_bridge =*/ m_is_station = false;
 				return true;
 			}
 		}
@@ -427,7 +428,7 @@ protected:
 			m_new_td_bits = TrackdirToTrackdirBits(ReverseTrackdir(m_old_td));
 			m_exitdir = ReverseDiagDir(m_exitdir);
 			m_tiles_skipped = 0;
-			m_is_tunnel = /* m_is_bridge = m_is_station =*/ false;
+			/*m_is_tunnel =  m_is_bridge =*/ m_is_station = false;
 			return true;
 		}
 

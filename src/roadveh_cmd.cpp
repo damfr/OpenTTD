@@ -564,7 +564,7 @@ static bool RoadVehCheckTrainCrash(RoadVehicle *v)
 	for (RoadVehicle *u = v; u != nullptr; u = u->Next()) {
 		if (u->state == RVSB_WORMHOLE) continue;
 
-		if (!IsIndexGroundTile(u->tile)) return; //TODO elevated crossings
+		if (!IsIndexGroundTile(u->tile)) return false; //TODO elevated crossings
 		TileIndex tile = u->tile.index;
 
 		if (!IsLevelCrossingTile(tile)) continue;
@@ -656,8 +656,9 @@ static RoadVehicle *RoadVehFindCloseTo(RoadVehicle *v, int x, int y, Direction d
 	rvf.best_diff = UINT_MAX;
 
 	if (front->state == RVSB_WORMHOLE) {
-		FindVehicleOnPos(v->tile, &rvf, EnumCheckRoadVehClose);
-		FindVehicleOnPos(GetOtherTunnelBridgeEnd(v->tile), &rvf, EnumCheckRoadVehClose);
+		//FindVehicleOnPos(v->tile, &rvf, EnumCheckRoadVehClose);
+		//FindVehicleOnPos(GetOtherTunnelBridgeEnd(v->tile), &rvf, EnumCheckRoadVehClose);
+		//TODO elevated roads
 	} else {
 		FindVehicleOnPosXY(x, y, &rvf, EnumCheckRoadVehClose); //TODO elevated
 	}
@@ -1123,12 +1124,13 @@ static Trackdir FollowPreviousRoadVehicle(const RoadVehicle *v, const RoadVehicl
  * @param r the road bits needed.
  * @return true when a track track can be build on 't'
  */
-static bool CanBuildTramTrackOnTile(CompanyID c, TileIndex t, RoadType rt, RoadBits r)
+static bool CanBuildTramTrackOnTile(CompanyID c, ExtendedTileIndex t, RoadType rt, RoadBits r)
 {
+	assert(IsIndexGroundTile(t)); //TODO elevated roads
 	/* The 'current' company is not necessarily the owner of the vehicle. */
 	Backup<CompanyID> cur_company(_current_company, c, FILE_LINE);
 
-	CommandCost ret = DoCommand(t, rt << 4 | r, 0, DC_NO_WATER, CMD_BUILD_ROAD);
+	CommandCost ret = DoCommand(t.index, rt << 4 | r, 0, DC_NO_WATER, CMD_BUILD_ROAD);
 
 	cur_company.Restore();
 	return ret.Succeeded();
@@ -1499,7 +1501,8 @@ again:
 			/* Vehicle has arrived at a bay in a road stop */
 
 			if (IsDriveThroughStopTile(v->tile)) {
-				ExtendedTileIndex next_tile = ExtendedTileAddByDiagDirFollowGround(v->tile, v->direction);
+				//ExtendedTileIndex next_tile = ExtendedTileAddByDiagDirFollowGround(v->tile, v->direction);
+				ExtendedTileIndex next_tile = v->tile + TileOffsByDir(v->direction);
 
 				/* Check if next inline bay is free and has compatible road. */
 				if (RoadStop::IsDriveThroughRoadStopContinuation(v->tile, next_tile) && HasTileAnyRoadType(next_tile, v->compatible_roadtypes)) {
@@ -1698,7 +1701,7 @@ static void CheckIfRoadVehNeedsService(RoadVehicle *v)
 
 	SetBit(v->gv_flags, GVF_SUPPRESS_IMPLICIT_ORDERS);
 	v->current_order.MakeGoToDepot(depot, ODTFB_SERVICE);
-	v->SetDestTile(rfdd.tile);
+	v->SetDestTile(rfdd.tile.index);
 	SetWindowWidgetDirty(WC_VEHICLE_VIEW, v->index, WID_VV_START_STOP);
 }
 
@@ -1748,4 +1751,33 @@ Trackdir RoadVehicle::GetVehicleTrackdir() const
 	/* If vehicle's state is a valid track direction (vehicle is not turning around) return it,
 	 * otherwise transform it into a valid track direction */
 	return (Trackdir)((IsReversingRoadTrackdir((Trackdir)this->state)) ? (this->state - 6) : this->state);
+}
+
+ExtendedTileIndex PathCacheExtendedTileWrapper::front() 
+{
+	return ExtendedTileIndex(path->tile_ground.front(), path->tile_height.front(), path->tile_flags.front());
+}
+ExtendedTileIndex PathCacheExtendedTileWrapper::back() 
+{
+	return ExtendedTileIndex(path->tile_ground.back(), path->tile_height.back(), path->tile_flags.back());
+}
+
+void PathCacheExtendedTileWrapper::push_front(ExtendedTileIndex tile)
+{ 
+	path->tile_ground.push_front(tile.index);
+	path->tile_height.push_front(tile.height);
+	path->tile_flags.push_front(tile.flags);
+}
+
+void PathCacheExtendedTileWrapper::pop_front()
+{
+	path->tile_ground.pop_front();
+	path->tile_height.pop_front();
+	path->tile_flags.pop_front();
+}
+void PathCacheExtendedTileWrapper::pop_back()
+{
+	path->tile_ground.pop_back();
+	path->tile_height.pop_back();
+	path->tile_flags.pop_back();
 }

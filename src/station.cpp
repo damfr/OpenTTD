@@ -27,6 +27,7 @@
 #include "core/random_func.hpp"
 #include "linkgraph/linkgraph.h"
 #include "linkgraph/linkgraphschedule.h"
+#include "elevated.h"
 
 #include "table/strings.h"
 
@@ -435,19 +436,20 @@ void Station::RecomputeCatchment()
 
 	/* Loop finding all station tiles */
 	TileArea ta(TileXY(this->rect.left, this->rect.top), TileXY(this->rect.right, this->rect.bottom));
-	for (TileIndex tile : ta) {
+	for (ExtendedOrthogonalTileIterator tile = ta.BeginExtended(); tile != ta.EndExtended(); ++tile) {
 		if (!IsTileType(tile, MP_STATION) || GetStationIndex(tile) != this->index) continue;
 
-		uint r = GetTileCatchmentRadius(tile, this);
+		uint r = GetTileCatchmentRadius((*tile).index, this);
 		if (r == CA_NONE) continue;
 
 		/* This tile sub-loop doesn't need to test any tiles, they are simply added to the catchment set. */
-		TileArea ta2 = TileArea(tile, 1, 1).Expand(r);
+		TileArea ta2 = TileArea((*tile).index, 1, 1).Expand(r);
 		for (TileIndex tile2 : ta2) this->catchment_tiles.SetTile(tile2);
 	}
 
 	/* Search catchment tiles for towns and industries */
 	BitmapTileIterator it(this->catchment_tiles);
+	/* Towns and industries are necessarily on the ground */
 	for (TileIndex tile = it; tile != INVALID_TILE; tile = ++it) {
 		if (IsTileType(tile, MP_HOUSE)) {
 			Town *t = Town::GetByTile(tile);
@@ -567,7 +569,7 @@ CommandCost StationRect::BeforeAddRect(TileIndex tile, int w, int h, StationRect
 /* static */ bool StationRect::ScanForStationTiles(StationID st_id, int left_a, int top_a, int right_a, int bottom_a)
 {
 	TileArea ta(TileXY(left_a, top_a), TileXY(right_a, bottom_a));
-	for (TileIndex tile : ta) {
+	for (ExtendedOrthogonalTileIterator tile = ta.BeginExtended(); tile != ta.EndExtended(); ++tile) {
 		if (IsTileType(tile, MP_STATION) && GetStationIndex(tile) == st_id) return true;
 	}
 

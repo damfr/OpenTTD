@@ -303,7 +303,7 @@ static inline bool IsDockTile(TileIndex t)
  * @pre IsTileType(t, MP_STATION)
  * @return \c true if the tile is a buoy
  */
-static inline bool IsBuoy(TileIndex t)
+static inline bool IsBuoy(ExtendedTileIndex t)
 {
 	return GetStationType(t) == STATION_BUOY;
 }
@@ -313,7 +313,7 @@ static inline bool IsBuoy(TileIndex t)
  * @param t Tile to check
  * @return \c true if the tile is a buoy
  */
-static inline bool IsBuoyTile(TileIndex t)
+static inline bool IsBuoyTile(ExtendedTileIndex t)
 {
 	return IsTileType(t, MP_STATION) && IsBuoy(t);
 }
@@ -323,9 +323,9 @@ static inline bool IsBuoyTile(TileIndex t)
  * @param t Tile to check
  * @return \c true if the tile is an hangar
  */
-static inline bool IsHangarTile(TileIndex t)
+static inline bool IsHangarTile(ExtendedTileIndex t)
 {
-	return IsTileType(t, MP_STATION) && IsHangar(t);
+	return IsIndexGroundTile(t) && IsTileType(t.index, MP_STATION) && IsHangar(t.index);
 }
 
 /**

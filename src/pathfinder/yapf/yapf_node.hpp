@@ -12,11 +12,11 @@
 
 /** Yapf Node Key that evaluates hash from (and compares) tile & exit dir. */
 struct CYapfNodeKeyExitDir {
-	TileIndex      m_tile;
-	Trackdir       m_td;
-	DiagDirection  m_exitdir;
+	ExtendedTileIndex  m_tile;
+	Trackdir      	   m_td;
+	DiagDirection      m_exitdir;
 
-	inline void Set(TileIndex tile, Trackdir td)
+	inline void Set(ExtendedTileIndex tile, Trackdir td)
 	{
 		m_tile = tile;
 		m_td = td;
@@ -25,7 +25,7 @@ struct CYapfNodeKeyExitDir {
 
 	inline int CalcHash() const
 	{
-		return m_exitdir | (m_tile << 2);
+		return m_exitdir | (m_tile.Pack() << 2);
 	}
 
 	inline bool operator==(const CYapfNodeKeyExitDir &other) const
@@ -45,7 +45,7 @@ struct CYapfNodeKeyTrackDir : public CYapfNodeKeyExitDir
 {
 	inline int CalcHash() const
 	{
-		return m_td | (m_tile << 4);
+		return m_td | (m_tile.Pack() << 4);
 	}
 
 	inline bool operator==(const CYapfNodeKeyTrackDir &other) const
@@ -67,7 +67,7 @@ struct CYapfNodeT {
 	int         m_estimate;
 	bool        m_is_choice;
 
-	inline void Set(Node *parent, TileIndex tile, Trackdir td, bool is_choice)
+	inline void Set(Node *parent, ExtendedTileIndex tile, Trackdir td, bool is_choice)
 	{
 		m_key.Set(tile, td);
 		m_hash_next = nullptr;
@@ -87,7 +87,7 @@ struct CYapfNodeT {
 		m_hash_next = pNext;
 	}
 
-	inline TileIndex GetTile() const
+	inline ExtendedTileIndex GetTile() const
 	{
 		return m_key.m_tile;
 	}

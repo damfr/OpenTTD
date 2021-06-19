@@ -33,7 +33,7 @@ FindDepotData NPFRoadVehicleFindNearestDepot(const RoadVehicle *v, int max_penal
  * @param path_found [out] Whether a path has been found (true) or has been guessed (false)
  * @return          the best trackdir for next turn or INVALID_TRACKDIR if the path could not be found
  */
-Trackdir NPFRoadVehicleChooseTrack(const RoadVehicle *v, TileIndex tile, DiagDirection enterdir, bool &path_found);
+Trackdir NPFRoadVehicleChooseTrack(const RoadVehicle *v, ExtendedTileIndex tile, DiagDirection enterdir, bool &path_found);
 
 /**
  * Finds the best path for given ship using NPF.
@@ -69,7 +69,7 @@ FindDepotData NPFTrainFindNearestDepot(const Train *v, int max_penalty);
  * @param override_railtype Should all physically compatible railtypes be searched, even if the vehicle can't run on them on its own?
  * @return True if the path could be extended to a safe tile.
  */
-bool NPFTrainFindNearestSafeTile(const Train *v, TileIndex tile, Trackdir td, bool override_railtype);
+bool NPFTrainFindNearestSafeTile(const Train *v, ExtendedTileIndex tile, Trackdir td, bool override_railtype);
 
 /**
  * Returns true if it is better to reverse the train before leaving station using NPF.

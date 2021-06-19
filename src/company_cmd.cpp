@@ -279,7 +279,7 @@ void UpdateLandscapingLimits()
  * @param tile  optional tile to get the right town.
  * @pre if tile == 0, then owner can't be OWNER_TOWN.
  */
-void GetNameOfOwner(Owner owner, TileIndex tile)
+void GetNameOfOwner(Owner owner, ExtendedTileIndex tile)
 {
 	SetDParam(2, owner);
 
@@ -326,7 +326,7 @@ CommandCost CheckOwnership(Owner owner, TileIndex tile)
  * @param tile the tile to check.
  * @return A succeeded command iff it's owned by the current company, else a failed command.
  */
-CommandCost CheckTileOwnership(TileIndex tile)
+CommandCost CheckTileOwnership(ExtendedTileIndex tile)
 {
 	Owner owner = GetTileOwner(tile);
 

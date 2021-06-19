@@ -317,6 +317,25 @@ static inline TileIndex AddTileIndexDiffCWrap(TileIndex tile, TileIndexDiffC dif
 }
 
 /**
+ * Add a TileIndexDiffC to a ExtendedTileIndex and returns the new one.
+ *
+ * Returns tile + the diff given in diff. If the result tile would end up
+ * outside of the map, INVALID_EXTENDED_TILE is returned instead.
+ *
+ * @param tile The base tile to add the offset on
+ * @param diff The offset to add on the tile
+ * @return The resulting TileIndex
+ */
+static inline ExtendedTileIndex AddTileIndexDiffCWrap(ExtendedTileIndex tile, TileIndexDiffC diff)
+{
+	int x = TileX(tile) + diff.x;
+	int y = TileY(tile) + diff.y;
+	/* Negative value will become big positive value after cast */
+	if ((uint)x >= MapSizeX() || (uint)y >= MapSizeY()) return INVALID_EXTENDED_TILE;
+	return ExtendedTileIndex(TileXY(x, y), tile.height, tile.flags);
+}
+
+/**
  * Returns the diff between two tiles
  *
  * @param tile_a from tile
@@ -406,7 +425,7 @@ ExtendedTileIndex ExtendedTileAddByDiagDirFollowGround(ExtendedTileIndex tile, D
  */
 static inline ExtendedTileIndex ExtendedTileAddByDiagDirSameHeight(ExtendedTileIndex tile, DiagDirection dir)
 {
-	return ExtendedTileIndex(tile.index + TileOffsByDiagDir(dir), tile.height);
+	return ExtendedTileIndex(tile.index + TileOffsByDiagDir(dir), tile.height, tile.flags);
 }
 
 /**

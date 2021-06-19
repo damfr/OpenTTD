@@ -94,7 +94,7 @@ static Waypoint *FindDeletedWaypointCloseTo(TileIndex tile, StringID str, Compan
  * @param tile the tile to look at.
  * @return the axis for the to-be-build waypoint.
  */
-Axis GetAxisForNewWaypoint(TileIndex tile)
+Axis GetAxisForNewWaypoint(ExtendedTileIndex tile)
 {
 	/* The axis for rail waypoints is easy. */
 	if (IsRailWaypointTile(tile)) return GetRailStationAxis(tile);

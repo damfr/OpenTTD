@@ -82,22 +82,48 @@ static const byte RV_OVERTAKE_TIMEOUT = 35;
 void RoadVehUpdateCache(RoadVehicle *v, bool same_length = false);
 void GetRoadVehSpriteSize(EngineID engine, uint &width, uint &height, int &xoffs, int &yoffs, EngineImageType image_type);
 
+struct RoadVehPathCache;
+struct PathCacheExtendedTileWrapper {
+	RoadVehPathCache* path;
+
+	PathCacheExtendedTileWrapper(RoadVehPathCache* path_cache) : path(path_cache)
+	{}
+
+	ExtendedTileIndex front();
+	ExtendedTileIndex back();
+
+	void push_front(ExtendedTileIndex tile);
+
+	void pop_front();
+	void pop_back();
+};
+
 struct RoadVehPathCache {
 	std::deque<Trackdir> td;
-	std::deque<TileIndex> tile;
+	std::deque<TileIndex> tile_ground;
+	std::deque<Height> tile_height;
+	std::deque<ElevatedFlags> tile_flags;
+
+	PathCacheExtendedTileWrapper tile; ///< Hack to be able to do path.tile.front()
+
+	RoadVehPathCache() : tile(this)
+	{}
 
 	inline bool empty() const { return this->td.empty(); }
 
 	inline size_t size() const
 	{
-		assert(this->td.size() == this->tile.size());
+		assert(this->td.size() == this->tile_ground.size() && this->tile_ground.size() == this->tile_height.size()
+			&& this->tile_height.size() == this->tile_flags.size);
 		return this->td.size();
 	}
 
 	inline void clear()
 	{
 		this->td.clear();
-		this->tile.clear();
+		this->tile_ground.clear();
+		this->tile_height.clear();
+		this->tile_flags.clear();
 	}
 };
 

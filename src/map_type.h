@@ -10,6 +10,9 @@
 #ifndef MAP_TYPE_H
 #define MAP_TYPE_H
 
+#include "core/bitmath_func.hpp"
+#include "tile_type.h"
+
 /**
  * Data that is stored per tile. Also used TileExtended for this.
  * Look at docs/landscape.html for the exact meaning of the members.
@@ -69,17 +72,26 @@ struct VirtualElevatedTile {
 typedef byte Height;
 //static const Height GROUND_HEIGHT = -1;
 
+enum ElevatedFlags {
+	EL_GROUND = 0,
+	EL_ELEVATED,
+	EL_TUNNEL,
+};
+
 struct ExtendedTileIndex {
     TileIndex index;
     Height height;
+	ElevatedFlags flags;
+
 
     ExtendedTileIndex(TileIndex ground_index = INVALID_TILE);
-	ExtendedTileIndex(TileIndex ground_index, Height height_param) : index(ground_index), height(height_param) {}
+	ExtendedTileIndex(TileIndex ground_index, Height height_param, ElevatedFlags flags_p) 
+		: index(ground_index), height(height_param), flags(flags_p) {}
 
 	//void operator=(TileIndex ground_index)
 
-	inline ExtendedTileIndex operator+(TileIndexDiff diff) const { return ExtendedTileIndex(this->index + diff, this->height); }
-	inline ExtendedTileIndex operator-(TileIndexDiff diff) const { return ExtendedTileIndex(this->index - diff, this->height); }
+	inline ExtendedTileIndex operator+(TileIndexDiff diff) const { return ExtendedTileIndex(this->index + diff, this->height, this->flags); }
+	inline ExtendedTileIndex operator-(TileIndexDiff diff) const { return ExtendedTileIndex(this->index - diff, this->height, this->flags); }
 
 	inline void operator+=(TileIndexDiff diff) { this->index += diff; }
 	inline void operator-=(TileIndexDiff diff) { this->index -= diff; }
@@ -88,10 +100,30 @@ struct ExtendedTileIndex {
 	inline bool operator!=(ExtendedTileIndex other_tile) const { return !(*this == other_tile); }
 
 	inline bool IsValid() const { return this->index != INVALID_TILE; }
+
+	
+
+	/**
+	 * Packs an ExtendedTileIndex in the first 32+8+2=42 bits of an uint64
+	 * @return the packed ExtendedTileIndex
+	 */
+	uint64 Pack() const
+	{
+		return ((uint64) index) | (((uint64) height) << 32) | ((uint64) flags << 40);
+	}
+
+	/**
+	 * Unpacks an ExtendedTileIndex from the first 32+8=40 bits of an uint64
+	 * @return the unpacked ExtendedTileIndex
+	 */
+	static ExtendedTileIndex Unpack(uint64 packed) 
+	{
+		return ExtendedTileIndex(GB(packed, 0, 32), GB(packed, 32, 8), GB(packed, 40, 2));
+	}
 };
 
 
-static const ExtendedTileIndex INVALID_EXTENDED_TILE = ExtendedTileIndex(INVALID_TILE, 0);
+static const ExtendedTileIndex INVALID_EXTENDED_TILE = ExtendedTileIndex(INVALID_TILE, 0, EL_GROUND);
 
 
 /** Minimal and maximal map width and height */

@@ -34,7 +34,7 @@ void CcBuildWagon(const CommandCost &result, TileIndex tile, uint32 p1, uint32 p
 	/* find a locomotive in the depot. */
 	const Vehicle *found = nullptr;
 	for (const Train *t : Train::Iterate()) {
-		if (t->IsFrontEngine() && t->tile == tile.index && t->IsStoppedInDepot()) { //TODO elevated depot
+		if (t->IsFrontEngine() && t->tile == tile && t->IsStoppedInDepot()) { //TODO elevated depot
 			if (found != nullptr) return; // must be exactly one.
 			found = t;
 		}

@@ -65,7 +65,7 @@ void SetRailStationPlatformReservation(ExtendedTileIndex start, DiagDirection di
 
 	do {
 		SetRailStationReservation(tile, b);
-		MarkTileDirtyByTile(tile.index, tile.height); //TODO elevated stations
+		MarkTileDirtyByTile(tile); //TODO elevated stations
 		//tile = TILE_ADD(tile, diff);
 		ExtendedTileAddByDiagDirFollowGround(tile, dir); //TODO performance cache TileIndexDiff
 	} while (IsCompatibleTrainStationTile(tile, start));

@@ -17,6 +17,6 @@
  * @param tile  the tile that is changed
  * @param track what piece of track is changed
  */
-void YapfNotifyTrackLayoutChange(TileIndex tile, Track track);
+void YapfNotifyTrackLayoutChange(ExtendedTileIndex tile, Track track);
 
 #endif /* YAPF_CACHE_H */

@@ -143,7 +143,7 @@ Foundation GetBridgeFoundation(Slope tileh, Axis axis)
 bool HasBridgeFlatRamp(ExtendedTileIndex tile)
 {
 	if (IsIndexGroundTile(tile)) {
-		Axis axis = GetBridgeAxis(tile.index);
+		Axis axis = DiagDirToAxis(GetTunnelBridgeDirection(tile.index));
 		Slope tile_slope = GetTileSlope(tile.index);
 		ApplyFoundationToSlope(GetBridgeFoundation(tile_slope, axis), &tile_slope);
 		return (tile_slope != SLOPE_FLAT);
@@ -1551,8 +1551,7 @@ static void DrawElevatedTrack(const TileInfo *ti)
     auto iterator_pair = GetElevatedTrackIterator(ti->tile);
 
     for (ElevatedIndex::iterator it = iterator_pair.first; it != iterator_pair.second; ++it) {
-		ExtendedTileIndex tile_index(ti->tile);
-		tile_index.height = it->tile.height;
+		ExtendedTileIndex tile_index(ti->tile, it->tile.height, EL_ELEVATED);
 
         assert(IsTileType(tile_index, MP_RAILWAY)); //TODO elevated roads and aqueducts
         TransportType transport_type = TRANSPORT_RAIL;
@@ -2135,7 +2134,7 @@ static VehicleEnterTileStatus VehicleEnter_TunnelBridge(Vehicle *v, ExtendedTile
 			switch (v->type) {
 				case VEH_TRAIN: {
 					Train *t = Train::From(v);
-					if ((t->track & TRACK_BIT_WORMHOLE != 0)) {
+					if ((t->track & TRACK_BIT_WORMHOLE) != 0) {
 						/* Train track has TRACK_BIT_WORMHOLE flag set -> remove the flag */
 						//TODO elevated ramps
 						t->track = DiagDirToDiagTrackBits(vdir); //TODO elevated is this necessary ?

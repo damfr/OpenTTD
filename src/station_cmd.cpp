@@ -105,7 +105,7 @@ CommandCost GetStationAround(TileArea ta, StationID closest_station, CompanyID c
 	ta.Expand(1);
 
 	/* check around to see if there are any stations there owned by the company */
-	for (TileIndex tile_cur : ta) {
+	for (ExtendedOrthogonalTileIterator tile_cur = ta.BeginExtended(); tile_cur != ta.EndExtended(); ++tile_cur) {
 		if (IsTileType(tile_cur, MP_STATION)) {
 			StationID t = GetStationIndex(tile_cur);
 			if (!T::IsValidID(t) || Station::Get(t)->owner != company) continue;

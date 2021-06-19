@@ -45,8 +45,8 @@ bool IsValidDockingDirectionForDock(TileIndex t, DiagDirection d);
 /* Check if a rail station tile is traversable. */
 bool IsStationTileBlocked(ExtendedTileIndex tile);
 
-bool CanStationTileHavePylons(TileIndex tile);
-bool CanStationTileHaveWires(TileIndex tile);
+bool CanStationTileHavePylons(ExtendedTileIndex tile);
+bool CanStationTileHaveWires(ExtendedTileIndex tile);
 
 void UpdateAirportsNoise();
 

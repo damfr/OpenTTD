@@ -40,10 +40,10 @@
 
 #include "safeguards.h"
 
-static Track ChooseTrainTrack(Train *v, TileIndex tile, DiagDirection enterdir, TrackBits tracks, bool force_res, bool *got_reservation, bool mark_stuck);
+static Track ChooseTrainTrack(Train *v, ExtendedTileIndex tile, DiagDirection enterdir, TrackBits tracks, bool force_res, bool *got_reservation, bool mark_stuck);
 static bool TrainCheckIfLineEnds(Train *v, bool reverse = true);
 bool TrainController(Train *v, Vehicle *nomove, bool reverse = true); // Also used in vehicle_sl.cpp.
-static TileIndex TrainApproachingCrossingTile(const Train *v);
+static ExtendedTileIndex TrainApproachingCrossingTile(const Train *v);
 static void CheckIfTrainNeedsService(Train *v);
 static void CheckNextTrainTile(Train *v);
 
@@ -1686,9 +1686,10 @@ static bool TrainApproachingCrossing(TileIndex tile)
  * @param sound should we play sound?
  * @pre tile is a rail-road crossing
  */
-void UpdateLevelCrossing(TileIndex tile, bool sound)
+void UpdateLevelCrossing(ExtendedTileIndex tile_ext, bool sound)
 {
-	assert(IsLevelCrossingTile(tile));
+	assert(IsIndexGroundTile(tile_ext) && IsLevelCrossingTile(tile_ext));
+	TileIndex tile = tile_ext.index;
 
 	/* reserved || train on crossing || train approaching crossing */
 	bool new_state = HasCrossingReservation(tile) || HasVehicleOnPos(tile, nullptr, &TrainOnTileEnum) || TrainApproachingCrossing(tile);
@@ -1708,11 +1709,11 @@ void UpdateLevelCrossing(TileIndex tile, bool sound)
  * @param tile tile with crossing
  * @pre tile is a rail-road crossing
  */
-static inline void MaybeBarCrossingWithSound(TileIndex tile)
+static inline void MaybeBarCrossingWithSound(ExtendedTileIndex tile)
 {
 	if (!IsCrossingBarred(tile)) {
 		BarCrossing(tile);
-		if (_settings_client.sound.ambient) SndPlayTileFx(SND_0E_LEVEL_CROSSING, tile);
+		if (_settings_client.sound.ambient) SndPlayTileFx(SND_0E_LEVEL_CROSSING, tile.index);
 		MarkTileDirtyByTile(tile);
 	}
 }
@@ -1818,7 +1819,7 @@ void ReverseTrainDirection(Train *v)
 	if (!HasBit(v->flags, VRF_TRAIN_STUCK)) FreeTrainTrackReservation(v);
 
 	/* Check if we were approaching a rail/road-crossing */
-	TileIndex crossing = TrainApproachingCrossingTile(v);
+	ExtendedTileIndex crossing = TrainApproachingCrossingTile(v);
 
 	/* count number of vehicles */
 	int r = CountVehiclesInChain(v) - 1;  // number of vehicles - 1
@@ -1848,11 +1849,11 @@ void ReverseTrainDirection(Train *v)
 	for (Train *u = v; u != nullptr; u = u->Next()) u->UpdateViewport(false, false);
 
 	/* update crossing we were approaching */
-	if (crossing != INVALID_TILE) UpdateLevelCrossing(crossing);
+	if (crossing != INVALID_EXTENDED_TILE) UpdateLevelCrossing(crossing);
 
 	/* maybe we are approaching crossing now, after reversal */
 	crossing = TrainApproachingCrossingTile(v);
-	if (crossing != INVALID_TILE) MaybeBarCrossingWithSound(crossing);
+	if (crossing != INVALID_EXTENDED_TILE) MaybeBarCrossingWithSound(crossing);
 
 	/* If we are inside a depot after reversing, don't bother with path reserving. */
 	if (v->track == TRACK_BIT_DEPOT) {
@@ -2446,7 +2447,7 @@ class VehicleOrderSaver {
 private:
 	Train             *v;
 	Order              old_order;
-	ExtendedTileIndex  old_dest_tile;
+	TileIndex  old_dest_tile;
 	StationID      	   old_last_station_visited;
 	VehicleOrderID     index;
 	bool               suppress_implicit_orders;
@@ -2958,8 +2959,8 @@ uint Train::Crash(bool flooded)
 
 		/* we may need to update crossing we were approaching,
 		 * but must be updated after the train has been marked crashed */
-		TileIndex crossing = TrainApproachingCrossingTile(this);
-		if (crossing != INVALID_TILE) UpdateLevelCrossing(crossing);
+		ExtendedTileIndex crossing = TrainApproachingCrossingTile(this);
+		if (crossing != INVALID_EXTENDED_TILE) UpdateLevelCrossing(crossing);
 
 		/* Remove the loading indicators (if any) */
 		HideFillingPercent(&this->fill_percent_te_id);
@@ -3119,8 +3120,8 @@ bool TrainController(Train *v, Vehicle *nomove, bool reverse)
 		bool update_signals_crossing = false; // will we update signals or crossing state?
 
 		GetNewVehiclePosResult gp = GetNewVehiclePos(v);
-		ExtendedTileIndex old_tile = v->ETileIndex();
-		ExtendedTileIndex new_tile = ExtendedTileIndex(gp.new_tile, GetHeightFromPixelZ(gp.new_tile, v->z_pos)); //TODO elevated check if it works
+		ExtendedTileIndex old_tile = v->tile;
+		ExtendedTileIndex new_tile = gp.new_tile;
 		//if (v->track != TRACK_BIT_WORMHOLE) {
 		/* Not inside tunnel */
 		if (gp.old_tile == gp.new_tile) {
@@ -3148,7 +3149,7 @@ bool TrainController(Train *v, Vehicle *nomove, bool reverse)
 			/* A new tile is about to be entered. */
 
 			/* Determine what direction we're entering the new tile from */
-			enterdir = DiagdirBetweenTiles(gp.old_tile, gp.new_tile);
+			enterdir = DiagdirBetweenTiles(gp.old_tile.index, gp.new_tile.index);
 			assert(IsValidDiagDirection(enterdir));
 
 			/* Get the status of the tracks in the new tile and mask
@@ -3329,8 +3330,8 @@ bool TrainController(Train *v, Vehicle *nomove, bool reverse)
 				v->wait_counter = 0;
 
 				/* If we are approaching a crossing that is reserved, play the sound now. */
-				TileIndex crossing = TrainApproachingCrossingTile(v);
-				if (crossing != INVALID_TILE && HasCrossingReservation(crossing) && _settings_client.sound.ambient) SndPlayTileFx(SND_0E_LEVEL_CROSSING, crossing);
+				ExtendedTileIndex crossing = TrainApproachingCrossingTile(v);
+				if (crossing != INVALID_EXTENDED_TILE && HasCrossingReservation(crossing) && _settings_client.sound.ambient) SndPlayTileFx(SND_0E_LEVEL_CROSSING, crossing.index);
 
 				/* Always try to extend the reservation when entering a tile. */
 				CheckNextTrainTile(v);
@@ -3680,7 +3681,7 @@ static bool TrainCanLeaveTile(const Train *v)
  * @return TileIndex of crossing the train is approaching, else INVALID_TILE
  * @pre v in non-crashed front engine
  */
-static TileIndex TrainApproachingCrossingTile(const Train *v)
+static ExtendedTileIndex TrainApproachingCrossingTile(const Train *v)
 {
 	assert(v->IsFrontEngine());
 	assert(!(v->vehstatus & VS_CRASHED));
@@ -3994,7 +3995,7 @@ static void CheckIfTrainNeedsService(Train *v)
 
 	SetBit(v->gv_flags, GVF_SUPPRESS_IMPLICIT_ORDERS);
 	v->current_order.MakeGoToDepot(depot, ODTFB_SERVICE);
-	v->dest_tile = tfdd.tile;
+	v->dest_tile = tfdd.tile.index;
 	SetWindowWidgetDirty(WC_VEHICLE_VIEW, v->index, WID_VV_START_STOP);
 }
 

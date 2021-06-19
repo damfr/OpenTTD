@@ -878,7 +878,7 @@ bool IsStationTileBlocked(ExtendedTileIndex tile)
  * @return Tile shall have pylons.
  * @note This could be cached (during build) in the map array to save on all the dereferencing.
  */
-bool CanStationTileHavePylons(TileIndex tile)
+bool CanStationTileHavePylons(ExtendedTileIndex tile)
 {
 	const StationSpec *statspec = GetStationSpec(tile);
 	uint gfx = GetStationGfx(tile);
@@ -892,7 +892,7 @@ bool CanStationTileHavePylons(TileIndex tile)
  * @return Tile shall have wires.
  * @note This could be cached (during build) in the map array to save on all the dereferencing.
  */
-bool CanStationTileHaveWires(TileIndex tile)
+bool CanStationTileHaveWires(ExtendedTileIndex tile)
 {
 	const StationSpec *statspec = GetStationSpec(tile);
 	return statspec == nullptr || !HasBit(statspec->wires, GetStationGfx(tile));
@@ -913,16 +913,22 @@ struct StationAnimationBase : public AnimationBase<StationAnimationBase, Station
 	static const StationCallbackMask cbm_animation_next_frame = CBM_STATION_ANIMATION_NEXT_FRAME;
 };
 
-void AnimateStationTile(TileIndex tile)
+void AnimateStationTile(ExtendedTileIndex tile_ext)
 {
+	if (!IsIndexGroundTile(tile_ext)) return; //TODO animate elevated stations
+	TileIndex tile = tile_ext.index;
+
 	const StationSpec *ss = GetStationSpec(tile);
 	if (ss == nullptr) return;
 
 	StationAnimationBase::AnimateTile(ss, BaseStation::GetByTile(tile), tile, HasBit(ss->flags, SSF_CB141_RANDOM_BITS));
 }
 
-void TriggerStationAnimation(BaseStation *st, TileIndex tile, StationAnimationTrigger trigger, CargoID cargo_type)
+void TriggerStationAnimation(BaseStation *st, ExtendedTileIndex tile_ext, StationAnimationTrigger trigger, CargoID cargo_type)
 {
+	if (!IsIndexGroundTile(tile_ext)) return; //TODO animate elevated stations
+	TileIndex tile = tile_ext.index;
+
 	/* List of coverage areas for each animation trigger */
 	static const TriggerArea tas[] = {
 		TA_TILE, TA_WHOLE, TA_WHOLE, TA_PLATFORM, TA_PLATFORM, TA_PLATFORM, TA_WHOLE
@@ -962,8 +968,10 @@ void TriggerStationAnimation(BaseStation *st, TileIndex tile, StationAnimationTr
  * @param trigger trigger type
  * @param cargo_type cargo type causing trigger
  */
-void TriggerStationRandomisation(Station *st, TileIndex tile, StationRandomTrigger trigger, CargoID cargo_type)
+void TriggerStationRandomisation(Station *st, ExtendedTileIndex tile_ext, StationRandomTrigger trigger, CargoID cargo_type)
 {
+	if (!IsIndexGroundTile(tile_ext)) return; //TODO animate elevated stations
+	TileIndex tile = tile_ext.index;
 	/* List of coverage areas for each animation trigger */
 	static const TriggerArea tas[] = {
 		TA_WHOLE, TA_WHOLE, TA_PLATFORM, TA_PLATFORM, TA_PLATFORM, TA_PLATFORM

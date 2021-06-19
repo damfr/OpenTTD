@@ -3594,8 +3594,9 @@ Town *CalcClosestTownFromTile(TileIndex tile, uint threshold)
  *
  * @note If you only care about distance, you can use the #CalcClosestTownFromTile function.
  */
-Town *ClosestTownFromTile(TileIndex tile, uint threshold)
+Town *ClosestTownFromTile(ExtendedTileIndex tile_ext, uint threshold)
 {
+	TileIndex tile = tile_ext.index;
 	switch (GetTileType(tile)) {
 		case MP_ROAD:
 			if (IsRoadDepot(tile)) return CalcClosestTownFromTile(tile, threshold);

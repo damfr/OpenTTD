@@ -142,9 +142,9 @@ struct RoadStop : RoadStopPool::PoolItem<&_roadstop_pool> {
 
 	RoadStop *GetNextRoadStop(const struct RoadVehicle *v) const;
 
-	static RoadStop *GetByTile(TileIndex tile, RoadStopType type);
+	static RoadStop *GetByTile(ExtendedTileIndex tile, RoadStopType type);
 
-	static bool IsDriveThroughRoadStopContinuation(TileIndex rs, TileIndex next);
+	static bool IsDriveThroughRoadStopContinuation(ExtendedTileIndex rs, ExtendedTileIndex next);
 
 private:
 	Entry *east; ///< The vehicles that entered from the east

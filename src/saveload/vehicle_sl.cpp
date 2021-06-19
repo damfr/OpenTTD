@@ -18,6 +18,7 @@
 #include "../company_base.h"
 #include "../company_func.h"
 #include "../disaster_vehicle.h"
+#include "../tunnelbridge_map.h"
 
 #include "saveload.h"
 
@@ -373,6 +374,40 @@ void AfterLoadVehicles(bool part_of_load)
 				s->rotation_y_pos = s->y_pos;
 			}
 		}
+
+		if (IsSavegameVersionBefore(SLV_ELEVATED_TRACKS)) {
+			/* We need to add Vehicle::tile.height for all vehicles */
+			for (Vehicle *v : Vehicle::Iterate()) {
+				switch (v->type)
+				{
+				case VEH_TRAIN:
+					if (Train::From(v)->track == TRACK_BIT_WORMHOLE) {
+						/* Old bridge / tunne */
+						DiagDirection dir = GetTunnelBridgeDirection(v->tile.index);
+						v->tile.height = (Height) v->z_pos/ TILE_HEIGHT;
+						Train::From(v)->track = DiagDirToDiagTrackBits(dir);
+					} else {
+						/* On the ground */
+						v->tile = ExtendedTileIndex(v->tile.index);
+					}
+					break;
+				case VEH_ROAD:
+					if (RoadVehicle::From(v)->state == RVSB_WORMHOLE) {
+						/* Old bridge / tunne */
+						v->tile.height = (Height) v->z_pos/ TILE_HEIGHT;
+					} else {
+						/* On the ground */
+						v->tile = ExtendedTileIndex(v->tile.index);
+					}
+
+					//TODO Fixup RoadVehPathCache
+					break;
+				
+				default:
+					break;
+				}
+			}
+		}
 	}
 
 	CheckValidVehicles();
@@ -590,8 +625,9 @@ const SaveLoad *GetVehicleDescription(VehicleType vt)
 		 SLE_CONDVAR(Vehicle, unitnumber,            SLE_FILE_U8  | SLE_VAR_U16,   SL_MIN_VERSION,   SLV_8),
 		 SLE_CONDVAR(Vehicle, unitnumber,            SLE_UINT16,                   SLV_8, SL_MAX_VERSION),
 		     SLE_VAR(Vehicle, owner,                 SLE_UINT8),
-		 SLE_CONDVAR(Vehicle, tile,                  SLE_FILE_U16 | SLE_VAR_U32,   SL_MIN_VERSION,   SLV_6),
-		 SLE_CONDVAR(Vehicle, tile,                  SLE_UINT32,                   SLV_6, SL_MAX_VERSION),
+		 SLE_CONDVAR(Vehicle, tile.index,            SLE_FILE_U16 | SLE_VAR_U32,   SL_MIN_VERSION,   SLV_6),
+		 SLE_CONDVAR(Vehicle, tile.index,            SLE_UINT32,                   SLV_6, SLV_ELEVATED_TRACKS),
+		 SLE_CONDVAR(Vehicle, tile.height,           SLE_UINT8,                    SLV_ELEVATED_TRACKS, SL_MAX_VERSION),
 		 SLE_CONDVAR(Vehicle, dest_tile,             SLE_FILE_U16 | SLE_VAR_U32,   SL_MIN_VERSION,   SLV_6),
 		 SLE_CONDVAR(Vehicle, dest_tile,             SLE_UINT32,                   SLV_6, SL_MAX_VERSION),
 
@@ -749,7 +785,8 @@ const SaveLoad *GetVehicleDescription(VehicleType vt)
 		      SLE_VAR(RoadVehicle, crashed_ctr,          SLE_UINT16),
 		      SLE_VAR(RoadVehicle, reverse_ctr,          SLE_UINT8),
 		SLE_CONDDEQUE(RoadVehicle, path.td,              SLE_UINT8,                  SLV_ROADVEH_PATH_CACHE, SL_MAX_VERSION),
-		SLE_CONDDEQUE(RoadVehicle, path.tile,            SLE_UINT32,                 SLV_ROADVEH_PATH_CACHE, SL_MAX_VERSION),
+		SLE_CONDDEQUE(RoadVehicle, path.tile_ground,     SLE_UINT32,                 SLV_ROADVEH_PATH_CACHE, SL_MAX_VERSION),
+		SLE_CONDDEQUE(RoadVehicle, path.tile_height,     SLE_UINT8,                 SLV_ELEVATED_TRACKS,    SL_MAX_VERSION),
 
 		 SLE_CONDNULL(2,                                                               SLV_6,  SLV_69),
 		  SLE_CONDVAR(RoadVehicle, gv_flags,             SLE_UINT16,                 SLV_139, SL_MAX_VERSION),
@@ -800,8 +837,8 @@ const SaveLoad *GetVehicleDescription(VehicleType vt)
 
 		     SLE_VAR(Vehicle, subtype,               SLE_UINT8),
 
-		 SLE_CONDVAR(Vehicle, tile,                  SLE_FILE_U16 | SLE_VAR_U32,   SL_MIN_VERSION,   SLV_6),
-		 SLE_CONDVAR(Vehicle, tile,                  SLE_UINT32,                   SLV_6, SL_MAX_VERSION),
+		 SLE_CONDVAR(Vehicle, tile.index,            SLE_FILE_U16 | SLE_VAR_U32,   SL_MIN_VERSION,   SLV_6),
+		 SLE_CONDVAR(Vehicle, tile.index,            SLE_UINT32,                   SLV_6, SL_MAX_VERSION),
 
 		 SLE_CONDVAR(Vehicle, x_pos,                 SLE_FILE_I16 | SLE_VAR_I32,   SL_MIN_VERSION,   SLV_6),
 		 SLE_CONDVAR(Vehicle, x_pos,                 SLE_INT32,                    SLV_6, SL_MAX_VERSION),
@@ -831,8 +868,8 @@ const SaveLoad *GetVehicleDescription(VehicleType vt)
 		     SLE_REF(Vehicle, next,                  REF_VEHICLE_OLD),
 
 		     SLE_VAR(Vehicle, subtype,               SLE_UINT8),
-		 SLE_CONDVAR(Vehicle, tile,                  SLE_FILE_U16 | SLE_VAR_U32,   SL_MIN_VERSION,   SLV_6),
-		 SLE_CONDVAR(Vehicle, tile,                  SLE_UINT32,                   SLV_6, SL_MAX_VERSION),
+		 SLE_CONDVAR(Vehicle, tile.index,            SLE_FILE_U16 | SLE_VAR_U32,   SL_MIN_VERSION,   SLV_6),
+		 SLE_CONDVAR(Vehicle, tile.index,            SLE_UINT32,                   SLV_6, SL_MAX_VERSION),
 		 SLE_CONDVAR(Vehicle, dest_tile,             SLE_FILE_U16 | SLE_VAR_U32,   SL_MIN_VERSION,   SLV_6),
 		 SLE_CONDVAR(Vehicle, dest_tile,             SLE_UINT32,                   SLV_6, SL_MAX_VERSION),
 

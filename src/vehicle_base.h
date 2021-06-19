@@ -244,7 +244,7 @@ public:
 	 * For airports and train stations this tile does not necessarily belong to the destination station,
 	 * but it can be used for heuristic purposes to estimate the distance.
 	 */
-	ExtendedTileIndex dest_tile;
+	TileIndex dest_tile;
 
 	Money profit_this_year;             ///< Profit this year << 8, low 8 bits are fract
 	Money profit_last_year;             ///< Profit last year << 8, low 8 bits are fract
@@ -344,7 +344,7 @@ public:
 
 
 	//TEMPORARY
-	ExtendedTileIndex ETileIndex() const { return this->index }
+	ExtendedTileIndex ETileIndex() const { return this->tile; }
 
 
 	void PreDestructor();

@@ -44,15 +44,15 @@
  * @param tile Tile of interest
  * @return the waterclass to be used by the ship.
  */
-WaterClass GetEffectiveWaterClass(TileIndex tile)
+WaterClass GetEffectiveWaterClass(ExtendedTileIndex tile)
 {
 	if (HasTileWaterClass(tile)) return GetWaterClass(tile);
 	if (IsTileType(tile, MP_TUNNELBRIDGE)) {
 		assert(GetTunnelBridgeTransportType(tile) == TRANSPORT_WATER);
 		return WATER_CLASS_CANAL;
 	}
-	if (IsTileType(tile, MP_RAILWAY)) {
-		assert(GetRailGroundType(tile) == RAIL_GROUND_WATER);
+	if (IsIndexGroundTile(tile) && IsTileType(tile, MP_RAILWAY)) {
+		assert(GetRailGroundType(tile.index) == RAIL_GROUND_WATER);
 		return WATER_CLASS_SEA;
 	}
 	NOT_REACHED();
@@ -66,7 +66,7 @@ bool IsValidImageIndex<VEH_SHIP>(uint8 image_index)
 	return image_index < lengthof(_ship_sprites);
 }
 
-static inline TrackBits GetTileShipTrackStatus(TileIndex tile)
+static inline TrackBits GetTileShipTrackStatus(ExtendedTileIndex tile)
 {
 	return TrackStatusToTrackBits(GetTileTrackStatus(tile, TRANSPORT_WATER, 0));
 }
@@ -155,7 +155,7 @@ static const Depot *FindClosestShipDepot(const Vehicle *v, uint max_distance)
 	for (const Depot *depot : Depot::Iterate()) {
 		ExtendedTileIndex tile = depot->xy;
 		if (IsShipDepotTile(tile) && IsTileOwner(tile, v->owner)) {
-			uint dist = DistanceManhattan(tile, v->tile);
+			uint dist = DistanceManhattan(tile.index, v->tile.index);
 			if (dist < best_dist) {
 				best_dist = dist;
 				best_depot = depot;
@@ -192,7 +192,7 @@ static void CheckIfShipNeedsService(Vehicle *v)
 	}
 
 	v->current_order.MakeGoToDepot(depot->index, ODTFB_SERVICE);
-	v->SetDestTile(depot->xy);
+	v->SetDestTile(depot->xy.index);
 	SetWindowWidgetDirty(WC_VEHICLE_VIEW, v->index, WID_VV_START_STOP);
 }
 
@@ -354,7 +354,8 @@ static bool CheckShipLeaveDepot(Ship *v)
 	if (HasVehicleOnPos(v->tile, nullptr, &EnsureNoMovingShipProc)) return true;
 
 	ExtendedTileIndex tile = v->tile;
-	Axis axis = GetShipDepotAxis(tile);
+	assert(IsIndexGroundTile(tile));
+	Axis axis = GetShipDepotAxis(tile.index);
 
 	DiagDirection north_dir = ReverseDiagDir(AxisToDiagDir(axis));
 	ExtendedTileIndex north_neighbour = tile + TileOffsByDiagDir(north_dir);//TileIndex north_neighbour = TILE_ADD(tile, TileOffsByDiagDir(north_dir));
@@ -601,9 +602,10 @@ static bool ShipMoveUpDownOnLock(Ship *v)
  * @param station Destination station.
  * @return true iff docking tile is next to station.
  */
-bool IsShipDestinationTile(TileIndex tile, StationID station)
+bool IsShipDestinationTile(ExtendedTileIndex tile_ext, StationID station)
 {
-	assert(IsDockingTile(tile));
+	assert(IsIndexGroundTile(tile_ext) && IsDockingTile(tile_ext));
+	TileIndex tile = tile_ext.index;
 	/* Check each tile adjacent to docking tile. */
 	for (DiagDirection d = DIAGDIR_BEGIN; d != DIAGDIR_END; d++) {
 		TileIndex t = tile + TileOffsByDiagDir(d);
@@ -682,14 +684,14 @@ static void ShipController(Ship *v)
 				} else if (v->dest_tile != 0) {
 					/* We have a target, let's see if we reached it... */
 					if (v->current_order.IsType(OT_GOTO_WAYPOINT) &&
-							DistanceManhattan(v->dest_tile, gp.new_tile) <= 3) {
+							DistanceManhattan(v->dest_tile, gp.new_tile.index) <= 3) {
 						/* We got within 3 tiles of our target buoy, so let's skip to our
 						 * next order */
 						UpdateVehicleTimetable(v, true);
 						v->IncrementRealOrderIndex();
 						v->current_order.MakeDummy();
 					} else if (v->current_order.IsType(OT_GOTO_DEPOT) &&
-						v->dest_tile == gp.new_tile) {
+						v->dest_tile == gp.new_tile.index) {
 						/* Depot orders really need to reach the tile */
 						if ((gp.x & 0xF) == 8 && (gp.y & 0xF) == 8) {
 							VehicleEnterDepot(v);
@@ -698,7 +700,7 @@ static void ShipController(Ship *v)
 					} else if (v->current_order.IsType(OT_GOTO_STATION) && IsDockingTile(gp.new_tile)) {
 						/* Process station in the orderlist. */
 						Station *st = Station::Get(v->current_order.GetDestination());
-						if (st->docking_station.Contains(gp.new_tile) && IsShipDestinationTile(gp.new_tile, st->index)) {
+						if (st->docking_station.Contains(gp.new_tile.index) && IsShipDestinationTile(gp.new_tile, st->index)) {
 							v->last_station_visited = st->index;
 							if (st->facilities & FACIL_DOCK) { // ugly, ugly workaround for problem with ships able to drop off cargo at wrong stations
 								ShipArrivesAt(v, st);
@@ -715,13 +717,13 @@ static void ShipController(Ship *v)
 			/* New tile */
 			if (!IsValidTile(gp.new_tile)) goto reverse_direction;
 
-			DiagDirection diagdir = DiagdirBetweenTiles(gp.old_tile, gp.new_tile);
+			DiagDirection diagdir = DiagdirBetweenTiles(gp.old_tile.index, gp.new_tile.index);
 			assert(diagdir != INVALID_DIAGDIR);
-			tracks = GetAvailShipTracks(gp.new_tile, diagdir);
+			tracks = GetAvailShipTracks(gp.new_tile.index, diagdir);
 			if (tracks == TRACK_BIT_NONE) goto reverse_direction;
 
 			/* Choose a direction, and continue if we find one */
-			track = ChooseShipTrack(v, gp.new_tile, diagdir, tracks);
+			track = ChooseShipTrack(v, gp.new_tile.index, diagdir, tracks);
 			if (track == INVALID_TRACK) goto reverse_direction;
 
 			b = _ship_subcoord[diagdir][track];

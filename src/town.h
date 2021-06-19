@@ -197,7 +197,7 @@ void ClearTownHouse(Town *t, TileIndex tile);
 void UpdateTownMaxPass(Town *t);
 void UpdateTownRadius(Town *t);
 CommandCost CheckIfAuthorityAllowsNewStation(TileIndex tile, DoCommandFlag flags);
-Town *ClosestTownFromTile(TileIndex tile, uint threshold);
+Town *ClosestTownFromTile(ExtendedTileIndex tile, uint threshold);
 void ChangeTownRating(Town *t, int add, int max, DoCommandFlag flags);
 HouseZonesBits GetTownRadiusGroup(const Town *t, TileIndex tile);
 void SetTownRatingTestMode(bool mode);

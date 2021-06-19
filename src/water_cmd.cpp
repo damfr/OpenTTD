@@ -1008,7 +1008,7 @@ static Vehicle *FloodVehicleProc(Vehicle *v, void *data)
 		default: break;
 
 		case VEH_AIRCRAFT: {
-			if (!IsAirportTile(v->tile) || GetTileMaxZ(v->tile.index) != 0) break;
+			if (!IsAirportTile(v->tile.index) || GetTileMaxZ(v->tile.index) != 0) break;
 			if (v->subtype == AIR_SHADOW) break;
 
 			/* We compare v->z_pos against delta_z + 1 because the shadow

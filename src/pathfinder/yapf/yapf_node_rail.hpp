@@ -13,7 +13,7 @@
 /** key for cached segment cost for rail YAPF */
 struct CYapfRailSegmentKey
 {
-	uint32    m_value;
+	uint64    m_value;
 
 	inline CYapfRailSegmentKey(const CYapfRailSegmentKey &src) : m_value(src.m_value) {}
 
@@ -29,17 +29,18 @@ struct CYapfRailSegmentKey
 
 	inline void Set(const CYapfNodeKeyTrackDir &node_key)
 	{
-		m_value = (((int)node_key.m_tile) << 4) | node_key.m_td;
+		//m_value = (((int)node_key.m_tile) << 4) | node_key.m_td;
+		m_value = node_key.m_td | ((node_key.m_tile.Pack()) << 4);
 	}
 
 	inline int32 CalcHash() const
 	{
-		return m_value;
+		return (int32)m_value; //This will discard tile.height and the high bits of tile.index
 	}
 
-	inline TileIndex GetTile() const
+	inline ExtendedTileIndex GetTile() const
 	{
-		return (TileIndex)(m_value >> 4);
+		return ExtendedTileIndex::Unpack(m_value >> 4);
 	}
 
 	inline Trackdir GetTrackdir() const
@@ -65,10 +66,10 @@ struct CYapfRailSegment
 	typedef CYapfRailSegmentKey Key;
 
 	CYapfRailSegmentKey    m_key;
-	TileIndex              m_last_tile;
+	ExtendedTileIndex      m_last_tile;
 	Trackdir               m_last_td;
 	int                    m_cost;
-	TileIndex              m_last_signal_tile;
+	ExtendedTileIndex      m_last_signal_tile;
 	Trackdir               m_last_signal_td;
 	EndSegmentReasonBits   m_end_segment_reason;
 	CYapfRailSegment      *m_hash_next;
@@ -89,7 +90,7 @@ struct CYapfRailSegment
 		return m_key;
 	}
 
-	inline TileIndex GetTile() const
+	inline ExtendedTileIndex GetTile() const
 	{
 		return m_key.GetTile();
 	}
@@ -137,7 +138,7 @@ struct CYapfRailNodeT
 	SignalType        m_last_red_signal_type;
 	SignalType        m_last_signal_type;
 
-	inline void Set(CYapfRailNodeT *parent, TileIndex tile, Trackdir td, bool is_choice)
+	inline void Set(CYapfRailNodeT *parent, ExtendedTileIndex tile, Trackdir td, bool is_choice)
 	{
 		base::Set(parent, tile, td, is_choice);
 		m_segment = nullptr;
@@ -165,7 +166,7 @@ struct CYapfRailNodeT
 		flags_u.flags_s.m_choice_seen |= is_choice;
 	}
 
-	inline TileIndex GetLastTile() const
+	inline ExtendedTileIndex GetLastTile() const
 	{
 		assert(m_segment != nullptr);
 		return m_segment->m_last_tile;
@@ -177,7 +178,7 @@ struct CYapfRailNodeT
 		return m_segment->m_last_td;
 	}
 
-	inline void SetLastTileTrackdir(TileIndex tile, Trackdir td)
+	inline void SetLastTileTrackdir(ExtendedTileIndex tile, Trackdir td)
 	{
 		assert(m_segment != nullptr);
 		m_segment->m_last_tile = tile;
@@ -185,10 +186,10 @@ struct CYapfRailNodeT
 	}
 
 	template <class Tbase, class Tfunc, class Tpf>
-	bool IterateTiles(const Train *v, Tpf &yapf, Tbase &obj, bool (Tfunc::*func)(TileIndex, Trackdir)) const
+	bool IterateTiles(const Train *v, Tpf &yapf, Tbase &obj, bool (Tfunc::*func)(ExtendedTileIndex, Trackdir)) const
 	{
 		typename Tbase::TrackFollower ft(v, yapf.GetCompatibleRailTypes());
-		TileIndex cur = base::GetTile();
+		ExtendedTileIndex cur = base::GetTile();
 		Trackdir  cur_td = base::GetTrackdir();
 
 		while (cur != GetLastTile() || cur_td != GetLastTrackdir()) {

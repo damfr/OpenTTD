@@ -19,6 +19,7 @@
 #include "queue.h"
 #include "../../tile_type.h"
 #include "../../track_type.h"
+#include "../../map_type.h"
 
 //#define AYSTAR_DEBUG
 
@@ -36,7 +37,7 @@ static const int AYSTAR_INVALID_NODE = -1; ///< Item is not valid (for example, 
 
 /** Node in the search. */
 struct AyStarNode {
-	TileIndex tile;
+	ExtendedTileIndex tile;
 	Trackdir direction;
 	uint user_data[2];
 };

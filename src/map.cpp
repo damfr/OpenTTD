@@ -126,7 +126,7 @@ ExtendedTileIndex TileAdd(ExtendedTileIndex tile, TileIndexDiff add,
 
 	assert(TileXY(x, y) == TILE_MASK(tile.index + add));
 
-	return ExtendedTileIndex(TileXY(x, y), tile.height);
+	return ExtendedTileIndex(TileXY(x, y), tile.height, tile.flags);
 }
 #endif
 

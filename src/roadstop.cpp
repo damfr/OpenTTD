@@ -263,8 +263,10 @@ bool RoadStop::Enter(RoadVehicle *rv)
  * @return pointer to RoadStop
  * @pre there has to be roadstop of given type there!
  */
-/* static */ RoadStop *RoadStop::GetByTile(TileIndex tile, RoadStopType type)
+/* static */ RoadStop *RoadStop::GetByTile(ExtendedTileIndex ext_tile, RoadStopType type)
 {
+	assert(IsIndexGroundTile(ext_tile)); //TODO elevated road stops
+	TileIndex& tile = ext_tile.index;
 	const Station *st = Station::GetByTile(tile);
 
 	for (RoadStop *rs = st->GetPrimaryRoadStop(type);; rs = rs->next) {
@@ -302,9 +304,10 @@ void RoadStop::Entry::Enter(const RoadVehicle *rv)
  * @param next the 'next' tile to check
  * @return true if the 'next' tile is part of the road stop at 'next'.
  */
-/* static */ bool RoadStop::IsDriveThroughRoadStopContinuation(TileIndex rs, TileIndex next)
+/* static */ bool RoadStop::IsDriveThroughRoadStopContinuation(ExtendedTileIndex rs, ExtendedTileIndex next)
 {
 	return IsTileType(next, MP_STATION) &&
+			rs.height == next.height &&
 			GetStationIndex(next) == GetStationIndex(rs) &&
 			GetStationType(next) == GetStationType(rs) &&
 			GetRoadStopDir(next) == GetRoadStopDir(rs) &&

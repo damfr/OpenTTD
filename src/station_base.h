@@ -511,7 +511,7 @@ public:
 		return this->catchment_tiles.HasTile(tile);
 	}
 
-	inline bool TileBelongsToRailStation(TileIndex tile) const override
+	inline bool TileBelongsToRailStation(ExtendedTileIndex tile) const override
 	{
 		return IsRailStationTile(tile) && GetStationIndex(tile) == this->index;
 	}
@@ -575,8 +575,8 @@ void ForAllStationsAroundTiles(const TileArea &ta, Func func)
 	 * to find the possible nearby stations. */
 	uint max_c = _settings_game.station.modified_catchment ? MAX_CATCHMENT : CA_UNMODIFIED;
 	TileArea ta_ext = TileArea(ta).Expand(max_c);
-	for (TileIndex tile : ta_ext) {
-		if (IsTileType(tile, MP_STATION)) seen_stations.insert(GetStationIndex(tile));
+	for (ExtendedOrthogonalTileIterator it = ta_ext.BeginExtended(); it != ta_ext.EndExtended(); ++it) {
+		if (IsTileType(it, MP_STATION)) seen_stations.insert(GetStationIndex(it));
 	}
 
 	for (StationID stationid : seen_stations) {

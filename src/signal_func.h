@@ -12,6 +12,7 @@
 
 #include "track_type.h"
 #include "tile_type.h"
+#include "map_type.h"
 #include "direction_type.h"
 #include "company_type.h"
 
@@ -52,10 +53,10 @@ enum SigSegState {
 	SIGSEG_PBS,     ///< Segment is a PBS segment
 };
 
-SigSegState UpdateSignalsOnSegment(TileIndex tile, DiagDirection side, Owner owner);
-void SetSignalsOnBothDir(TileIndex tile, Track track, Owner owner);
-void AddTrackToSignalBuffer(TileIndex tile, Track track, Owner owner);
-void AddSideToSignalBuffer(TileIndex tile, DiagDirection side, Owner owner);
+SigSegState UpdateSignalsOnSegment(ExtendedTileIndex tile, DiagDirection side, Owner owner);
+void SetSignalsOnBothDir(ExtendedTileIndex tile, Track track, Owner owner);
+void AddTrackToSignalBuffer(ExtendedTileIndex tile, Track track, Owner owner);
+void AddSideToSignalBuffer(ExtendedTileIndex tile, DiagDirection side, Owner owner);
 void UpdateSignalsInBuffer();
 
 #endif /* SIGNAL_FUNC_H */

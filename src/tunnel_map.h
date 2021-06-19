@@ -31,9 +31,9 @@ static inline bool IsTunnel(ExtendedTileIndex t)
  * @param t the tile that might be a tunnel
  * @return true if and only if this tile is a tunnel (entrance)
  */
-static inline bool IsTunnelTile(TileIndex t)
+static inline bool IsTunnelTile(ExtendedTileIndex t)
 {
-	return IsTileType(t, MP_TUNNELBRIDGE) && IsTunnel(t);
+	return IsIndexGroundTile(t) && IsTileType(t, MP_TUNNELBRIDGE) && IsTunnel(t);
 }
 
 TileIndex GetOtherTunnelEnd(TileIndex);

@@ -2027,7 +2027,6 @@ static const TrackBits _road_trackbits[16] = {
 static TrackStatus GetTileTrackStatus_Road(ExtendedTileIndex tile, TransportType mode, uint sub_mode, DiagDirection side)
 {
 	TileIndex ground_tile = tile.index;
-	bool ground = IsIndexGroundTile(tile);
 
 	TrackdirBits trackdirbits = TRACKDIR_BIT_NONE;
 	TrackdirBits red_signals = TRACKDIR_BIT_NONE; // crossing barred

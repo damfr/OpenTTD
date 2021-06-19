@@ -16,7 +16,7 @@
 #include "water_map.h"
 
 void GetShipSpriteSize(EngineID engine, uint &width, uint &height, int &xoffs, int &yoffs, EngineImageType image_type);
-WaterClass GetEffectiveWaterClass(TileIndex tile);
+WaterClass GetEffectiveWaterClass(ExtendedTileIndex tile);
 
 typedef std::deque<Trackdir> ShipPathCache;
 
@@ -55,6 +55,6 @@ struct Ship FINAL : public SpecializedVehicle<Ship, VEH_SHIP> {
 	void SetDestTile(TileIndex tile);
 };
 
-bool IsShipDestinationTile(TileIndex tile, StationID station);
+bool IsShipDestinationTile(ExtendedTileIndex tile, StationID station);
 
 #endif /* SHIP_H */

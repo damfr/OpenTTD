@@ -14,10 +14,11 @@
 #include "company_type.h"
 #include "gfx_type.h"
 #include "vehicle_type.h"
+#include "map_type.h"
 
 bool MayCompanyTakeOver(CompanyID cbig, CompanyID small);
 void ChangeOwnershipOfCompanyItems(Owner old_owner, Owner new_owner);
-void GetNameOfOwner(Owner owner, TileIndex tile);
+void GetNameOfOwner(Owner owner, ExtendedTileIndex tile);
 void SetLocalCompany(CompanyID new_company);
 void ShowBuyCompanyDialog(CompanyID company);
 void CompanyAdminUpdate(const Company *company);
@@ -28,7 +29,7 @@ bool CheckCompanyHasMoney(CommandCost &cost);
 void SubtractMoneyFromCompany(const CommandCost& cost);
 void SubtractMoneyFromCompanyFract(CompanyID company, const CommandCost& cost);
 CommandCost CheckOwnership(Owner owner, TileIndex tile = 0);
-CommandCost CheckTileOwnership(TileIndex tile);
+CommandCost CheckTileOwnership(ExtendedTileIndex tile);
 
 extern CompanyID _local_company;
 extern CompanyID _current_company;

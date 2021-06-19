@@ -15,10 +15,10 @@ template <class Tkey_>
 struct CYapfRoadNodeT : CYapfNodeT<Tkey_, CYapfRoadNodeT<Tkey_> > {
 	typedef CYapfNodeT<Tkey_, CYapfRoadNodeT<Tkey_> > base;
 
-	TileIndex m_segment_last_tile;
+	ExtendedTileIndex m_segment_last_tile;
 	Trackdir  m_segment_last_td;
 
-	void Set(CYapfRoadNodeT *parent, TileIndex tile, Trackdir td, bool is_choice)
+	void Set(CYapfRoadNodeT *parent, ExtendedTileIndex tile, Trackdir td, bool is_choice)
 	{
 		base::Set(parent, tile, td, is_choice);
 		m_segment_last_tile = tile;

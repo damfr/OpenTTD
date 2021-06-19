@@ -20,8 +20,8 @@ public:
 	typedef typename Node::Key Key;               ///< key to hash tables
 
 protected:
-	TileIndex    m_orgTile;                       ///< origin tile
-	TrackdirBits m_orgTrackdirs;                  ///< origin trackdir mask
+	ExtendedTileIndex m_orgTile;                       ///< origin tile
+	TrackdirBits m_orgTrackdirs;                 	   ///< origin trackdir mask
 
 	/** to access inherited path finder */
 	inline Tpf& Yapf()
@@ -31,7 +31,7 @@ protected:
 
 public:
 	/** Set origin tile / trackdir mask */
-	void SetOrigin(TileIndex tile, TrackdirBits trackdirs)
+	void SetOrigin(ExtendedTileIndex tile, TrackdirBits trackdirs)
 	{
 		m_orgTile = tile;
 		m_orgTrackdirs = trackdirs;
@@ -60,12 +60,12 @@ public:
 	typedef typename Node::Key Key;               ///< key to hash tables
 
 protected:
-	TileIndex   m_orgTile;                        ///< first origin tile
-	Trackdir    m_orgTd;                          ///< first origin trackdir
-	TileIndex   m_revTile;                        ///< second (reversed) origin tile
-	Trackdir    m_revTd;                          ///< second (reversed) origin trackdir
-	int         m_reverse_penalty;                ///< penalty to be added for using the reversed origin
-	bool        m_treat_first_red_two_way_signal_as_eol; ///< in some cases (leaving station) we need to handle first two-way signal differently
+	ExtendedTileIndex   m_orgTile;                        ///< first origin tile
+	Trackdir    		m_orgTd;                          ///< first origin trackdir
+	ExtendedTileIndex   m_revTile;                        ///< second (reversed) origin tile
+	Trackdir   		    m_revTd;                          ///< second (reversed) origin trackdir
+	int        		    m_reverse_penalty;                ///< penalty to be added for using the reversed origin
+	bool         m_treat_first_red_two_way_signal_as_eol; ///< in some cases (leaving station) we need to handle first two-way signal differently
 
 	/** to access inherited path finder */
 	inline Tpf& Yapf()
@@ -75,7 +75,7 @@ protected:
 
 public:
 	/** set origin (tiles, trackdirs, etc.) */
-	void SetOrigin(TileIndex tile, Trackdir td, TileIndex tiler = INVALID_TILE, Trackdir tdr = INVALID_TRACKDIR, int reverse_penalty = 0, bool treat_first_red_two_way_signal_as_eol = true)
+	void SetOrigin(ExtendedTileIndex tile, Trackdir td, ExtendedTileIndex tiler = INVALID_EXTENDED_TILE, Trackdir tdr = INVALID_TRACKDIR, int reverse_penalty = 0, bool treat_first_red_two_way_signal_as_eol = true)
 	{
 		m_orgTile = tile;
 		m_orgTd = td;
@@ -88,12 +88,12 @@ public:
 	/** Called when YAPF needs to place origin nodes into open list */
 	void PfSetStartupNodes()
 	{
-		if (m_orgTile != INVALID_TILE && m_orgTd != INVALID_TRACKDIR) {
+		if (m_orgTile != INVALID_EXTENDED_TILE && m_orgTd != INVALID_TRACKDIR) {
 			Node &n1 = Yapf().CreateNewNode();
 			n1.Set(nullptr, m_orgTile, m_orgTd, false);
 			Yapf().AddStartupNode(n1);
 		}
-		if (m_revTile != INVALID_TILE && m_revTd != INVALID_TRACKDIR) {
+		if (m_revTile != INVALID_EXTENDED_TILE && m_revTd != INVALID_TRACKDIR) {
 			Node &n2 = Yapf().CreateNewNode();
 			n2.Set(nullptr, m_revTile, m_revTd, false);
 			n2.m_cost = m_reverse_penalty;
@@ -118,12 +118,12 @@ public:
 	typedef typename Node::Key Key;               ///< key to hash tables
 
 protected:
-	TileIndex    m_destTile;                      ///< destination tile
-	TrackdirBits m_destTrackdirs;                 ///< destination trackdir mask
+	ExtendedTileIndex m_destTile;                      ///< destination tile
+	TrackdirBits 		  m_destTrackdirs;                 ///< destination trackdir mask
 
 public:
 	/** set the destination tile / more trackdirs */
-	void SetDestination(TileIndex tile, TrackdirBits trackdirs)
+	void SetDestination(ExtendedTileIndex tile, TrackdirBits trackdirs)
 	{
 		m_destTile = tile;
 		m_destTrackdirs = trackdirs;
@@ -156,7 +156,7 @@ public:
 			return true;
 		}
 
-		TileIndex tile = n.GetTile();
+		ExtendedTileIndex tile = n.GetTile();
 		DiagDirection exitdir = TrackdirToExitdir(n.GetTrackdir());
 		int x1 = 2 * TileX(tile) + dg_dir_to_x_offs[(int)exitdir];
 		int y1 = 2 * TileY(tile) + dg_dir_to_y_offs[(int)exitdir];

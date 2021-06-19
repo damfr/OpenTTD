@@ -19,6 +19,7 @@
 #include "company_base.h"
 #include "viewport_func.h"
 #include "pathfinder/yapf/yapf_cache.h"
+#include "bridge_map.h"
 
 
 //TODO elevated : move this to a more sensible location
@@ -27,12 +28,14 @@
  * @param ground_index index of the ground tile
  */
 ExtendedTileIndex::ExtendedTileIndex(TileIndex ground_index) 
-	:index(ground_index), height(TileHeight(ground_index)) 
-{}
+	:index(ground_index), height(0), flags(EL_GROUND)
+{
+	if (ground_index < MapSize()) this->height = TileHeight(ground_index);
+}
 
 bool ExtendedTileIndex::operator==(ExtendedTileIndex other_tile) const
 {
-	if (this->index != other_tile.index) return;
+	if (this->index != other_tile.index) return false;
 	if (IsIndexGroundTile(*this)) {
 		return IsInsideMM(other_tile.height, GetTileZ(this->index), GetTileMaxZ(this->index)+1);
 	} else {
@@ -63,14 +66,17 @@ ElevatedIndex::iterator GetElevatedTrackAtHeight(TileIndex tile, Height height)
 	NOT_REACHED();
 }
 
-bool HasElevatedTrack(ExtendedTileIndex tile)
+bool HasElevatedTrack(TileIndex tile)
 {
+	auto pair = _elevated_index.equal_range(tile);
+	return pair.first != pair.second; //TODO better implementation
+	/*
     std::pair<ElevatedIndex::iterator, ElevatedIndex::iterator> range = GetElevatedTrackIterator(tile.index);
     for (ElevatedIndex::iterator it = range.first; it != range.second; ++it) {
         if (it->tile.height == tile.height)
             return true;
     }
-    return false;
+    return false;*/
 }
 
 /**
@@ -123,13 +129,13 @@ void InsertElevatedTile(ExtendedTileIndex tile)
  */
 ExtendedTileIndex ExtendedTileAddByDiagDirFollowGround(ExtendedTileIndex tile, DiagDirection dir)
 {
-	if (IsIndexGroundTile(tile)) {
-		ExtendedTileIndex new_tile(tile.index + TileOffsByDiagDir(dir));
-		new_tile.height = TileHeight(tile.index);
-		return new_tile;
-	} else {
-		return ExtendedTileIndex(tile.index + TileOffsByDiagDir(dir), tile.height);
-	}
+	//if (IsIndexGroundTile(tile)) {
+		//ExtendedTileIndex new_tile(tile.index + TileOffsByDiagDir(dir));
+		//new_tile.height = TileHeight(tile.index);
+		return tile + TileOffsByDiagDir(dir);
+	//} else {
+	//	return ExtendedTileIndex(tile.index + TileOffsByDiagDir(dir), tile.height);
+	//}
 }
 
 /**

@@ -74,8 +74,10 @@ bool IsPossibleDockingTile(TileIndex t);
  * @param t Water tile to query.
  * @return Water tile type at the tile.
  */
-static inline WaterTileType GetWaterTileType(TileIndex t)
+static inline WaterTileType GetWaterTileType(ExtendedTileIndex t_ext)
 {
+	assert(IsIndexGroundTile(t_ext)); //TODO elevated canals
+	TileIndex t = t_ext.index;
 	assert(IsTileType(t, MP_WATER));
 
 	switch (GB(_m[t].m5, WBL_TYPE_BEGIN, WBL_TYPE_COUNT)) {
@@ -92,7 +94,7 @@ static inline WaterTileType GetWaterTileType(TileIndex t)
  * @param t Tile to query.
  * @return True if the tiletype has a waterclass.
  */
-static inline bool HasTileWaterClass(TileIndex t)
+static inline bool HasTileWaterClass(ExtendedTileIndex t)
 {
 	return IsTileType(t, MP_WATER) || IsTileType(t, MP_STATION) || IsTileType(t, MP_INDUSTRY) || IsTileType(t, MP_OBJECT) || IsTileType(t, MP_TREES);
 }
@@ -103,10 +105,10 @@ static inline bool HasTileWaterClass(TileIndex t)
  * @pre IsTileType(t, MP_WATER) || IsTileType(t, MP_STATION) || IsTileType(t, MP_INDUSTRY) || IsTileType(t, MP_OBJECT)
  * @return Water class at the tile.
  */
-static inline WaterClass GetWaterClass(TileIndex t)
+static inline WaterClass GetWaterClass(ExtendedTileIndex t)
 {
 	assert(HasTileWaterClass(t));
-	return (WaterClass)GB(_m[t].m1, 5, 2);
+	return (WaterClass)GB(GetElevatedTile(t).m1, 5, 2);
 }
 
 /**
@@ -223,9 +225,9 @@ static inline bool IsShipDepot(TileIndex t)
  * @param t Tile to query.
  * @return \c true if it is a ship depot tile.
  */
-static inline bool IsShipDepotTile(TileIndex t)
+static inline bool IsShipDepotTile(ExtendedTileIndex t)
 {
-	return IsTileType(t, MP_WATER) && IsShipDepot(t);
+	return IsIndexGroundTile(t) && IsTileType(t.index, MP_WATER) && IsShipDepot(t.index);
 }
 
 /**
@@ -258,8 +260,10 @@ static inline DepotPart GetShipDepotPart(TileIndex t)
  * @return Direction of the depot.
  * @pre IsShipDepotTile(t)
  */
-static inline DiagDirection GetShipDepotDirection(TileIndex t)
+static inline DiagDirection GetShipDepotDirection(ExtendedTileIndex t_ext)
 {
+	assert(IsIndexGroundTile(t_ext));
+	TileIndex t = t_ext.index;
 	return XYNSToDiagDir(GetShipDepotAxis(t), GetShipDepotPart(t));
 }
 
@@ -294,7 +298,7 @@ static inline TileIndex GetShipDepotNorthTile(TileIndex t)
  * @return \c true if it is a water lock tile.
  * @pre IsTileType(t, MP_WATER)
  */
-static inline bool IsLock(TileIndex t)
+static inline bool IsLock(ExtendedTileIndex t)
 {
 	return GetWaterTileType(t) == WATER_TILE_LOCK;
 }
@@ -317,10 +321,10 @@ static inline DiagDirection GetLockDirection(TileIndex t)
  * @return The part.
  * @pre IsTileType(t, MP_WATER) && IsLock(t)
  */
-static inline byte GetLockPart(TileIndex t)
+static inline byte GetLockPart(ExtendedTileIndex t)
 {
 	assert(IsLock(t));
-	return GB(_m[t].m5, WBL_LOCK_PART_BEGIN, WBL_LOCK_PART_COUNT);
+	return GB(_m[t.index].m5, WBL_LOCK_PART_BEGIN, WBL_LOCK_PART_COUNT);
 }
 
 /**
@@ -362,9 +366,9 @@ static inline void SetDockingTile(TileIndex t, bool b)
  * Checks whether the tile is marked as a dockling tile.
  * @return true iff the tile is marked as a docking tile.
  */
-static inline bool IsDockingTile(TileIndex t)
+static inline bool IsDockingTile(ExtendedTileIndex t)
 {
-	return (IsTileType(t, MP_WATER) || IsTileType(t, MP_RAILWAY) || IsTileType(t, MP_STATION) || IsTileType(t, MP_TUNNELBRIDGE)) && HasBit(_m[t].m1, 7);
+	return IsIndexGroundTile(t) && (IsTileType(t, MP_WATER) || IsTileType(t, MP_RAILWAY) || IsTileType(t, MP_STATION) || IsTileType(t, MP_TUNNELBRIDGE)) && HasBit(_m[t.index].m1, 7);
 }
 
 

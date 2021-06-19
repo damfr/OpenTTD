@@ -15,6 +15,7 @@
 #include "tile_type.h"
 #include "vehicle_type.h"
 #include "base_consist.h"
+#include "map_type.h"
 
 /** Unique identifier for an order backup. */
 typedef uint8 OrderBackupID;

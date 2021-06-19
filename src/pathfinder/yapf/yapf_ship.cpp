@@ -27,7 +27,7 @@ public:
 	typedef typename Node::Key Key;                      ///< key to hash tables
 
 protected:
-	TileIndex    m_destTile;
+	ExtendedTileIndex m_destTile;
 	TrackdirBits m_destTrackdirs;
 	StationID    m_destStation;
 
@@ -36,7 +36,7 @@ public:
 	{
 		if (v->current_order.IsType(OT_GOTO_STATION)) {
 			m_destStation   = v->current_order.GetDestination();
-			m_destTile      = CalcClosestStationTile(m_destStation, v->tile, STATION_DOCK);
+			m_destTile      = CalcClosestStationTile(m_destStation, v->tile.index, STATION_DOCK);
 			m_destTrackdirs = INVALID_TRACKDIR_BIT;
 		} else {
 			m_destStation   = INVALID_STATION;
@@ -59,10 +59,10 @@ public:
 		return PfDetectDestinationTile(n.m_segment_last_tile, n.m_segment_last_td);
 	}
 
-	inline bool PfDetectDestinationTile(TileIndex tile, Trackdir trackdir)
+	inline bool PfDetectDestinationTile(ExtendedTileIndex tile, Trackdir trackdir)
 	{
 		if (m_destStation != INVALID_STATION) {
-			return IsDockingTile(tile) && IsShipDestinationTile(tile, m_destStation);
+			return IsIndexGroundTile(tile) && IsDockingTile(tile.index) && IsShipDestinationTile(tile.index, m_destStation);
 		}
 
 		return tile == m_destTile && ((m_destTrackdirs & TrackdirToTrackdirBits(trackdir)) != TRACKDIR_BIT_NONE);
@@ -81,7 +81,7 @@ public:
 			return true;
 		}
 
-		TileIndex tile = n.m_segment_last_tile;
+		ExtendedTileIndex tile = n.m_segment_last_tile;
 		DiagDirection exitdir = TrackdirToExitdir(n.m_segment_last_td);
 		int x1 = 2 * TileX(tile) + dg_dir_to_x_offs[(int)exitdir];
 		int y1 = 2 * TileY(tile) + dg_dir_to_y_offs[(int)exitdir];
@@ -136,7 +136,7 @@ public:
 		return 'w';
 	}
 
-	static Trackdir ChooseShipTrack(const Ship *v, TileIndex tile, DiagDirection enterdir, TrackBits tracks, bool &path_found, ShipPathCache &path_cache)
+	static Trackdir ChooseShipTrack(const Ship *v, ExtendedTileIndex tile, DiagDirection enterdir, TrackBits tracks, bool &path_found, ShipPathCache &path_cache)
 	{
 		/* handle special case - when next tile is destination tile */
 		if (tile == v->dest_tile) {
@@ -151,7 +151,7 @@ public:
 		}
 
 		/* move back to the old tile/trackdir (where ship is coming from) */
-		TileIndex src_tile = TileAddByDiagDir(tile, ReverseDiagDir(enterdir));
+		ExtendedTileIndex src_tile = ExtendedTileAddByDiagDirSameHeight(tile, ReverseDiagDir(enterdir)); //TODO ships elevated
 		Trackdir trackdir = v->GetVehicleTrackdir();
 		assert(IsValidTrackdir(trackdir));
 
@@ -206,7 +206,7 @@ public:
 	 * @param td2 Reverse direction
 	 * @return true if the reverse direction is better
 	 */
-	static bool CheckShipReverse(const Ship *v, TileIndex tile, Trackdir td1, Trackdir td2)
+	static bool CheckShipReverse(const Ship *v, ExtendedTileIndex tile, Trackdir td1, Trackdir td2)
 	{
 		/* create pathfinder instance */
 		Tpf pf;
@@ -285,7 +285,7 @@ public:
 		/* additional penalty for curves */
 		c += CurveCost(n.m_parent->GetTrackdir(), n.GetTrackdir());
 
-		if (IsDockingTile(n.GetTile())) {
+		if (IsIndexGroundTile(n.GetTile()) && IsDockingTile(n.GetTile().index)) {
 			/* Check docking tile for occupancy */
 			uint count = 1;
 			HasVehicleOnPos(n.GetTile(), &count, &CountShipProc);
@@ -348,10 +348,10 @@ static inline bool RequireTrackdirKey()
 }
 
 /** Ship controller helper - path finder invoker */
-Track YapfShipChooseTrack(const Ship *v, TileIndex tile, DiagDirection enterdir, TrackBits tracks, bool &path_found, ShipPathCache &path_cache)
+Track YapfShipChooseTrack(const Ship *v, ExtendedTileIndex tile, DiagDirection enterdir, TrackBits tracks, bool &path_found, ShipPathCache &path_cache)
 {
 	/* default is YAPF type 2 */
-	typedef Trackdir (*PfnChooseShipTrack)(const Ship*, TileIndex, DiagDirection, TrackBits, bool &path_found, ShipPathCache &path_cache);
+	typedef Trackdir (*PfnChooseShipTrack)(const Ship*, ExtendedTileIndex, DiagDirection, TrackBits, bool &path_found, ShipPathCache &path_cache);
 	PfnChooseShipTrack pfnChooseShipTrack = CYapfShip2::ChooseShipTrack; // default: ExitDir
 
 	/* check if non-default YAPF type needed */
@@ -367,9 +367,9 @@ bool YapfShipCheckReverse(const Ship *v)
 {
 	Trackdir td = v->GetVehicleTrackdir();
 	Trackdir td_rev = ReverseTrackdir(td);
-	TileIndex tile = v->tile;
+	ExtendedTileIndex tile = v->tile;
 
-	typedef bool (*PfnCheckReverseShip)(const Ship*, TileIndex, Trackdir, Trackdir);
+	typedef bool (*PfnCheckReverseShip)(const Ship*, ExtendedTileIndex, Trackdir, Trackdir);
 	PfnCheckReverseShip pfnCheckReverseShip = CYapfShip2::CheckShipReverse; // default: ExitDir
 
 	/* check if non-default YAPF type needed */

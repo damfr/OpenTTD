@@ -50,14 +50,14 @@ protected:
 	}
 
 private:
-	TileIndex m_res_dest;         ///< The reservation target tile
-	Trackdir  m_res_dest_td;      ///< The reservation target trackdir
-	Node      *m_res_node;        ///< The reservation target node
-	TileIndex m_res_fail_tile;    ///< The tile where the reservation failed
-	Trackdir  m_res_fail_td;      ///< The trackdir where the reservation failed
-	TileIndex m_origin_tile;      ///< Tile our reservation will originate from
+	ExtendedTileIndex m_res_dest;         ///< The reservation target tile
+	Trackdir  		  m_res_dest_td;      ///< The reservation target trackdir
+	Node      		  *m_res_node;        ///< The reservation target node
+	ExtendedTileIndex m_res_fail_tile;    ///< The tile where the reservation failed
+	Trackdir 		  m_res_fail_td;      ///< The trackdir where the reservation failed
+	ExtendedTileIndex m_origin_tile;      ///< Tile our reservation will originate from
 
-	bool FindSafePositionProc(TileIndex tile, Trackdir td)
+	bool FindSafePositionProc(ExtendedTileIndex tile, Trackdir td)
 	{
 		if (IsSafeWaitingPosition(Yapf().GetVehicle(), tile, td, true, !TrackFollower::Allow90degTurns())) {
 			m_res_dest = tile;
@@ -68,25 +68,25 @@ private:
 	}
 
 	/** Reserve a railway platform. Tile contains the failed tile on abort. */
-	bool ReserveRailStationPlatform(TileIndex &tile, DiagDirection dir)
+	bool ReserveRailStationPlatform(ExtendedTileIndex &tile, DiagDirection dir)
 	{
-		TileIndex     start = tile;
+		ExtendedTileIndex start = tile;
 		TileIndexDiff diff = TileOffsByDiagDir(dir);
 
 		do {
 			if (HasStationReservation(tile)) return false;
 			SetRailStationReservation(tile, true);
 			MarkTileDirtyByTile(tile);
-			tile = TILE_ADD(tile, diff);
+			tile += diff;
 		} while (IsCompatibleTrainStationTile(tile, start) && tile != m_origin_tile);
 
-		TriggerStationRandomisation(nullptr, start, SRT_PATH_RESERVATION);
+		if (IsIndexGroundTile(start)) TriggerStationRandomisation(nullptr, start.index, SRT_PATH_RESERVATION); //TODO elevated station randomisation
 
 		return true;
 	}
 
 	/** Try to reserve a single track/platform. */
-	bool ReserveSingleTrack(TileIndex tile, Trackdir td)
+	bool ReserveSingleTrack(ExtendedTileIndex tile, Trackdir td)
 	{
 		if (IsRailStationTile(tile)) {
 			if (!ReserveRailStationPlatform(tile, TrackdirToExitdir(ReverseTrackdir(td)))) {
@@ -107,14 +107,14 @@ private:
 	}
 
 	/** Unreserve a single track/platform. Stops when the previous failer is reached. */
-	bool UnreserveSingleTrack(TileIndex tile, Trackdir td)
+	bool UnreserveSingleTrack(ExtendedTileIndex tile, Trackdir td)
 	{
 		if (IsRailStationTile(tile)) {
-			TileIndex     start = tile;
+			ExtendedTileIndex start = tile;
 			TileIndexDiff diff = TileOffsByDiagDir(TrackdirToExitdir(ReverseTrackdir(td)));
 			while ((tile != m_res_fail_tile || td != m_res_fail_td) && IsCompatibleTrainStationTile(tile, start)) {
 				SetRailStationReservation(tile, false);
-				tile = TILE_ADD(tile, diff);
+				tile += diff;
 			}
 		} else if (tile != m_res_fail_tile || td != m_res_fail_td) {
 			UnreserveRailTrack(tile, TrackdirToTrack(td));
@@ -124,7 +124,7 @@ private:
 
 public:
 	/** Set the target to where the reservation should be extended. */
-	inline void SetReservationTarget(Node *node, TileIndex tile, Trackdir td)
+	inline void SetReservationTarget(Node *node, ExtendedTileIndex tile, Trackdir td)
 	{
 		m_res_node = node;
 		m_res_dest = tile;
@@ -145,9 +145,9 @@ public:
 	}
 
 	/** Try to reserve the path till the reservation target. */
-	bool TryReservePath(PBSTileInfo *target, TileIndex origin)
+	bool TryReservePath(PBSTileInfo *target, ExtendedTileIndex origin)
 	{
-		m_res_fail_tile = INVALID_TILE;
+		m_res_fail_tile = INVALID_EXTENDED_TILE;
 		m_origin_tile = origin;
 
 		if (target != nullptr) {
@@ -164,7 +164,7 @@ public:
 			if (m_res_fail_tile != INVALID_TILE) {
 				/* Reservation failed, undo. */
 				Node *fail_node = m_res_node;
-				TileIndex stop_tile = m_res_fail_tile;
+				ExtendedTileIndex stop_tile = m_res_fail_tile;
 				do {
 					/* If this is the node that failed, stop at the failed tile. */
 					m_res_fail_tile = fail_node == node ? stop_tile : INVALID_TILE;
@@ -221,7 +221,7 @@ public:
 		return 't';
 	}
 
-	static FindDepotData stFindNearestDepotTwoWay(const Train *v, TileIndex t1, Trackdir td1, TileIndex t2, Trackdir td2, int max_penalty, int reverse_penalty)
+	static FindDepotData stFindNearestDepotTwoWay(const Train *v, ExtendedTileIndex t1, Trackdir td1, ExtendedTileIndex t2, Trackdir td2, int max_penalty, int reverse_penalty)
 	{
 		Tpf pf1;
 		/*
@@ -242,8 +242,8 @@ public:
 			FindDepotData result2 = pf2.FindNearestDepotTwoWay(v, t1, td1, t2, td2, max_penalty, reverse_penalty);
 			if (result1.tile != result2.tile || (result1.reverse != result2.reverse)) {
 				DEBUG(desync, 2, "CACHE ERROR: FindNearestDepotTwoWay() = [%s, %s]",
-						result1.tile != INVALID_TILE ? "T" : "F",
-						result2.tile != INVALID_TILE ? "T" : "F");
+						result1.tile != INVALID_EXTENDED_TILE ? "T" : "F",
+						result2.tile != INVALID_EXTENDED_TILE ? "T" : "F");
 				DumpState(pf1, pf2);
 			}
 		}
@@ -251,7 +251,7 @@ public:
 		return result1;
 	}
 
-	inline FindDepotData FindNearestDepotTwoWay(const Train *v, TileIndex t1, Trackdir td1, TileIndex t2, Trackdir td2, int max_penalty, int reverse_penalty)
+	inline FindDepotData FindNearestDepotTwoWay(const Train *v, ExtendedTileIndex t1, Trackdir td1, ExtendedTileIndex t2, Trackdir td2, int max_penalty, int reverse_penalty)
 	{
 		/* set origin and destination nodes */
 		Yapf().SetOrigin(t1, td1, t2, td2, reverse_penalty, true);
@@ -312,7 +312,7 @@ public:
 		return 't';
 	}
 
-	static bool stFindNearestSafeTile(const Train *v, TileIndex t1, Trackdir td, bool override_railtype)
+	static bool stFindNearestSafeTile(const Train *v, ExtendedTileIndex t1, Trackdir td, bool override_railtype)
 	{
 		/* Create pathfinder instance */
 		Tpf pf1;
@@ -333,7 +333,7 @@ public:
 		return result1;
 	}
 
-	bool FindNearestSafeTile(const Train *v, TileIndex t1, Trackdir td, bool override_railtype, bool dont_reserve)
+	bool FindNearestSafeTile(const Train *v, ExtendedTileIndex t1, Trackdir td, bool override_railtype, bool dont_reserve)
 	{
 		/* Set origin and destination. */
 		Yapf().SetOrigin(t1, td);
@@ -395,7 +395,7 @@ public:
 		return 't';
 	}
 
-	static Trackdir stChooseRailTrack(const Train *v, TileIndex tile, DiagDirection enterdir, TrackBits tracks, bool &path_found, bool reserve_track, PBSTileInfo *target)
+	static Trackdir stChooseRailTrack(const Train *v, ExtendedTileIndex tile, DiagDirection enterdir, TrackBits tracks, bool &path_found, bool reserve_track, PBSTileInfo *target)
 	{
 		/* create pathfinder instance */
 		Tpf pf1;
@@ -417,13 +417,13 @@ public:
 		return result1;
 	}
 
-	inline Trackdir ChooseRailTrack(const Train *v, TileIndex tile, DiagDirection enterdir, TrackBits tracks, bool &path_found, bool reserve_track, PBSTileInfo *target)
+	inline Trackdir ChooseRailTrack(const Train *v, ExtendedTileIndex tile, DiagDirection enterdir, TrackBits tracks, bool &path_found, bool reserve_track, PBSTileInfo *target)
 	{
-		if (target != nullptr) target->tile = INVALID_TILE;
+		if (target != nullptr) target->tile = INVALID_EXTENDED_TILE;
 
 		/* set origin and destination nodes */
 		PBSTileInfo origin = FollowTrainReservation(v);
-		Yapf().SetOrigin(origin.tile, origin.trackdir, INVALID_TILE, INVALID_TRACKDIR, 1, true);
+		Yapf().SetOrigin(origin.tile, origin.trackdir, INVALID_EXTENDED_TILE, INVALID_TRACKDIR, 1, true);
 		Yapf().SetDestination(v);
 
 		/* find the best path */
@@ -457,7 +457,7 @@ public:
 		return next_trackdir;
 	}
 
-	static bool stCheckReverseTrain(const Train *v, TileIndex t1, Trackdir td1, TileIndex t2, Trackdir td2, int reverse_penalty)
+	static bool stCheckReverseTrain(const Train *v, ExtendedTileIndex t1, Trackdir td1, ExtendedTileIndex t2, Trackdir td2, int reverse_penalty)
 	{
 		Tpf pf1;
 		bool result1 = pf1.CheckReverseTrain(v, t1, td1, t2, td2, reverse_penalty);
@@ -475,7 +475,7 @@ public:
 		return result1;
 	}
 
-	inline bool CheckReverseTrain(const Train *v, TileIndex t1, Trackdir td1, TileIndex t2, Trackdir td2, int reverse_penalty)
+	inline bool CheckReverseTrain(const Train *v, ExtendedTileIndex t1, Trackdir td1, ExtendedTileIndex t2, Trackdir td2, int reverse_penalty)
 	{
 		/* create pathfinder instance
 		 * set origin and destination nodes */
@@ -528,10 +528,10 @@ struct CYapfAnySafeTileRail1 : CYapfT<CYapfRail_TypesT<CYapfAnySafeTileRail1, CF
 struct CYapfAnySafeTileRail2 : CYapfT<CYapfRail_TypesT<CYapfAnySafeTileRail2, CFollowTrackFreeRailNo90, CRailNodeListTrackDir, CYapfDestinationAnySafeTileRailT , CYapfFollowAnySafeTileRailT> > {};
 
 
-Track YapfTrainChooseTrack(const Train *v, TileIndex tile, DiagDirection enterdir, TrackBits tracks, bool &path_found, bool reserve_track, PBSTileInfo *target)
+Track YapfTrainChooseTrack(const Train *v, ExtendedTileIndex tile, DiagDirection enterdir, TrackBits tracks, bool &path_found, bool reserve_track, PBSTileInfo *target)
 {
 	/* default is YAPF type 2 */
-	typedef Trackdir (*PfnChooseRailTrack)(const Train*, TileIndex, DiagDirection, TrackBits, bool&, bool, PBSTileInfo*);
+	typedef Trackdir (*PfnChooseRailTrack)(const Train*, ExtendedTileIndex, DiagDirection, TrackBits, bool&, bool, PBSTileInfo*);
 	PfnChooseRailTrack pfnChooseRailTrack = &CYapfRail1::stChooseRailTrack;
 
 	/* check if non-default YAPF type needed */
@@ -552,41 +552,41 @@ bool YapfTrainCheckReverse(const Train *v)
 	Trackdir td_rev = ReverseTrackdir(last_veh->GetVehicleTrackdir());
 
 	/* tiles where front and back are */
-	TileIndex tile = v->tile;
-	TileIndex tile_rev = last_veh->tile;
+	ExtendedTileIndex tile = v->tile;
+	ExtendedTileIndex tile_rev = last_veh->tile;
 
 	int reverse_penalty = 0;
 
-	if (v->track == TRACK_BIT_WORMHOLE) {
-		/* front in tunnel / on bridge */
-		DiagDirection dir_into_wormhole = GetTunnelBridgeDirection(tile);
+	// if (v->track == TRACK_BIT_WORMHOLE) {
+	// 	/* front in tunnel / on bridge */
+	// 	DiagDirection dir_into_wormhole = GetTunnelBridgeDirection(tile);
 
-		if (TrackdirToExitdir(td) == dir_into_wormhole) tile = GetOtherTunnelBridgeEnd(tile);
-		/* Now 'tile' is the tunnel entry/bridge ramp the train will reach when driving forward */
+	// 	if (TrackdirToExitdir(td) == dir_into_wormhole) tile = GetOtherTunnelBridgeEnd(tile);
+	// 	/* Now 'tile' is the tunnel entry/bridge ramp the train will reach when driving forward */
 
-		/* Current position of the train in the wormhole */
-		TileIndex cur_tile = TileVirtXY(v->x_pos, v->y_pos);
+	// 	/* Current position of the train in the wormhole */
+	// 	TileIndex cur_tile = TileVirtXY(v->x_pos, v->y_pos);
 
-		/* Add distance to drive in the wormhole as penalty for the forward path, i.e. bonus for the reverse path
-		 * Note: Negative penalties are ok for the start tile. */
-		reverse_penalty -= DistanceManhattan(cur_tile, tile) * YAPF_TILE_LENGTH;
-	}
+	// 	/* Add distance to drive in the wormhole as penalty for the forward path, i.e. bonus for the reverse path
+	// 	 * Note: Negative penalties are ok for the start tile. */
+	// 	reverse_penalty -= DistanceManhattan(cur_tile, tile) * YAPF_TILE_LENGTH;
+	// }
 
-	if (last_veh->track == TRACK_BIT_WORMHOLE) {
-		/* back in tunnel / on bridge */
-		DiagDirection dir_into_wormhole = GetTunnelBridgeDirection(tile_rev);
+	// if (last_veh->track == TRACK_BIT_WORMHOLE) {
+	// 	/* back in tunnel / on bridge */
+	// 	DiagDirection dir_into_wormhole = GetTunnelBridgeDirection(tile_rev);
 
-		if (TrackdirToExitdir(td_rev) == dir_into_wormhole) tile_rev = GetOtherTunnelBridgeEnd(tile_rev);
-		/* Now 'tile_rev' is the tunnel entry/bridge ramp the train will reach when reversing */
+	// 	if (TrackdirToExitdir(td_rev) == dir_into_wormhole) tile_rev = GetOtherTunnelBridgeEnd(tile_rev);
+	// 	/* Now 'tile_rev' is the tunnel entry/bridge ramp the train will reach when reversing */
 
-		/* Current position of the last wagon in the wormhole */
-		TileIndex cur_tile = TileVirtXY(last_veh->x_pos, last_veh->y_pos);
+	// 	/* Current position of the last wagon in the wormhole */
+	// 	TileIndex cur_tile = TileVirtXY(last_veh->x_pos, last_veh->y_pos);
 
-		/* Add distance to drive in the wormhole as penalty for the revere path. */
-		reverse_penalty += DistanceManhattan(cur_tile, tile_rev) * YAPF_TILE_LENGTH;
-	}
+	// 	/* Add distance to drive in the wormhole as penalty for the revere path. */
+	// 	reverse_penalty += DistanceManhattan(cur_tile, tile_rev) * YAPF_TILE_LENGTH;
+	// }
 
-	typedef bool (*PfnCheckReverseTrain)(const Train*, TileIndex, Trackdir, TileIndex, Trackdir, int);
+	typedef bool (*PfnCheckReverseTrain)(const Train*, ExtendedTileIndex, Trackdir, ExtendedTileIndex, Trackdir, int);
 	PfnCheckReverseTrain pfnCheckReverseTrain = CYapfRail1::stCheckReverseTrain;
 
 	/* check if non-default YAPF type needed */
@@ -607,10 +607,10 @@ FindDepotData YapfTrainFindNearestDepot(const Train *v, int max_penalty)
 	const Train *last_veh = v->Last();
 
 	PBSTileInfo origin = FollowTrainReservation(v);
-	TileIndex last_tile = last_veh->tile;
+	ExtendedTileIndex last_tile = last_veh->tile;
 	Trackdir td_rev = ReverseTrackdir(last_veh->GetVehicleTrackdir());
 
-	typedef FindDepotData (*PfnFindNearestDepotTwoWay)(const Train*, TileIndex, Trackdir, TileIndex, Trackdir, int, int);
+	typedef FindDepotData (*PfnFindNearestDepotTwoWay)(const Train*, ExtendedTileIndex, Trackdir, ExtendedTileIndex, Trackdir, int, int);
 	PfnFindNearestDepotTwoWay pfnFindNearestDepotTwoWay = &CYapfAnyDepotRail1::stFindNearestDepotTwoWay;
 
 	/* check if non-default YAPF type needed */
@@ -621,9 +621,9 @@ FindDepotData YapfTrainFindNearestDepot(const Train *v, int max_penalty)
 	return pfnFindNearestDepotTwoWay(v, origin.tile, origin.trackdir, last_tile, td_rev, max_penalty, YAPF_INFINITE_PENALTY);
 }
 
-bool YapfTrainFindNearestSafeTile(const Train *v, TileIndex tile, Trackdir td, bool override_railtype)
+bool YapfTrainFindNearestSafeTile(const Train *v, ExtendedTileIndex tile, Trackdir td, bool override_railtype)
 {
-	typedef bool (*PfnFindNearestSafeTile)(const Train*, TileIndex, Trackdir, bool);
+	typedef bool (*PfnFindNearestSafeTile)(const Train*, ExtendedTileIndex, Trackdir, bool);
 	PfnFindNearestSafeTile pfnFindNearestSafeTile = CYapfAnySafeTileRail1::stFindNearestSafeTile;
 
 	/* check if non-default YAPF type needed */
@@ -637,7 +637,7 @@ bool YapfTrainFindNearestSafeTile(const Train *v, TileIndex tile, Trackdir td, b
 /** if any track changes, this counter is incremented - that will invalidate segment cost cache */
 int CSegmentCostCacheBase::s_rail_change_counter = 0;
 
-void YapfNotifyTrackLayoutChange(TileIndex tile, Track track)
+void YapfNotifyTrackLayoutChange(ExtendedTileIndex tile, Track track)
 {
 	CSegmentCostCacheBase::NotifyTrackLayoutChange(tile, track);
 }

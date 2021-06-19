@@ -132,6 +132,13 @@ void DumpTarget::WriteTile(const char *name, TileIndex tile)
 	m_out += std::string(name) + " = " + TileStr(tile) + "\n";
 }
 
+/** Write name & ExtendedTileIndex to the output. */
+void DumpTarget::WriteTile(const char *name, ExtendedTileIndex tile)
+{
+	WriteIndent();
+	m_out += std::string(name) + " = " + TileStr(tile.index) + " (h=" + std::to_string(tile.height) + ")" + "\n";
+}
+
 /**
  * Open new structure (one level deeper than the current one) 'name = {\<LF\>'.
  */

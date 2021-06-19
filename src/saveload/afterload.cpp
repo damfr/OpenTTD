@@ -1183,86 +1183,86 @@ bool AfterLoadGame()
 		}
 	}
 
-	if (IsSavegameVersionBefore(SLV_42)) {
-		for (TileIndex t = 0; t < map_size; t++) {
-			if (MayHaveBridgeAbove(t)) ClearBridgeMiddle(t);
-			if (IsBridgeTile(t)) {
-				if (HasBit(_m[t].m5, 6)) { // middle part
-					Axis axis = (Axis)GB(_m[t].m5, 0, 1);
+	// if (IsSavegameVersionBefore(SLV_42)) {
+	// 	for (TileIndex t = 0; t < map_size; t++) {
+	// 		if (MayHaveBridgeAbove(t)) ClearBridgeMiddle(t);
+	// 		if (IsBridgeTile(t)) {
+	// 			if (HasBit(_m[t].m5, 6)) { // middle part
+	// 				Axis axis = (Axis)GB(_m[t].m5, 0, 1);
 
-					if (HasBit(_m[t].m5, 5)) { // transport route under bridge?
-						if (GB(_m[t].m5, 3, 2) == TRANSPORT_RAIL) {
-							MakeRailNormal(
-								t,
-								GetTileOwner(t),
-								axis == AXIS_X ? TRACK_BIT_Y : TRACK_BIT_X,
-								GetRailType(t)
-							);
-						} else {
-							TownID town = IsTileOwner(t, OWNER_TOWN) ? ClosestTownFromTile(t, UINT_MAX)->index : 0;
+	// 				if (HasBit(_m[t].m5, 5)) { // transport route under bridge?
+	// 					if (GB(_m[t].m5, 3, 2) == TRANSPORT_RAIL) {
+	// 						MakeRailNormal(
+	// 							t,
+	// 							GetTileOwner(t),
+	// 							axis == AXIS_X ? TRACK_BIT_Y : TRACK_BIT_X,
+	// 							GetRailType(t)
+	// 						);
+	// 					} else {
+	// 						TownID town = IsTileOwner(t, OWNER_TOWN) ? ClosestTownFromTile(t, UINT_MAX)->index : 0;
 
-							/* MakeRoadNormal */
-							SetTileType(t, MP_ROAD);
-							_m[t].m2 = town;
-							_m[t].m3 = 0;
-							_m[t].m5 = (axis == AXIS_X ? ROAD_Y : ROAD_X) | ROAD_TILE_NORMAL << 6;
-							SB(_me[t].m6, 2, 4, 0);
-							_me[t].m7 = 1 << 6;
-							SetRoadOwner(t, RTT_TRAM, OWNER_NONE);
-						}
-					} else {
-						if (GB(_m[t].m5, 3, 2) == 0) {
-							MakeClear(t, CLEAR_GRASS, 3);
-						} else {
-							if (!IsTileFlat(t)) {
-								MakeShore(t);
-							} else {
-								if (GetTileOwner(t) == OWNER_WATER) {
-									MakeSea(t);
-								} else {
-									MakeCanal(t, GetTileOwner(t), Random());
-								}
-							}
-						}
-					}
-					SetBridgeMiddle(t, axis);
-				} else { // ramp
-					Axis axis = (Axis)GB(_m[t].m5, 0, 1);
-					uint north_south = GB(_m[t].m5, 5, 1);
-					DiagDirection dir = ReverseDiagDir(XYNSToDiagDir(axis, north_south));
-					TransportType type = (TransportType)GB(_m[t].m5, 1, 2);
+	// 						/* MakeRoadNormal */
+	// 						SetTileType(t, MP_ROAD);
+	// 						_m[t].m2 = town;
+	// 						_m[t].m3 = 0;
+	// 						_m[t].m5 = (axis == AXIS_X ? ROAD_Y : ROAD_X) | ROAD_TILE_NORMAL << 6;
+	// 						SB(_me[t].m6, 2, 4, 0);
+	// 						_me[t].m7 = 1 << 6;
+	// 						SetRoadOwner(t, RTT_TRAM, OWNER_NONE);
+	// 					}
+	// 				} else {
+	// 					if (GB(_m[t].m5, 3, 2) == 0) {
+	// 						MakeClear(t, CLEAR_GRASS, 3);
+	// 					} else {
+	// 						if (!IsTileFlat(t)) {
+	// 							MakeShore(t);
+	// 						} else {
+	// 							if (GetTileOwner(t) == OWNER_WATER) {
+	// 								MakeSea(t);
+	// 							} else {
+	// 								MakeCanal(t, GetTileOwner(t), Random());
+	// 							}
+	// 						}
+	// 					}
+	// 				}
+	// 				SetBridgeMiddle(t, axis);
+	// 			} else { // ramp
+	// 				Axis axis = (Axis)GB(_m[t].m5, 0, 1);
+	// 				uint north_south = GB(_m[t].m5, 5, 1);
+	// 				DiagDirection dir = ReverseDiagDir(XYNSToDiagDir(axis, north_south));
+	// 				TransportType type = (TransportType)GB(_m[t].m5, 1, 2);
 
-					_m[t].m5 = 1 << 7 | type << 2 | dir;
-				}
-			}
-		}
+	// 				_m[t].m5 = 1 << 7 | type << 2 | dir;
+	// 			}
+	// 		}
+	// 	}
 
-		for (Vehicle* v : Vehicle::Iterate()) {
-			if (!v->IsGroundVehicle()) continue;
-			if (IsBridgeTile(v->tile)) {
-				DiagDirection dir = GetTunnelBridgeDirection(v->tile);
+	// 	for (Vehicle* v : Vehicle::Iterate()) {
+	// 		if (!v->IsGroundVehicle()) continue;
+	// 		if (IsBridgeTile(v->tile)) {
+	// 			DiagDirection dir = GetTunnelBridgeDirection(v->tile);
 
-				if (dir != DirToDiagDir(v->direction)) continue;
-				switch (dir) {
-					default: SlErrorCorrupt("Invalid vehicle direction");
-					case DIAGDIR_NE: if ((v->x_pos & 0xF) !=  0)            continue; break;
-					case DIAGDIR_SE: if ((v->y_pos & 0xF) != TILE_SIZE - 1) continue; break;
-					case DIAGDIR_SW: if ((v->x_pos & 0xF) != TILE_SIZE - 1) continue; break;
-					case DIAGDIR_NW: if ((v->y_pos & 0xF) !=  0)            continue; break;
-				}
-			} else if (v->z_pos > GetSlopePixelZ(v->x_pos, v->y_pos)) {
-				v->tile = GetNorthernBridgeEnd(v->tile);
-				v->UpdatePosition();
-			} else {
-				continue;
-			}
-			if (v->type == VEH_TRAIN) {
-				Train::From(v)->track = TRACK_BIT_WORMHOLE;
-			} else {
-				RoadVehicle::From(v)->state = RVSB_WORMHOLE;
-			}
-		}
-	}
+	// 			if (dir != DirToDiagDir(v->direction)) continue;
+	// 			switch (dir) {
+	// 				default: SlErrorCorrupt("Invalid vehicle direction");
+	// 				case DIAGDIR_NE: if ((v->x_pos & 0xF) !=  0)            continue; break;
+	// 				case DIAGDIR_SE: if ((v->y_pos & 0xF) != TILE_SIZE - 1) continue; break;
+	// 				case DIAGDIR_SW: if ((v->x_pos & 0xF) != TILE_SIZE - 1) continue; break;
+	// 				case DIAGDIR_NW: if ((v->y_pos & 0xF) !=  0)            continue; break;
+	// 			}
+	// 		} else if (v->z_pos > GetSlopePixelZ(v->x_pos, v->y_pos)) {
+	// 			v->tile = GetNorthernBridgeEnd(v->tile);
+	// 			v->UpdatePosition();
+	// 		} else {
+	// 			continue;
+	// 		}
+	// 		if (v->type == VEH_TRAIN) {
+	// 			Train::From(v)->track = TRACK_BIT_WORMHOLE;
+	// 		} else {
+	// 			RoadVehicle::From(v)->state = RVSB_WORMHOLE;
+	// 		}
+	// 	}
+	// }
 
 	if (IsSavegameVersionBefore(SLV_ROAD_TYPES)) {
 		/* Add road subtypes */
@@ -2311,8 +2311,8 @@ bool AfterLoadGame()
 				d = nullptr;
 				continue;
 			}
-			_m[d->xy].m2 = d->index;
-			if (IsTileType(d->xy, MP_WATER)) _m[GetOtherShipDepotTile(d->xy)].m2 = d->index;
+			_m[d->xy.index].m2 = d->index;
+			if (IsTileType(d->xy, MP_WATER)) _m[GetOtherShipDepotTile(d->xy.index)].m2 = d->index;
 		}
 	}
 
@@ -2666,7 +2666,7 @@ bool AfterLoadGame()
 					continue;
 			}
 
-			if (IsBridgeTile(v->tile) && TileVirtXY(v->x_pos, v->y_pos) == v->tile) {
+			if (IsBridgeTile(v->tile) && TileVirtXY(v->x_pos, v->y_pos) == v->tile.index) {
 				/* In old versions, z_pos was 1 unit lower on bridge heads.
 				 * However, this invalid state could be converted to new savegames
 				 * by loading and saving the game in a new version. */
@@ -2908,7 +2908,7 @@ bool AfterLoadGame()
 		for (RoadVehicle *v : RoadVehicle::Iterate()) {
 			if (!v->IsFrontEngine()) continue;
 			skip_frames.clear();
-			TileIndex prev_tile = v->tile;
+			ExtendedTileIndex prev_tile = v->tile;
 			uint prev_tile_skip = 0;
 			uint cur_skip = 0;
 			for (RoadVehicle *u = v; u != nullptr; u = u->Next()) {
@@ -3029,7 +3029,7 @@ bool AfterLoadGame()
 		/* Move ships from lock slope to upper or lower position. */
 		for (Ship *s : Ship::Iterate()) {
 			/* Suitable tile? */
-			if (!IsTileType(s->tile, MP_WATER) || !IsLock(s->tile) || GetLockPart(s->tile) != LOCK_PART_MIDDLE) continue;
+			if (!IsTileType(s->tile, MP_WATER) || !IsLock(s->tile.index) || GetLockPart(s->tile.index) != LOCK_PART_MIDDLE) continue;
 
 			/* We don't need to adjust position when at the tile centre */
 			int x = s->x_pos & 0xF;
@@ -3047,15 +3047,15 @@ bool AfterLoadGame()
 				case DIAGDIR_SE: second_half = y > 8; break;
 			}
 
-			DiagDirection slopediagdir = GetInclinedSlopeDirection(GetTileSlope(s->tile));
+			DiagDirection slopediagdir = GetInclinedSlopeDirection(GetTileSlope(s->tile.index));
 
 			/* Heading up slope == passed half way */
 			if ((shipdiagdir == slopediagdir) == second_half) {
 				/* On top half of lock */
-				s->z_pos = GetTileMaxZ(s->tile) * (int)TILE_HEIGHT;
+				s->z_pos = GetTileMaxZ(s->tile.index) * (int)TILE_HEIGHT;
 			} else {
 				/* On lower half of lock */
-				s->z_pos = GetTileZ(s->tile) * (int)TILE_HEIGHT;
+				s->z_pos = GetTileZ(s->tile.index) * (int)TILE_HEIGHT;
 			}
 		}
 	}

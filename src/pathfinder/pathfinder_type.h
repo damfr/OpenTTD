@@ -10,7 +10,7 @@
 #ifndef PATHFINDER_TYPE_H
 #define PATHFINDER_TYPE_H
 
-#include "../tile_type.h"
+#include "../map_type.h"
 
 /** Length (penalty) of one tile with NPF */
 static const int NPF_TILE_LENGTH = 100;

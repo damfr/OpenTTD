@@ -141,6 +141,7 @@ struct DumpTarget {
 	void WriteValue(const char *name, int value);
 	void WriteValue(const char *name, const char *value_str);
 	void WriteTile(const char *name, TileIndex t);
+	void WriteTile(const char *name, ExtendedTileIndex t);
 
 	/** Dump given enum value (as a number and as named value) */
 	template <typename E> void WriteEnumT(const char *name, E e)

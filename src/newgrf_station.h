@@ -179,7 +179,7 @@ struct StationSpec {
 /** Struct containing information relating to station classes. */
 typedef NewGRFClass<StationSpec, StationClassID, STAT_CLASS_MAX> StationClass;
 
-const StationSpec *GetStationSpec(TileIndex t);
+const StationSpec *GetStationSpec(ExtendedTileIndex t);
 
 /* Evaluate a tile's position within a station, and return the result a bitstuffed format. */
 uint32 GetPlatformInfo(Axis axis, byte tile, int platforms, int length, int x, int y, bool centred);
@@ -198,9 +198,9 @@ void DeallocateSpecFromStation(BaseStation *st, byte specindex);
 /* Draw representation of a station tile for GUI purposes. */
 bool DrawStationTile(int x, int y, RailType railtype, Axis axis, StationClassID sclass, uint station);
 
-void AnimateStationTile(TileIndex tile);
-void TriggerStationAnimation(BaseStation *st, TileIndex tile, StationAnimationTrigger trigger, CargoID cargo_type = CT_INVALID);
-void TriggerStationRandomisation(Station *st, TileIndex tile, StationRandomTrigger trigger, CargoID cargo_type = CT_INVALID);
+void AnimateStationTile(ExtendedTileIndex tile);
+void TriggerStationAnimation(BaseStation *st, ExtendedTileIndex tile, StationAnimationTrigger trigger, CargoID cargo_type = CT_INVALID);
+void TriggerStationRandomisation(Station *st, ExtendedTileIndex tile, StationRandomTrigger trigger, CargoID cargo_type = CT_INVALID);
 void StationUpdateCachedTriggers(BaseStation *st);
 
 #endif /* NEWGRF_STATION_H */

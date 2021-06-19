@@ -42,9 +42,10 @@ static inline bool IsBridgeTile(ExtendedTileIndex t)
  * @param t The tile to analyze
  * @return true if a bridge is detected above
  */
-static inline bool IsBridgeAbove(TileIndex t)
+static inline bool IsBridgeAbove(ExtendedTileIndex t)
 {
-	return GB(_m[t].type, 2, 2) != 0;
+	//TODO elevated tracks over elevated tracks
+	return GB(_m[t.index].type, 2, 2) != 0;
 }
 
 /**

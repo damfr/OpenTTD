@@ -95,18 +95,24 @@ static inline ExtendedTileIndex GetElevatedRampNextTile(ExtendedTileIndex ramp, 
 {
 	assert(IsTileType(ramp, MP_TUNNELBRIDGE));
 	DiagDirection ramp_dir = GetTunnelBridgeDirection(ramp);
-	bool flat_ramp = true;
-	if (IsBridgeTile(ramp) && !HasBridgeFlatRamp(ramp)) flat_ramp = false;
+
+	uint ramp_offset = 0;
+	if (IsBridgeTile(ramp) && !HasBridgeFlatRamp(ramp)) ramp_offset = 1;
+
+	ExtendedTileIndex next_tile(ramp.index + TileOffsByDiagDir(dir), ramp.height, EL_GROUND);
 
 	if (ramp_dir == dir) {
 		/* We are going on the ramp, possibly going up */
-		return ExtendedTileIndex(ramp.index + TileOffsByDiagDir(dir), ramp.height + flat_ramp ? 0 : 1);
+		next_tile.height += ramp_offset;
+		next_tile.flags = EL_ELEVATED; //TODO elevated tunnels
 	} else if (ramp_dir == ReverseDiagDir(dir)) {
 		/* We are leaving a ramp, possibly going down */
-		return ExtendedTileIndex(ramp.index + TileOffsByDiagDir(dir), ramp.height - flat_ramp ? 0 : 1);
+		next_tile.height -= ramp_offset;
+		if (IsIndexGroundTile(next_tile)) next_tile.flags = EL_GROUND;
 	} else {
 		NOT_REACHED();
 	}
+	return next_tile;
 }
 
 

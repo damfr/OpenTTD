@@ -31,7 +31,7 @@
 			const CargoPacketList *packets = v->cargo.Packets();
 			for (VehicleCargoList::ConstIterator it(packets->begin()); it != packets->end(); it++) {
 				CargoPacket *cp = *it;
-				cp->source_xy = Station::IsValidID(cp->source) ? Station::Get(cp->source)->xy : v->tile;
+				cp->source_xy = Station::IsValidID(cp->source) ? Station::Get(cp->source)->xy : v->tile.index;
 				cp->loaded_at_xy = cp->source_xy;
 			}
 		}

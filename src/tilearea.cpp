@@ -156,12 +156,30 @@ OrthogonalTileIterator OrthogonalTileArea::begin() const
 }
 
 /**
+ * Returns an ExtendedOrthogonalTileIterator iterator to the beginning of the tile area.
+ * @return The ExtendedOrthogonalTileIterator.
+ */
+ExtendedOrthogonalTileIterator OrthogonalTileArea::BeginExtended() const
+{
+	return ExtendedOrthogonalTileIterator(*this);
+}
+
+/**
  * Returns an iterator to the end of the tile area.
  * @return The OrthogonalTileIterator.
  */
 OrthogonalTileIterator OrthogonalTileArea::end() const
 {
 	return OrthogonalTileIterator(OrthogonalTileArea());
+}
+
+/**
+ * Returns an ExtendedOrthogonalTileIterator iterator to the end of the tile area.
+ * @return The ExtendedOrthogonalTileIterator.
+ */
+ExtendedOrthogonalTileIterator OrthogonalTileArea::EndExtended() const
+{
+	return ExtendedOrthogonalTileIterator(OrthogonalTileArea());
 }
 
 /**

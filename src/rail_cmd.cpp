@@ -1587,8 +1587,7 @@ CommandCost CmdBuildSingleRailElevated(TileIndex ground_tile, DoCommandFlag flag
 	//Slope tileh = GetTileSlope(tile);
 	TrackBits trackbit = TrackToTrackBits(track);
 
-	ExtendedTileIndex elevated_tile(ground_tile);
-	elevated_tile.height = height;
+	ExtendedTileIndex elevated_tile(ground_tile, height, EL_ELEVATED);
 
     ElevatedIndex::iterator elevated_track;
     bool overbuild = false;

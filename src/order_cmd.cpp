@@ -688,7 +688,7 @@ TileIndex Order::GetLocation(const Vehicle *v, bool airport) const
 
 		case OT_GOTO_DEPOT:
 			if ((this->GetDepotActionType() & ODATFB_NEAREST_DEPOT) != 0) return INVALID_TILE;
-			return (v->type == VEH_AIRCRAFT) ? Station::Get(this->GetDestination())->xy : Depot::Get(this->GetDestination())->xy;
+			return (v->type == VEH_AIRCRAFT) ? Station::Get(this->GetDestination())->xy : Depot::Get(this->GetDestination())->xy.index;
 
 		default:
 			return INVALID_TILE;
@@ -2022,7 +2022,7 @@ bool UpdateOrderDest(Vehicle *v, const Order *order, int conditional_depth, bool
 
 			if (v->current_order.GetDepotActionType() & ODATFB_NEAREST_DEPOT) {
 				/* We need to search for the nearest depot (hangar). */
-				TileIndex location;
+				ExtendedTileIndex location;
 				DestinationID destination;
 				bool reverse;
 
@@ -2030,7 +2030,7 @@ bool UpdateOrderDest(Vehicle *v, const Order *order, int conditional_depth, bool
 					/* PBS reservations cannot reverse */
 					if (pbs_look_ahead && reverse) return false;
 
-					v->SetDestTile(location);
+					v->SetDestTile(location.index);
 					v->current_order.MakeGoToDepot(destination, v->current_order.GetDepotOrderType(), v->current_order.GetNonStopType(), (OrderDepotActionFlags)(v->current_order.GetDepotActionType() & ~ODATFB_NEAREST_DEPOT), v->current_order.GetRefitCargo());
 
 					/* If there is no depot in front, reverse automatically (trains only) */
@@ -2054,7 +2054,7 @@ bool UpdateOrderDest(Vehicle *v, const Order *order, int conditional_depth, bool
 				v->IncrementRealOrderIndex();
 			} else {
 				if (v->type != VEH_AIRCRAFT) {
-					v->SetDestTile(Depot::Get(order->GetDestination())->xy);
+					v->SetDestTile(Depot::Get(order->GetDestination())->xy.index);
 				} else {
 					Aircraft *a = Aircraft::From(v);
 					DestinationID destination = a->current_order.GetDestination();

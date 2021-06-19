@@ -1110,13 +1110,14 @@ static int32 River_CalculateG(AyStar *aystar, AyStarNode *current, OpenListNode 
 /* AyStar callback for getting the estimated cost to the destination. */
 static int32 River_CalculateH(AyStar *aystar, AyStarNode *current, OpenListNode *parent)
 {
-	return DistanceManhattan(*(TileIndex*)aystar->user_target, current->tile);
+	return DistanceManhattan(*(TileIndex*)aystar->user_target, current->tile.index);
 }
 
 /* AyStar callback for getting the neighbouring nodes of the given node. */
 static void River_GetNeighbours(AyStar *aystar, OpenListNode *current)
 {
-	TileIndex tile = current->path.node.tile;
+	assert(IsIndexGroundTile(current->path.node.tile));
+	TileIndex tile = current->path.node.tile.index;
 
 	aystar->num_neighbours = 0;
 	for (DiagDirection d = DIAGDIR_BEGIN; d < DIAGDIR_END; d++) {
@@ -1133,7 +1134,8 @@ static void River_GetNeighbours(AyStar *aystar, OpenListNode *current)
 static void River_FoundEndNode(AyStar *aystar, OpenListNode *current)
 {
 	for (PathNode *path = &current->path; path != nullptr; path = path->parent) {
-		TileIndex tile = path->node.tile;
+		assert(IsIndexGroundTile(path->node.tile));
+		TileIndex tile = path->node.tile.index;
 		if (!IsWaterTile(tile)) {
 			MakeRiver(tile, Random());
 			MarkTileDirtyByTile(tile);

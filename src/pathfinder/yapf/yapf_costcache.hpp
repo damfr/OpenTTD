@@ -101,7 +101,7 @@ struct CSegmentCostCacheBase
 {
 	static int   s_rail_change_counter;
 
-	static void NotifyTrackLayoutChange(TileIndex tile, Track track)
+	static void NotifyTrackLayoutChange(ExtendedTileIndex tile, Track track)
 	{
 		s_rail_change_counter++;
 	}

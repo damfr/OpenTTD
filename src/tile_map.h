@@ -18,7 +18,7 @@
 
 Tile& GetElevatedTile(ExtendedTileIndex tile);
 TileExtended& GetElevatedTileExt(ExtendedTileIndex tile);
-bool HasElevatedTrack(ExtendedTileIndex tile);
+bool HasElevatedTrack(TileIndex tile);
 void InsertElevatedTile(ExtendedTileIndex tile);
 
 
@@ -335,7 +335,10 @@ static inline Height GetHeightFromPixelZ(TileIndex ground_tile, int z)
  */
 static inline bool IsIndexGroundTile(ExtendedTileIndex tile)
 {
-	return IsInsideMM(tile.height, GetTileZ(tile.index), GetTileMaxZ(tile.index)+1);
+	if (IsInsideMM(tile.height, GetTileZ(tile.index), GetTileMaxZ(tile.index)+1))
+		return true;
+	else
+		return false;
 }
 
 

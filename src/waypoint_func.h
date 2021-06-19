@@ -16,7 +16,7 @@
 
 CommandCost RemoveBuoy(TileIndex tile, DoCommandFlag flags);
 
-Axis GetAxisForNewWaypoint(TileIndex tile);
+Axis GetAxisForNewWaypoint(ExtendedTileIndex tile);
 void ShowWaypointWindow(const Waypoint *wp);
 void DrawWaypointSprite(int x, int y, int stat_id, RailType railtype);
 

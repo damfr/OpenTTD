@@ -27,20 +27,20 @@ protected:
 
 	/* Structure used inside PfCalcCost() to keep basic tile information. */
 	struct TILE {
-		TileIndex   tile;
-		Trackdir    td;
-		TileType    tile_type;
-		RailType    rail_type;
+		ExtendedTileIndex tile;
+		Trackdir   		  td;
+		TileType    	  tile_type;
+		RailType    	  rail_type;
 
 		TILE()
 		{
-			tile = INVALID_TILE;
+			tile = INVALID_EXTENDED_TILE;
 			td = INVALID_TRACKDIR;
 			tile_type = MP_VOID;
 			rail_type = INVALID_RAILTYPE;
 		}
 
-		TILE(TileIndex tile, Trackdir td)
+		TILE(ExtendedTileIndex tile, Trackdir td)
 		{
 			this->tile = tile;
 			this->td = td;
@@ -84,7 +84,7 @@ protected:
 	}
 
 public:
-	inline int SlopeCost(TileIndex tile, Trackdir td)
+	inline int SlopeCost(ExtendedTileIndex tile, Trackdir td)
 	{
 		if (!stSlopeCost(tile, td)) return 0;
 		return Yapf().PfGetSettings().rail_slope_penalty;
@@ -106,7 +106,7 @@ public:
 		return cost;
 	}
 
-	inline int SwitchCost(TileIndex tile1, TileIndex tile2, DiagDirection exitdir)
+	inline int SwitchCost(ExtendedTileIndex tile1, ExtendedTileIndex tile2, DiagDirection exitdir)
 	{
 		if (IsPlainRailTile(tile1) && IsPlainRailTile(tile2)) {
 			bool t1 = KillFirstBit(GetTrackBits(tile1) & DiagdirReachesTracks(ReverseDiagDir(exitdir))) != TRACK_BIT_NONE;
@@ -117,7 +117,7 @@ public:
 	}
 
 	/** Return one tile cost (base cost + level crossing penalty). */
-	inline int OneTileCost(TileIndex &tile, Trackdir trackdir)
+	inline int OneTileCost(ExtendedTileIndex &tile, Trackdir trackdir)
 	{
 		int cost = 0;
 		/* set base cost */
@@ -142,7 +142,7 @@ public:
 	}
 
 	/** Check for a reserved station platform. */
-	inline bool IsAnyStationTileReserved(TileIndex tile, Trackdir trackdir, int skipped)
+	inline bool IsAnyStationTileReserved(ExtendedTileIndex tile, Trackdir trackdir, int skipped)
 	{
 		TileIndexDiff diff = TileOffsByDiagDir(TrackdirToExitdir(ReverseTrackdir(trackdir)));
 		for (; skipped >= 0; skipped--, tile += diff) {
@@ -152,7 +152,7 @@ public:
 	}
 
 	/** The cost for reserved tiles, including skipped ones. */
-	inline int ReservationCost(Node &n, TileIndex tile, Trackdir trackdir, int skipped)
+	inline int ReservationCost(Node &n, ExtendedTileIndex tile, Trackdir trackdir, int skipped)
 	{
 		if (n.m_num_signals_passed >= m_sig_look_ahead_costs.size() / 2) return 0;
 		if (!IsPbsSignal(n.m_last_signal_type)) return 0;
@@ -167,7 +167,7 @@ public:
 		return 0;
 	}
 
-	int SignalCost(Node &n, TileIndex tile, Trackdir trackdir)
+	int SignalCost(Node &n, ExtendedTileIndex tile, Trackdir trackdir)
 	{
 		int cost = 0;
 		/* if there is one-way signal in the opposite direction, then it is not our way */
@@ -405,7 +405,7 @@ no_entry_cost: // jump here at the beginning if the node has no parent (it is th
 					 * one, so check that and if so see that as the last signal being
 					 * red. This way waypoints near stations should work better. */
 					CFollowTrackRail ft(v);
-					TileIndex t = cur.tile;
+					ExtendedTileIndex t = cur.tile;
 					Trackdir td = cur.td;
 					/* Arbitrary maximum tiles to follow to avoid infinite loops. */
 					uint max_tiles = 20;

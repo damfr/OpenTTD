@@ -18,7 +18,7 @@ struct CYapfCostBase {
 	 * @param td   The track direction to check.
 	 * @return True if there's a slope, otherwise false.
 	 */
-	inline static bool stSlopeCost(TileIndex tile, Trackdir td)
+	inline static bool stSlopeCost(ExtendedTileIndex tile, Trackdir td)
 	{
 		if (IsDiagonalTrackdir(td)) {
 			if (IsBridgeTile(tile)) {
@@ -29,7 +29,9 @@ struct CYapfCostBase {
 			} else {
 				/* not bridge ramp */
 				if (IsTunnelTile(tile)) return false; // tunnel entry/exit doesn't slope
-				Slope tile_slope = GetTileSlope(tile);
+				if (!IsIndexGroundTile(tile)) return false; //Elevated track that is not a bridge ramp : no slope
+				/* We are on the ground */
+				Slope tile_slope = GetTileSlope(tile.index);
 				return IsUphillTrackdir(tile_slope, td); // slopes uphill => apply penalty
 			}
 		}

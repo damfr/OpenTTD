@@ -52,7 +52,7 @@ public:
 	}
 
 	/** Called by YAPF to detect if node ends in the desired destination */
-	inline bool PfDetectDestination(TileIndex tile, Trackdir td)
+	inline bool PfDetectDestination(ExtendedTileIndex tile, Trackdir td)
 	{
 		bool bDest = IsRailDepotTile(tile);
 		return bDest;
@@ -90,7 +90,7 @@ public:
 	}
 
 	/** Called by YAPF to detect if node ends in the desired destination */
-	inline bool PfDetectDestination(TileIndex tile, Trackdir td)
+	inline bool PfDetectDestination(ExtendedTileIndex tile, Trackdir td)
 	{
 		return IsSafeWaitingPosition(Yapf().GetVehicle(), tile, td, true, !TrackFollower::Allow90degTurns()) &&
 				IsWaitingPositionFree(Yapf().GetVehicle(), tile, td, !TrackFollower::Allow90degTurns());
@@ -115,9 +115,9 @@ public:
 	typedef typename Node::Key Key;               ///< key to hash tables
 
 protected:
-	TileIndex    m_destTile;
-	TrackdirBits m_destTrackdirs;
-	StationID    m_dest_station_id;
+	ExtendedTileIndex m_destTile;
+	TrackdirBits 	  m_destTrackdirs;
+	StationID   	  m_dest_station_id;
 
 	/** to access inherited path finder */
 	Tpf& Yapf()
@@ -141,7 +141,9 @@ public:
 				FALLTHROUGH;
 
 			case OT_GOTO_STATION:
-				m_destTile = CalcClosestStationTile(v->current_order.GetDestination(), v->tile, v->current_order.IsType(OT_GOTO_STATION) ? STATION_RAIL : STATION_WAYPOINT);
+				//m_destTile = CalcClosestStationTile(v->current_order.GetDestination(), v->tile, v->current_order.IsType(OT_GOTO_STATION) ? STATION_RAIL : STATION_WAYPOINT);
+				m_destTile = CalcClosestStationTile(v->current_order.GetDestination(), v->tile.index, v->current_order.IsType(OT_GOTO_STATION) ? STATION_RAIL : STATION_WAYPOINT);
+				//TODO elevated : check this
 				m_dest_station_id = v->current_order.GetDestination();
 				m_destTrackdirs = INVALID_TRACKDIR_BIT;
 				break;
@@ -162,7 +164,7 @@ public:
 	}
 
 	/** Called by YAPF to detect if node ends in the desired destination */
-	inline bool PfDetectDestination(TileIndex tile, Trackdir td)
+	inline bool PfDetectDestination(ExtendedTileIndex tile, Trackdir td)
 	{
 		if (m_dest_station_id != INVALID_STATION) {
 			return HasStationTileRail(tile)
@@ -186,7 +188,7 @@ public:
 			return true;
 		}
 
-		TileIndex tile = n.GetLastTile();
+		ExtendedTileIndex tile = n.GetLastTile();
 		DiagDirection exitdir = TrackdirToExitdir(n.GetLastTrackdir());
 		int x1 = 2 * TileX(tile) + dg_dir_to_x_offs[(int)exitdir];
 		int y1 = 2 * TileY(tile) + dg_dir_to_y_offs[(int)exitdir];

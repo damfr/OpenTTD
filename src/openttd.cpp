@@ -342,7 +342,8 @@ static void LoadIntroGame(bool load_newgrfs = true)
 	SetupColoursAndInitialWindow();
 
 	/* Load the default opening screen savegame */
-	if (SaveOrLoad("opntitle.dat", SLO_LOAD, DFT_GAME_FILE, BASESET_DIR) != SL_OK) {
+	//if (SaveOrLoad("opntitle.dat", SLO_LOAD, DFT_GAME_FILE, BASESET_DIR) != SL_OK) {
+	if (SaveOrLoad("elevated_test.sav", SLO_LOAD, DFT_GAME_FILE, SAVE_DIR) != SL_OK) { //TODO elevated revert this
 		GenerateWorld(GWM_EMPTY, 64, 64); // if failed loading, make empty world.
 		SetLocalCompany(COMPANY_SPECTATOR);
 	} else {

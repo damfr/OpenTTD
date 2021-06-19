@@ -13,8 +13,6 @@
 #include "stdafx.h"
 #include "core/multimap.hpp"
 #include "core/pool_func.hpp"
-#include "landscape.h"
-#include "tunnelbridge_map.h"
 #include "map_type.h"
 
 // typedef uint32 ElevatedNetworkID;

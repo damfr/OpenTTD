@@ -11,8 +11,10 @@
 #define TILEAREA_TYPE_H
 
 #include "map_func.h"
+#include "elevated.h"
 
 class OrthogonalTileIterator;
+class ExtendedOrthogonalTileIterator;
 
 /** Represents the covered area of e.g. a rail station */
 struct OrthogonalTileArea {
@@ -62,8 +64,10 @@ struct OrthogonalTileArea {
 	}
 
 	OrthogonalTileIterator begin() const;
+	ExtendedOrthogonalTileIterator BeginExtended() const;
 
 	OrthogonalTileIterator end() const;
+	ExtendedOrthogonalTileIterator EndExtended() const;
 };
 
 /** Represents a diagonal tile area. */
@@ -235,6 +239,108 @@ public:
 	virtual TileIterator *Clone() const
 	{
 		return new DiagonalTileIterator(*this);
+	}
+};
+
+/** Iterator to iterate over all (ground and elevated) tiles of a TileArea */
+class ExtendedOrthogonalTileIterator {
+private:
+	OrthogonalTileIterator ground_it;
+
+	bool ground;
+	ElevatedIndex::iterator elevated_it;
+	ElevatedIndex::iterator elevated_it_end;
+
+	void UpdateElevatedIterators()
+	{
+		if (ground_it == INVALID_TILE) {
+			/* Reset the iterators so comparison of end iterators work */
+			elevated_it = ElevatedIndex::iterator();
+			elevated_it_end = ElevatedIndex::iterator();
+		} else {
+			auto iterator_pair = GetElevatedTrackIterator(ground_it);
+			this->elevated_it = iterator_pair.first;
+			this->elevated_it_end = iterator_pair.second;
+		}
+	}
+
+public:
+	/**
+	 * Construct the iterator.
+	 * @param ta Area, i.e. begin point and width/height of to-be-iterated area.
+	 */
+	ExtendedOrthogonalTileIterator(const OrthogonalTileArea &ta) : ground_it(ta), ground(false), elevated_it(), elevated_it_end()
+	{
+		this->UpdateElevatedIterators();
+	}
+
+	/**
+	 * Construct the iterator.
+	 * @param corner1 Tile from where to begin iterating.
+	 * @param corner2 Tile where to end the iterating.
+	 */
+	ExtendedOrthogonalTileIterator(TileIndex corner1, TileIndex corner2) : ground_it(corner1, corner2), ground(false), elevated_it(), elevated_it_end()
+	{
+		this->UpdateElevatedIterators();
+	}
+
+	/**
+	 * Move ourselves to the next tile in the rectangle on the map.
+	 */
+	inline ExtendedOrthogonalTileIterator& operator ++()
+	{
+		if (ground) {
+			ground = false;
+		} else {
+			elevated_it++;
+		}
+		
+		if (elevated_it == elevated_it_end) {
+			/* We have reached the end of the elevated tiles (or there were none to start with) */
+			++(this->ground_it);
+			this->ground = true;
+			this->UpdateElevatedIterators();
+		} else {
+			(this->elevated_it)++;
+		}
+
+		return *this;
+	}
+
+	/**
+	 * Get the tile we are currently at.
+	 * @return The tile we are at, or INVALID_EXTENDED_TILE when we're done.
+	 */
+	inline operator ExtendedTileIndex () const
+	{
+		return this->ground ? ExtendedTileIndex(this->ground_it) : ExtendedTileIndex(this->ground_it, this->elevated_it->tile.height);
+	}
+
+	/**
+	 * Get the tile we are currently at.
+	 * @return The tile we are at, or INVALID_EXTENDED_TILE when we're done.
+	 */
+	inline ExtendedTileIndex operator *() const
+	{
+		return this->ground ? ExtendedTileIndex(this->ground_it) : ExtendedTileIndex(this->ground_it, this->elevated_it->tile.height);
+	}
+
+	inline bool operator ==(ExtendedOrthogonalTileIterator const& other) const
+	{
+		return this->ground_it == other.ground_it && this->ground == other.ground
+					&& this->ground ? this->elevated_it == other.elevated_it : true;
+	}
+	inline bool operator !=(ExtendedOrthogonalTileIterator const& other) const
+	{
+		return !(*this == other);
+	}
+
+	/**
+	 * Allocate a new iterator that is a copy of this one.
+	 */
+	ExtendedOrthogonalTileIterator *Clone() const
+	{
+		return new ExtendedOrthogonalTileIterator(*this);
 	}
 };
 

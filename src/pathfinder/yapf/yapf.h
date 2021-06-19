@@ -26,7 +26,7 @@
  * @param path_found [out] Whether a path has been found (true) or has been guessed (false)
  * @return         the best trackdir for next turn or INVALID_TRACK if the path could not be found
  */
-Track YapfShipChooseTrack(const Ship *v, TileIndex tile, DiagDirection enterdir, TrackBits tracks, bool &path_found, ShipPathCache &path_cache);
+Track YapfShipChooseTrack(const Ship *v, ExtendedTileIndex tile, DiagDirection enterdir, TrackBits tracks, bool &path_found, ShipPathCache &path_cache);
 
 /**
  * Returns true if it is better to reverse the ship before leaving depot using YAPF.
@@ -44,7 +44,7 @@ bool YapfShipCheckReverse(const Ship *v);
  * @param path_found [out] Whether a path has been found (true) or has been guessed (false)
  * @return          the best trackdir for next turn or INVALID_TRACKDIR if the path could not be found
  */
-Trackdir YapfRoadVehicleChooseTrack(const RoadVehicle *v, TileIndex tile, DiagDirection enterdir, TrackdirBits trackdirs, bool &path_found, RoadVehPathCache &path_cache);
+Trackdir YapfRoadVehicleChooseTrack(const RoadVehicle *v, ExtendedTileIndex tile, DiagDirection enterdir, TrackdirBits trackdirs, bool &path_found, RoadVehPathCache &path_cache);
 
 /**
  * Finds the best path for given train using YAPF.
@@ -57,7 +57,7 @@ Trackdir YapfRoadVehicleChooseTrack(const RoadVehicle *v, TileIndex tile, DiagDi
  * @param target   [out] the target tile of the reservation, free is set to true if path was reserved
  * @return         the best track for next turn
  */
-Track YapfTrainChooseTrack(const Train *v, TileIndex tile, DiagDirection enterdir, TrackBits tracks, bool &path_found, bool reserve_track, struct PBSTileInfo *target);
+Track YapfTrainChooseTrack(const Train *v, ExtendedTileIndex tile, DiagDirection enterdir, TrackBits tracks, bool &path_found, bool reserve_track, struct PBSTileInfo *target);
 
 /**
  * Used when user sends road vehicle to the nearest depot or if road vehicle needs servicing using YAPF.
@@ -95,6 +95,6 @@ bool YapfTrainCheckReverse(const Train *v);
  * @param override_railtype Should all physically compatible railtypes be searched, even if the vehicle can't run on them on its own?
  * @return True if the path could be extended to a safe tile.
  */
-bool YapfTrainFindNearestSafeTile(const Train *v, TileIndex tile, Trackdir td, bool override_railtype);
+bool YapfTrainFindNearestSafeTile(const Train *v, ExtendedTileIndex tile, Trackdir td, bool override_railtype);
 
 #endif /* YAPF_H */

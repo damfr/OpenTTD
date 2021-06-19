@@ -622,7 +622,7 @@ static Vehicle *EnsureNoTrainOnTrackProc(Vehicle *v, void *data)
  */
 CommandCost EnsureNoTrainOnTrackBits(ExtendedTileIndex tile, TrackBits track_bits)
 {
-	TrackBitsHeight data;
+	TrackBitsTileIndex data;
 	data.track_bits = track_bits;
 	data.tile = tile;
 	/* Value v is not safe in MP games, however, it is used to generate a local
@@ -1567,7 +1567,7 @@ void VehicleEnterDepot(Vehicle *v)
 		 * Note: The target depot for nearest-/manual-depot-orders is only updated on junctions, but we want to accept every depot. */
 		if ((v->current_order.GetDepotOrderType() & ODTFB_PART_OF_ORDERS) &&
 				real_order != nullptr && !(real_order->GetDepotActionType() & ODATFB_NEAREST_DEPOT) &&
-				(v->type == VEH_AIRCRAFT ? v->current_order.GetDestination() != GetStationIndex(v->tile) : v->dest_tile != v->tile)) {
+				(v->type == VEH_AIRCRAFT ? v->current_order.GetDestination() != GetStationIndex(v->tile) : v->dest_tile != v->tile.index)) { //TODO elevated
 			/* We are heading for another depot, keep driving. */
 			return;
 		}
@@ -1725,7 +1725,7 @@ GetNewVehiclePosResult GetNewVehiclePos(const Vehicle *v)
 	gp.x = x;
 	gp.y = y;
 	gp.old_tile = v->tile;
-	gp.new_tile = ExtendedTileIndex(TileVirtXY(x, y), v->tile.height);//TODO elevated should update height here ?
+	gp.new_tile = ExtendedTileIndex(TileVirtXY(x, y), v->tile.height, v->tile.flags);//TODO elevated should update height here ?
 	return gp;
 }
 
@@ -2434,7 +2434,7 @@ CommandCost Vehicle::SendToDepot(DoCommandFlag flags, DepotCommand command)
 		return CommandCost();
 	}
 
-	TileIndex location;
+	ExtendedTileIndex location;
 	DestinationID destination;
 	bool reverse;
 	static const StringID no_depot[] = {STR_ERROR_UNABLE_TO_FIND_ROUTE_TO, STR_ERROR_UNABLE_TO_FIND_LOCAL_DEPOT, STR_ERROR_UNABLE_TO_FIND_LOCAL_DEPOT, STR_ERROR_CAN_T_SEND_AIRCRAFT_TO_HANGAR};
@@ -2448,7 +2448,7 @@ CommandCost Vehicle::SendToDepot(DoCommandFlag flags, DepotCommand command)
 			SetBit(gv_flags, GVF_SUPPRESS_IMPLICIT_ORDERS);
 		}
 
-		this->SetDestTile(location);
+		this->SetDestTile(location.index);
 		this->current_order.MakeGoToDepot(destination, ODTF_MANUAL);
 		if (!(command & DEPOT_SERVICE)) this->current_order.SetDepotActionType(ODATFB_HALT);
 		SetWindowWidgetDirty(WC_VEHICLE_VIEW, this->index, WID_VV_START_STOP);

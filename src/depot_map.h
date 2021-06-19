@@ -41,7 +41,7 @@ static inline bool IsDepotTypeTile(ExtendedTileIndex tile, TransportType type)
 static inline bool IsDepotTile(ExtendedTileIndex tile)
 {
 	return IsRailDepotTile(tile) || IsRoadDepotTile(tile) 
-		|| (IsIndexGroundTile(tile) && IsShipDepotTile(tile.index)) || ((IsIndexGroundTile(tile) && IsHangarTile(tile.index));
+		|| (IsIndexGroundTile(tile) && IsShipDepotTile(tile.index)) || (IsIndexGroundTile(tile) && IsHangarTile(tile.index));
 }
 
 /**
@@ -53,7 +53,7 @@ static inline bool IsDepotTile(ExtendedTileIndex tile)
 static inline DepotID GetDepotIndex(ExtendedTileIndex t)
 {
 	/* Hangars don't have a Depot class, thus store no DepotID. */
-	assert(IsRailDepotTile(t) || IsRoadDepotTile(t) || (IsIndexGroundTile(tile) && IsShipDepotTile(t.index)));
+	assert(IsRailDepotTile(t) || IsRoadDepotTile(t) || (IsIndexGroundTile(t) && IsShipDepotTile(t.index)));
 	return GetElevatedTile(t).m2;
 }
 
@@ -63,7 +63,7 @@ static inline DepotID GetDepotIndex(ExtendedTileIndex t)
  * @pre IsDepotTile(t)
  * @return the type of vehicles that can use the depot
  */
-static inline VehicleType GetDepotVehicleType(TileIndex t)
+static inline VehicleType GetDepotVehicleType(ExtendedTileIndex t)
 {
 	switch (GetTileType(t)) {
 		default: NOT_REACHED();

@@ -27,7 +27,7 @@ struct Waypoint FINAL : SpecializedStation<Waypoint, true> {
 
 	void MoveSign(TileIndex new_xy) override;
 
-	inline bool TileBelongsToRailStation(TileIndex tile) const override
+	inline bool TileBelongsToRailStation(ExtendedTileIndex tile) const override
 	{
 		return IsRailWaypointTile(tile) && GetStationIndex(tile) == this->index;
 	}
@@ -36,12 +36,12 @@ struct Waypoint FINAL : SpecializedStation<Waypoint, true> {
 
 	void GetTileArea(TileArea *ta, StationType type) const override;
 
-	uint GetPlatformLength(TileIndex tile, DiagDirection dir) const override
+	uint GetPlatformLength(ExtendedTileIndex tile, DiagDirection dir) const override
 	{
 		return 1;
 	}
 
-	uint GetPlatformLength(TileIndex tile) const override
+	uint GetPlatformLength(ExtendedTileIndex tile) const override
 	{
 		return 1;
 	}
