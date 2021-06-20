@@ -44,8 +44,6 @@ private:
 
 	CargoID refit_cargo;  ///< Refit CargoID
 
-	uint16 wait_time;    ///< How long in ticks to wait at the destination.
-	uint16 travel_time;  ///< How long in ticks the journey to this destination should take.
 	uint16 max_speed;    ///< How fast the vehicle may go on the way to the destination.
 
 public:
@@ -180,48 +178,12 @@ public:
 	/** Set the value to base the skip on. */
 	inline void SetConditionValue(uint16 value) { SB(this->dest, 0, 11, value); }
 
-	/* As conditional orders write their "skip to" order all over the flags, we cannot check the
-	 * flags to find out if timetabling is enabled. However, as conditional orders are never
-	 * autofilled we can be sure that any non-zero values for their wait_time and travel_time are
-	 * explicitly set (but travel_time is actually unused for conditionals). */
-
-	/** Does this order have an explicit wait time set? */
-	inline bool IsWaitTimetabled() const { return this->IsType(OT_CONDITIONAL) ? this->wait_time > 0 : HasBit(this->flags, 3); }
-	/** Does this order have an explicit travel time set? */
-	inline bool IsTravelTimetabled() const { return this->IsType(OT_CONDITIONAL) ? this->travel_time > 0 : HasBit(this->flags, 7); }
-
-	/** Get the time in ticks a vehicle should wait at the destination or 0 if it's not timetabled. */
-	inline uint16 GetTimetabledWait() const { return this->IsWaitTimetabled() ? this->wait_time : 0; }
-	/** Get the time in ticks a vehicle should take to reach the destination or 0 if it's not timetabled. */
-	inline uint16 GetTimetabledTravel() const { return this->IsTravelTimetabled() ? this->travel_time : 0; }
-	/** Get the time in ticks a vehicle will probably wait at the destination (timetabled or not). */
-	inline uint16 GetWaitTime() const { return this->wait_time; }
-	/** Get the time in ticks a vehicle will probably take to reach the destination (timetabled or not). */
-	inline uint16 GetTravelTime() const { return this->travel_time; }
-
 	/**
 	 * Get the maxmimum speed in km-ish/h a vehicle is allowed to reach on the way to the
 	 * destination.
 	 * @return maximum speed.
 	 */
 	inline uint16 GetMaxSpeed() const { return this->max_speed; }
-
-	/** Set if the wait time is explicitly timetabled (unless the order is conditional). */
-	inline void SetWaitTimetabled(bool timetabled) { if (!this->IsType(OT_CONDITIONAL)) SB(this->flags, 3, 1, timetabled ? 1 : 0); }
-	/** Set if the travel time is explicitly timetabled (unless the order is conditional). */
-	inline void SetTravelTimetabled(bool timetabled) { if (!this->IsType(OT_CONDITIONAL)) SB(this->flags, 7, 1, timetabled ? 1 : 0); }
-
-	/**
-	 * Set the time in ticks to wait at the destination.
-	 * @param time Time to set as wait time.
-	 */
-	inline void SetWaitTime(uint16 time) { this->wait_time = time;  }
-
-	/**
-	 * Set the time in ticks to take for travelling to the destination.
-	 * @param time Time to set as travel time.
-	 */
-	inline void SetTravelTime(uint16 time) { this->travel_time = time; }
 
 	/**
 	 * Set the maxmimum speed in km-ish/h a vehicle is allowed to reach on the way to the
@@ -235,17 +197,6 @@ public:
 	bool CanLeaveWithCargo(bool has_cargo) const;
 
 	TileIndex GetLocation(const Vehicle *v, bool airport = false) const;
-
-	/** Checks if travel_time and wait_time apply to this order and if they are timetabled. */
-	inline bool IsCompletelyTimetabled() const
-	{
-		if (!this->IsTravelTimetabled() && !this->IsType(OT_CONDITIONAL)) return false;
-		if (!this->IsWaitTimetabled() && this->IsType(OT_GOTO_STATION) &&
-				!(this->GetNonStopType() & ONSF_NO_STOP_AT_DESTINATION_STATION)) {
-			return false;
-		}
-		return true;
-	}
 
 	void AssignOrder(const Order &other);
 	bool Equals(const Order &other) const;
@@ -370,8 +321,6 @@ public:
 	inline void AddVehicle(Vehicle *v) { ++this->num_vehicles; }
 
 	void RemoveVehicle(Vehicle *v);
-
-	bool IsCompleteTimetable() const;
 
 	inline Ticks GetTimetableTotalDuration() const { return 0; }
 

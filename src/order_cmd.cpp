@@ -237,8 +237,6 @@ Order::Order(uint32 packed)
 	this->dest    = GB(packed, 16, 16);
 	this->next    = nullptr;
 	this->refit_cargo   = CT_NO_REFIT;
-	this->wait_time     = 0;
-	this->travel_time   = 0;
 	this->arrival = INVALID_DATE;
 	this->departure = INVALID_DATE;
 	this->max_speed     = UINT16_MAX;
@@ -279,8 +277,6 @@ void Order::AssignOrder(const Order &other)
 
 	this->refit_cargo   = other.refit_cargo;
 
-	this->wait_time   = other.wait_time;
-	this->travel_time = other.travel_time;
 	this->arrival     = other.arrival;
 	this->departure   = other.departure;
 	this->max_speed   = other.max_speed;
@@ -580,20 +576,6 @@ int OrderList::GetPositionInSharedOrderList(const Vehicle *v) const
 	int count = 0;
 	for (const Vehicle *v_shared = v->PreviousShared(); v_shared != nullptr; v_shared = v_shared->PreviousShared()) count++;
 	return count;
-}
-
-/**
- * Checks whether all orders of the list have a filled timetable.
- * @return whether all orders have a filled timetable.
- */
-bool OrderList::IsCompleteTimetable() const
-{
-	for (Order *o = this->first; o != nullptr; o = o->next) {
-		/* Implicit orders are, by definition, not timetabled. */
-		if (o->IsType(OT_IMPLICIT)) continue;
-		if (!o->IsCompletelyTimetabled()) return false;
-	}
-	return true;
 }
 
 /**
@@ -1821,18 +1803,8 @@ restart:
 					break;
 				}
 
-				/* Clear wait time */
-				v->orders.list->UpdateTotalDuration(-order->GetWaitTime());
-				if (order->IsWaitTimetabled()) {
-					v->orders.list->UpdateTimetableDuration(-order->GetTimetabledWait());
-					order->SetWaitTimetabled(false);
-				}
-				order->SetWaitTime(0);
-
-				/* Clear order, preserving travel time */
-				bool travel_timetabled = order->IsTravelTimetabled();
+				/* Clear order */
 				order->MakeDummy();
-				order->SetTravelTimetabled(travel_timetabled);
 
 				for (const Vehicle *w = v->FirstShared(); w != nullptr; w = w->NextShared()) {
 					/* In GUI, simulate by removing the order and adding it back */
@@ -2061,7 +2033,8 @@ bool UpdateOrderDest(Vehicle *v, const Order *order, int conditional_depth, bool
 				v->current_order_time = 0;
 				v->cur_implicit_order_index = v->cur_real_order_index = next_order;
 				v->UpdateRealOrderIndex();
-				v->current_order_time += v->GetOrder(v->cur_real_order_index)->GetTimetabledTravel();
+// TODO Ticket 7072: Replace this line of code in an appropriate manner
+//				v->current_order_time += v->GetOrder(v->cur_real_order_index)->GetTimetabledTravel();
 
 				/* Disable creation of implicit orders.
 				 * When inserting them we do not know that we would have to make the conditional orders point to them. */
