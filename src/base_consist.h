@@ -20,8 +20,10 @@ struct BaseConsist {
 
 	/* Used for timetabling. */
 	uint32 current_order_time;          ///< How many ticks have passed since this order started.
-	int32 lateness_counter;             ///< How many ticks late (or early if negative) this vehicle is.
-	Date timetable_start;               ///< When the vehicle is supposed to start the timetable.
+	int32 lateness_counter;             ///< How many days late (or early if negative) this vehicle is.
+	Date timetable_start;               ///< NOSAVE: Start of the timetable, calculated as result of timetable start plus vehicle offset
+	Date timetable_end;                 ///< NOSAVE: End of the timetable, i.e. the date timetable_start + timetable_length.
+	Duration timetable_offset;          ///< The desired offset of the vehicle relative to the absolute start time of its timetable
 
 	uint16 service_interval;            ///< The interval for (automatic) servicing; either in days or %.
 
@@ -33,6 +35,13 @@ struct BaseConsist {
 	virtual ~BaseConsist() {}
 
 	void CopyConsistPropertiesFrom(const BaseConsist *src);
+
+	inline void SetTimetableOffset(Duration offset)	{ this->timetable_offset = offset; }
+	inline Duration GetTimetableOffset() const { return this->timetable_offset; }
+	inline void SetTimetableStart(Date timetable_start) { this->timetable_start = timetable_start; }
+	inline Date GetTimetableStart() const { return this->timetable_start; }
+	inline void SetTimetableEnd(Date timetable_end) { this->timetable_end = timetable_end; }
+	inline Date GetTimetableEnd() const { return this->timetable_end; }
 };
 
 #endif /* BASE_CONSIST_H */

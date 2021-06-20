@@ -2957,16 +2957,6 @@ bool AfterLoadGame()
 		}
 	}
 
-	if (IsSavegameVersionBefore(SLV_190)) {
-		for (Order *order : Order::Iterate()) {
-			order->SetTravelTimetabled(order->GetTravelTime() > 0);
-			order->SetWaitTimetabled(order->GetWaitTime() > 0);
-		}
-		for (OrderList *orderlist : OrderList::Iterate()) {
-			orderlist->RecalculateTimetableDuration();
-		}
-	}
-
 	/*
 	 * Only keep order-backups for network clients (and when replaying).
 	 * If we are a network server or not networking, then we just loaded a previously
@@ -3153,11 +3143,28 @@ bool AfterLoadGame()
 		for (Station *st : Station::Iterate()) UpdateStationAcceptance(st, false);
 	}
 
+	/* Don´t try to convert the old timetables into the new world, just zero them.
+	 * At least for now.
+	 * (remember, we reuse the space for the old wait_time / travel_time attributes
+	 */
+	if (IsSavegameVersionBefore(TIP_SAVEGAME_VERSION)) {
+		for (Order *o : Order::Iterate()) {
+			o->SetDeparture(INVALID_DATE);
+			o->SetArrival(INVALID_DATE);
+		}
+		for (Vehicle *v : Vehicle::Iterate()) {
+			v->current_order.SetDeparture(INVALID_DATE);
+			v->current_order.SetArrival(INVALID_DATE);
+		}
+	}
+
 	/* Road stops is 'only' updating some caches */
 	AfterLoadRoadStops();
 	AfterLoadLabelMaps();
 	AfterLoadCompanyStats();
 	AfterLoadStoryBook();
+
+	AfterLoadTimetables();
 
 	GamelogPrintDebug(1);
 

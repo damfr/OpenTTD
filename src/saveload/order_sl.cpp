@@ -11,6 +11,8 @@
 #include "../order_backup.h"
 #include "../settings_type.h"
 #include "../network/network.h"
+#include "../date_func.h"
+#include "../vehicle_base.h"
 
 #include "saveload_internal.h"
 
@@ -108,8 +110,15 @@ const SaveLoad *GetOrderDescription()
 		     SLE_REF(Order, next,           REF_ORDER),
 		 SLE_CONDVAR(Order, refit_cargo,    SLE_UINT8,   SLV_36, SL_MAX_VERSION),
 		SLE_CONDNULL(1,                                  SLV_36, SLV_182), // refit_subtype
-		 SLE_CONDVAR(Order, wait_time,      SLE_UINT16,  SLV_67, SL_MAX_VERSION),
-		 SLE_CONDVAR(Order, travel_time,    SLE_UINT16,  SLV_67, SL_MAX_VERSION),
+
+		 SLE_CONDVAR(Order, departure,      SLE_INT32,   SLV_67, SL_MAX_VERSION),
+/* wait_time and travel_time were replaced by departure in TIP_SAVEGAME_VERSION.
+ * Conversion is a job for the afterLoad code.  By treating them this way, I can
+ * get rid of those two fields in struct order completely, and just have to do
+ * the right things in AfterLoad (thus, in particular start version 67 is correct!)
+ *		 SLE_CONDVAR(Order, wait_time,      SLE_UINT16,  SLV_67, SL_MAX_VERSION),
+ *		 SLE_CONDVAR(Order, travel_time,    SLE_UINT16,  SLV_67, SL_MAX_VERSION), */
+		 SLE_CONDVAR(Order, arrival,        SLE_INT32,   TIP_SAVEGAME_VERSION, SL_MAX_VERSION),
 		 SLE_CONDVAR(Order, max_speed,      SLE_UINT16, SLV_172, SL_MAX_VERSION),
 
 		/* Leftover from the minor savegame version stuff
@@ -199,7 +208,11 @@ static void Ptrs_ORDR()
 const SaveLoad *GetOrderListDescription()
 {
 	static const SaveLoad _orderlist_desc[] = {
-		SLE_REF(OrderList, first,              REF_ORDER),
+		SLE_REF(OrderList,     first,                       REF_ORDER),
+		SLE_CONDVAR(OrderList, timetable_duration.length,   SLE_INT32,   TIP_SAVEGAME_VERSION, SL_MAX_VERSION),
+		SLE_CONDVAR(OrderList, timetable_duration.unit,     SLE_UINT8,   TIP_SAVEGAME_VERSION, SL_MAX_VERSION),
+		SLE_CONDVAR(OrderList, start_time,                  SLE_INT32,   TIP_SAVEGAME_VERSION, SL_MAX_VERSION),
+	    SLE_CONDSTR(OrderList, name,                        SLE_STR, 0,  TIP_SAVEGAME_VERSION, SL_MAX_VERSION),
 		SLE_END()
 	};
 
@@ -294,3 +307,20 @@ extern const ChunkHandler _order_chunk_handlers[] = {
 	{ 'ORDR', Save_ORDR, Load_ORDR, Ptrs_ORDR, nullptr, CH_ARRAY},
 	{ 'ORDL', Save_ORDL, Load_ORDL, Ptrs_ORDL, nullptr, CH_ARRAY | CH_LAST},
 };
+
+
+void AfterLoadTimetables()
+{
+	for (Vehicle *vehicle : Vehicle::Iterate()) {
+		if (vehicle->orders.list != NULL) {
+			Date start_time = vehicle->orders.list->GetStartTime();
+			Duration offset = vehicle->timetable_offset;
+			Duration duration = vehicle->orders.list->GetTimetableDuration();
+			vehicle->timetable_start = AddToDate(start_time, offset);
+			vehicle->timetable_end = AddToDate(vehicle->timetable_start, duration);
+		} else {
+			vehicle->timetable_start = INVALID_DATE;
+			vehicle->timetable_end = INVALID_DATE;
+		}
+	}
+}

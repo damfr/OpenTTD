@@ -239,6 +239,8 @@ Order::Order(uint32 packed)
 	this->refit_cargo   = CT_NO_REFIT;
 	this->wait_time     = 0;
 	this->travel_time   = 0;
+	this->arrival = INVALID_DATE;
+	this->departure = INVALID_DATE;
 	this->max_speed     = UINT16_MAX;
 }
 
@@ -279,6 +281,8 @@ void Order::AssignOrder(const Order &other)
 
 	this->wait_time   = other.wait_time;
 	this->travel_time = other.travel_time;
+	this->arrival     = other.arrival;
+	this->departure   = other.departure;
 	this->max_speed   = other.max_speed;
 }
 
@@ -295,15 +299,14 @@ void OrderList::Initialize(Order *chain, Vehicle *v)
 	this->num_orders = 0;
 	this->num_manual_orders = 0;
 	this->num_vehicles = 1;
-	this->timetable_duration = 0;
+
+	/* Deliberately do not initialize timetable_duration and start_time, as they are stored in a
+     * persistent manner in the savegame, and not subject to recalculations. */
 
 	for (Order *o = this->first; o != nullptr; o = o->next) {
 		++this->num_orders;
 		if (!o->IsType(OT_IMPLICIT)) ++this->num_manual_orders;
-		this->total_duration += o->GetWaitTime() + o->GetTravelTime();
 	}
-
-	this->RecalculateTimetableDuration();
 
 	for (Vehicle *u = this->first_shared->PreviousShared(); u != nullptr; u = u->PreviousShared()) {
 		++this->num_vehicles;
@@ -311,18 +314,6 @@ void OrderList::Initialize(Order *chain, Vehicle *v)
 	}
 
 	for (const Vehicle *u = v->NextShared(); u != nullptr; u = u->NextShared()) ++this->num_vehicles;
-}
-
-/**
- * Recomputes Timetable duration.
- * Split out into a separate function so it can be used by afterload.
- */
-void OrderList::RecalculateTimetableDuration()
-{
-	this->timetable_duration = 0;
-	for (Order *o = this->first; o != nullptr; o = o->next) {
-		this->timetable_duration += o->GetTimetabledWait() + o->GetTimetabledTravel();
-	}
 }
 
 /**
@@ -342,7 +333,7 @@ void OrderList::FreeChain(bool keep_orderlist)
 		this->first = nullptr;
 		this->num_orders = 0;
 		this->num_manual_orders = 0;
-		this->timetable_duration = 0;
+		this->timetable_duration = Duration();
 	} else {
 		delete this;
 	}
@@ -489,8 +480,6 @@ void OrderList::InsertOrderAt(Order *new_order, int index)
 	}
 	++this->num_orders;
 	if (!new_order->IsType(OT_IMPLICIT)) ++this->num_manual_orders;
-	this->timetable_duration += new_order->GetTimetabledWait() + new_order->GetTimetabledTravel();
-	this->total_duration += new_order->GetWaitTime() + new_order->GetTravelTime();
 
 	/* We can visit oil rigs and buoys that are not our own. They will be shown in
 	 * the list of stations. So, we need to invalidate that window if needed. */
@@ -522,8 +511,6 @@ void OrderList::DeleteOrderAt(int index)
 	}
 	--this->num_orders;
 	if (!to_remove->IsType(OT_IMPLICIT)) --this->num_manual_orders;
-	this->timetable_duration -= (to_remove->GetTimetabledWait() + to_remove->GetTimetabledTravel());
-	this->total_duration -= (to_remove->GetWaitTime() + to_remove->GetTravelTime());
 	delete to_remove;
 }
 
@@ -617,30 +604,24 @@ void OrderList::DebugCheckSanity() const
 	VehicleOrderID check_num_orders = 0;
 	VehicleOrderID check_num_manual_orders = 0;
 	uint check_num_vehicles = 0;
-	Ticks check_timetable_duration = 0;
-	Ticks check_total_duration = 0;
 
 	DEBUG(misc, 6, "Checking OrderList %hu for sanity...", this->index);
 
 	for (const Order *o = this->first; o != nullptr; o = o->next) {
 		++check_num_orders;
 		if (!o->IsType(OT_IMPLICIT)) ++check_num_manual_orders;
-		check_timetable_duration += o->GetTimetabledWait() + o->GetTimetabledTravel();
-		check_total_duration += o->GetWaitTime() + o->GetTravelTime();
 	}
 	assert(this->num_orders == check_num_orders);
 	assert(this->num_manual_orders == check_num_manual_orders);
-	assert(this->timetable_duration == check_timetable_duration);
-	assert(this->total_duration == check_total_duration);
 
 	for (const Vehicle *v = this->first_shared; v != nullptr; v = v->NextShared()) {
 		++check_num_vehicles;
 		assert(v->orders.list == this);
 	}
 	assert(this->num_vehicles == check_num_vehicles);
-	DEBUG(misc, 6, "... detected %u orders (%u manual), %u vehicles, %i timetabled, %i total",
+	DEBUG(misc, 6, "... detected %u orders (%u manual), %u vehicles",
 			(uint)this->num_orders, (uint)this->num_manual_orders,
-			this->num_vehicles, this->timetable_duration, this->total_duration);
+			this->num_vehicles);
 }
 
 /**

@@ -657,11 +657,18 @@ const SaveLoad *GetVehicleDescription(VehicleType vt)
 		 SLE_CONDVAR(Vehicle, current_order.refit_cargo,   SLE_UINT8,             SLV_36, SL_MAX_VERSION),
 		SLE_CONDNULL(1,                                                           SLV_36, SLV_182), // refit_subtype
 
-		/* Timetable in current order */
-		 SLE_CONDVAR(Vehicle, current_order.wait_time,     SLE_UINT16,            SLV_67, SL_MAX_VERSION),
-		 SLE_CONDVAR(Vehicle, current_order.travel_time,   SLE_UINT16,            SLV_67, SL_MAX_VERSION),
+		 SLE_CONDVAR(Vehicle, current_order.departure,      SLE_INT32,   SLV_67, SL_MAX_VERSION),
+/* wait_time and travel_time were replaced by departure in TIP_SAVEGAME_VERSION.
+ * Conversion is a job for the afterLoad code.  By treating them this way, I can
+ * get rid of those two fields in struct order completely, and just have to do
+ * the right things in AfterLoad (thus, in particular start version 67 is correct!)
+		 SLE_CONDVAR(Vehicle, current_order.wait_time,     SLE_UINT16,            SLV_67, TIP_SAVEGAME_VERSION - 1),
+		 SLE_CONDVAR(Vehicle, current_order.travel_time,   SLE_UINT16,            SLV_67, TIP_SAVEGAME_VERSION - 1),*/
+		 SLE_CONDVAR(Vehicle, current_order.arrival,        SLE_INT32,   TIP_SAVEGAME_VERSION, SL_MAX_VERSION),
 		 SLE_CONDVAR(Vehicle, current_order.max_speed,     SLE_UINT16,           SLV_174, SL_MAX_VERSION),
-		 SLE_CONDVAR(Vehicle, timetable_start,       SLE_INT32,                  SLV_129, SL_MAX_VERSION),
+	     SLE_CONDVAR(Vehicle, timetable_start,             SLE_INT32,            SLV_129, TIP_SAVEGAME_VERSION),
+		 SLE_CONDVAR(Vehicle, timetable_offset.length,     SLE_INT32,            TIP_SAVEGAME_VERSION, SL_MAX_VERSION),
+		 SLE_CONDVAR(Vehicle, timetable_offset.unit, SLE_UINT8, TIP_SAVEGAME_VERSION, SL_MAX_VERSION),
 
 		 SLE_CONDREF(Vehicle, orders,                REF_ORDER,                    SL_MIN_VERSION, SLV_105),
 		 SLE_CONDREF(Vehicle, orders,                REF_ORDERLIST,              SLV_105, SL_MAX_VERSION),

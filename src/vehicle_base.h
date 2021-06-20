@@ -484,6 +484,11 @@ public:
 		return this->type == VEH_TRAIN || this->type == VEH_ROAD;
 	}
 
+	inline void SetTimetableOffset(Duration offset)
+	{
+		this->timetable_offset = offset;
+	}
+
 	/**
 	 * Gets the speed in km-ish/h that can be sent into SetDParam for string processing.
 	 * @return the vehicle's speed
