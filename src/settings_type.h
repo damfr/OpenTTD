@@ -481,6 +481,7 @@ struct VehicleSettings {
 	uint8  plane_crashes;                    ///< number of plane crashes, 0 = none, 1 = reduced, 2 = normal
 	uint8  autofill_default_station_time;    ///< default time autofill holds vehicles in stations
 	uint8  autofill_relax_factor;            ///< percentage by which autofill increases measured travel times
+	bool   instant_loading;	 				 ///< vehicles have zero loading time
 };
 
 /** Settings related to the economy. */

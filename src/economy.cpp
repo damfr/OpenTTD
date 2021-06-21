@@ -1586,6 +1586,10 @@ static void ReserveConsist(Station *st, Vehicle *u, CargoArray *consist_capleft,
  */
 static void UpdateLoadUnloadTicks(Vehicle *front, const Station *st, int ticks)
 {
+	if (_settings_game.vehicle.instant_loading) {
+		front->load_unload_ticks = 1;
+		return;
+	}
 	if (front->type == VEH_TRAIN) {
 		/* Each platform tile is worth 2 rail vehicles. */
 		int overhang = front->GetGroundVehicleCache()->cached_total_length - st->GetPlatformLength(front->tile) * TILE_SIZE;
