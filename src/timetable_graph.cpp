@@ -19,26 +19,41 @@ TimetableGraphBuilder::TimetableGraphBuilder(const OrderList* baseOrders)
 
 void TimetableGraphBuilder::SetBaseOrderList(const OrderList* baseOrders) {
 	this->baseOrders = baseOrders;
-	destinations.segments.clear();
-	destinations.offsets.clear();
+	mainGraphLine.orderList = baseOrders;
+	mainGraphLine.segments.clear();
+	mainGraphLine.offsets.clear();
 	destinationsIndex.clear();
 }
 
+/**
+ * Build a GraphLine from the current OrderList.
+ * Includes all offsets from vehicles using this OrderList
+ * @return a GraphLine
+ */
 GraphLine TimetableGraphBuilder::BuildGraph()
 {
 	this->BuildDestinationsIndex();
-	return destinations;
+	if (!mainGraphLine.segments.empty()) {	//No need to continue if we aren't going to draw anything
+		//Building the offsets vector
+		this->mainGraphLine.offsets = this->GetOrderListOffsets(this->baseOrders);
+	}
+	return mainGraphLine;
 }
 
+/**
+ * Builds a GraphLine for another OrderList, keeping only relevant times between stations present in the base OrderList
+ * @param orders An OrderList to build from
+ * @return A GraphLine containing segments from the given OrderList, to draw in addition to the default GraphLine (@see TimetableGraphBuilder::BuildGraph())
+ */
 GraphLine TimetableGraphBuilder::GetGraphForOrderList(const OrderList* orders)
 {
 	GraphLine line;
-
+	
 	for (GotoOrderListIterator compIt(orders); !compIt.IsRepeating(); ++compIt) {
-
+		/* First we iterate over all ordres of the new OrderList to check for stations already present in baseOrderList */
 		std::pair<DestIndexIterator, DestIndexIterator> pair = destinationsIndex.equal_range(compIt->GetDestination());
 		for (DestIndexIterator baseIt = pair.first; baseIt != pair.second; ++baseIt) {
-
+			/* Then for all stations in the baseOrderList mathcing the current station, we try to build a segment*/
 			GraphSegment segment = BuildGraphLine(orders, compIt, GotoOrderListIterator(baseOrders, baseIt->second.first), baseIt->second.second);
 			if (segment.order1 != NULL) {
 				line.segments.push_back(segment);
@@ -49,11 +64,7 @@ GraphLine TimetableGraphBuilder::GetGraphForOrderList(const OrderList* orders)
 
 	if (!line.segments.empty()) {	//No need to continue if we aren't going to draw anything
 		//Building the offsets vector
-		for (const Vehicle* v = orders->GetFirstSharedVehicle(); v != NULL; v = v->NextShared()) {
-			if (!v->GetTimetableOffset().IsInvalid()) {
-				line.offsets.insert(v->GetTimetableOffset());
-			}
-		}
+		line.offsets = this->GetOrderListOffsets(orders);
 	}
 
 	line.orderList = orders;
@@ -61,6 +72,14 @@ GraphLine TimetableGraphBuilder::GetGraphForOrderList(const OrderList* orders)
 	return line;
 }
 
+/**
+ * Try to build a graph segment
+ * @param orderList The OrderList to build the graph segment from
+ * @param compItStart the iterator in orderList that points to the first point of the segment we search
+ * @param baseItStart the iterator in baseOrderList that points to the first point of the segment we search (same destination ad compItStart)
+ * @param baseStartIndex the index in the baseOrderList of baseItStart
+ * @return If found, a GrpahSegment from orderList to draw. If not found, returns GraphSegment()
+ */
 GraphSegment TimetableGraphBuilder::BuildGraphLine(const OrderList* orderList, GotoOrderListIterator compItStart, GotoOrderListIterator baseItStart, int baseStartIndex)
 {
 	std::set<Destination> visitedBase, visitedComp;
@@ -76,9 +95,11 @@ GraphSegment TimetableGraphBuilder::BuildGraphLine(const OrderList* orderList, G
 
 	for (;;) {
 		if (!baseEnded && visitedBase.count(baseIt->GetDestination()) != 0) {
+			/* baseIt reached a destination already encountered : don't advance baseIt anymore */
 			baseEnded = true;
 		}
 		if (!compEnded && visitedComp.count(compIt->GetDestination()) != 0) {
+			/* compIt reached a destination already encountered : don't advance compIt anymore */
 			compEnded = true;
 		}
 		if (compEnded && baseEnded) return GraphSegment();
@@ -132,7 +153,9 @@ GraphSegment TimetableGraphBuilder::BuildGraphLine(const OrderList* orderList, G
 
 }
 
-
+/**
+ * Build the mainGraphLine and the destinationIndex
+ */
 void TimetableGraphBuilder::BuildDestinationsIndex()
 {
 	int i = 0;
@@ -140,18 +163,32 @@ void TimetableGraphBuilder::BuildDestinationsIndex()
 	++orderIt2;
 	while (!orderIt1.IsRepeating()) {
 		//If we are adding the last segment (from the last order to the first, we add an offset
-		destinations.segments.push_back(GraphSegment(*orderIt1, *orderIt2, i, i+1, Duration(0, DU_DAYS),
+		mainGraphLine.segments.push_back(GraphSegment(*orderIt1, *orderIt2, i, i+1, Duration(0, DU_DAYS),
 				orderIt2.IsRepeating() ? baseOrders->GetTimetableDuration() : Duration(0, DU_DAYS)));
 
 		destinationsIndex.insert(std::pair<Destination, BasePair>(orderIt1->GetDestination(), BasePair(*orderIt1, i)));
 		++i;
 		++orderIt1;
 		++orderIt2;
-	}//FIXME What happens with an orderlist with 1 order ?
-	/*
-	if (i>= 2) {
-		destinationsIndex.insert(std::pair<Destination, BasePair>(baseOrders->GetFirstOrder()->GetDestination(), BasePair(baseOrders->GetFirstOrder(), i)));
-	}*/
+	}
+	
+	//FIXME What happens with an orderlist with 1 order ?
+}
+
+/**
+ * Builds a set of Duration representing all the offsets of the given OrderList
+ * @param orderList the order list to get the offsets from
+ * @return A set containing all the durations of the offsets
+ */
+std::set<Duration> TimetableGraphBuilder::GetOrderListOffsets(const OrderList* orderList) const
+{
+	std::set<Duration> offsets;
+	for (const Vehicle* v = orderList->GetFirstSharedVehicle(); v != nullptr; v = v->NextShared()) {
+		if (!v->GetTimetableOffset().IsInvalid()) {
+			offsets.insert(v->GetTimetableOffset());
+		}
+	}
+	return offsets;
 }
 
 

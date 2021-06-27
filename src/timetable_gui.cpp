@@ -1339,7 +1339,7 @@ private:
 		int curr_x = x1 + dest_bounding_box.width;
 		StringID str;
 
-		/* First draw the destination column, aligned to the right in order to paint the destinations closer to the timetable information */
+		/* First draw the destination column, aligned to the right in order to paint the mainGraphLine closer to the timetable information */
        if (order->IsWaypointOrder()) {
 			SetDParam(0, order->GetDestination());
 			str = STR_WAYPOINT_NAME;

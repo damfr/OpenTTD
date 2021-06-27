@@ -58,6 +58,20 @@ struct GraphSegment {
 
 	GraphSegment(const Order* order1 = NULL, const Order* order2 = NULL, int index1 = -1, int index2 = -1, Duration offset1 = Duration(0, DU_DAYS), Duration offset2 = Duration(0, DU_DAYS))
 		: order1(order1), index1(index1), offset1(offset1), order2(order2), index2(index2), offset2(offset2) {}
+	
+	bool HasDuration() const
+	{
+		return order2->HasArrival() && order1->HasDeparture();
+	}
+
+	/**
+	 * Calculates the Duration (as a Date) of this GraphSegment taking into account offsets
+	 * @pre HasDuration()
+	 */
+	Date GetDuration() const
+	{
+		return (order2->GetArrival() + offset2.GetLengthAsDate()) - (order1->GetDeparture() + offset1.GetLengthAsDate());
+	}
 };
 
 struct GraphLine {
@@ -79,20 +93,21 @@ public:
 	void SetBaseOrderList(const OrderList* baseOrders);
 
 private:
-	typedef std::pair<const Order*, int> BasePair;
+	typedef std::pair<const Order*, int> BasePair; ///< A line in the graph : an Order pointer and an index (line number)
 
 	const OrderList* baseOrders;
 
 	/**
-	 * A map : keys = (destination, index) (index being the index on the y axis)
-	 * values = wether we have already considered the associated key in the algorithm
+	 * A multimap where we store :
+	 * a Destination, a pointer to the corresponding Order, and the index of the destination in the graph
+	 * Indexed by Destination for performance.
+	 * There can be multiple Destination entries but index is unique
 	 */
-	//std::map<BasePair, bool> destinationsIndex;
 	std::multimap<Destination, BasePair> destinationsIndex;
 
 	typedef std::multimap<Destination, BasePair>::iterator DestIndexIterator;
 
-	GraphLine destinations;
+	GraphLine mainGraphLine;
 
 
 	void BuildDestinationsIndex();
@@ -101,6 +116,8 @@ private:
 
 	Duration GetGlobalOffset(const OrderList* orderList);
 
+
+	std::set<Duration> GetOrderListOffsets(const OrderList* orderList) const;
 };
 
 

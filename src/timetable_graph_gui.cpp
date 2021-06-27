@@ -85,8 +85,15 @@ protected:
 	OrderList* baseOrderList; //Order list shown
 	VehicleListIdentifier vli; //Identifier of the shared order list shown
 
-	std::vector<int> yindexPositions; //Positions of each row
-	uint rowCount;
+	std::vector<int> yindexPositions; //Positions of each row 
+	uint yindexCount; ///< The number of elements in yIndexPositions
+	uint rowCount;  ///< The number of rows in the graph (may be less than yindexCount when reversing mode is enabled)
+
+	/**
+	 * The index at which we start drawing upwards (for single line graphs)
+	 * (INT_MAX-1 if we never reverse)
+	 */
+	uint reverseIndex;
 
 	typedef DestinationID Destination;
 
@@ -97,12 +104,11 @@ protected:
 
 	struct OrderListGraph {
 		GraphLine line;
-		const OrderList* orderList;
 		byte colour;
 		bool enabled;
 
-		OrderListGraph(const GraphLine& line, const OrderList* orderList, byte colour, bool enabled = true)
-			: line(line), orderList(orderList), colour(colour), enabled(enabled) {}
+		OrderListGraph(const GraphLine& line, byte colour, bool enabled = true)
+			: line(line), colour(colour), enabled(enabled) {}
 	};
 
 	GraphLine baseGraphLine;
@@ -119,7 +125,7 @@ public:
 
 	TimetableGraphWindow(WindowDesc *desc, WindowNumber window_number)
 		: Window(desc), baseOrderList(nullptr), vli(VehicleListIdentifier::UnPack(window_number)),
-			YlabelWidth(0), baseGraphLine(), orderListGraphs(),
+			yindexCount(0), rowCount(0), reverseIndex((uint) INT_MAX-1), YlabelWidth(0), baseGraphLine(), orderListGraphs(),
 			graphPaddingTop(GetCharacterHeight(FS_SMALL) / 2 + 5), graphPaddingBottom(GetCharacterHeight(FS_SMALL) / 2), graphPaddingLeft(5),
 			graphPaddingRight(10)
 	{
@@ -154,14 +160,15 @@ protected:
 	}
 
 	/**
-	 * Initializes the destinations vector and the mainGraphLine linked list from the orderList
+	 * Initializes the mainGraphLine vector and the mainGraphLine linked list from the orderList
 	 * Only keeps goto orders (not conditionnal or implicit)
 	 * Also initializes reverseIndex
 	 */
 	void InitGraphData() {
 		builder.SetBaseOrderList(this->baseOrderList);
 		this->baseGraphLine = builder.BuildGraph();
-		rowCount = baseGraphLine.segments.size() +1;
+		yindexCount = baseGraphLine.segments.size() +1;
+		rowCount = reverseIndex >= yindexCount ? yindexCount : reverseIndex+1;
 
 		orderListGraphs.clear();
 		
@@ -172,7 +179,7 @@ protected:
 			if (orderList != this->baseOrderList && IsOrderListTimetabled(orderList)) {
 				GraphLine graphLine = builder.GetGraphForOrderList(orderList);
 				if (!graphLine.segments.empty()) {
-					orderListGraphs.push_back(OrderListGraph(graphLine, orderList, _colour_gradient[colour][shade], true));
+					orderListGraphs.push_back(OrderListGraph(graphLine, _colour_gradient[colour][shade], true));
 					++colour;
 					if (colour >= COLOUR_WHITE) {
 						colour = COLOUR_BEGIN;
@@ -207,41 +214,62 @@ protected:
 	void InitYAxisPositions() {
 		uint graphHeight = GetWidget<NWidgetBase>(WID_TGW_GRAPH)->current_y - graphPaddingTop - graphPaddingBottom - XLegendHeight;
 		uint minRowHeight = FONT_HEIGHT_SMALL;
-		yindexPositions.clear();
-		yindexPositions.reserve(rowCount);
+		yindexPositions.resize(yindexCount);
 		
 		Date ttLength = this->baseOrderList->GetTimetableDuration().GetLengthAsDate();
 		uint freeSpace = graphHeight - (rowCount-1) * minRowHeight;	//The vertical space (in pixels) that we can allocate freely (after the minimum heights have been deduced)
 		Date freeSpaceDuration = 0;	//Same, but in Date instead of pixels
 		Date minDuration = ttLength * minRowHeight/graphHeight;	//The equivalent of minRowHeight in Date
 
-		//On the first pass we calculate freeSpaceDuration
+		/* First pass :  we calculate freeSpaceDuration. We only consider non-reverse segments */
 		for (uint i = 1; i < rowCount; ++i) {
+			/* Before reversing */
 			const GraphSegment& segment = this->baseGraphLine.segments[i-1];
-			if (segment.order2->HasArrival() && segment.order1->HasDeparture() &&
-								(segment.order2->GetArrival() + segment.offset2.GetLengthAsDate()) - (segment.order1->GetDeparture() + segment.offset1.GetLengthAsDate()) >= minDuration) {
+
+			/* If segment is not fully timetabled we consider its duration to be less than minDuration */
+			if (!segment.HasDuration()) continue;
+
+			Date segmentDuration = segment.GetDuration();
+
+			if (segmentDuration > minDuration) {
 				//This segment exceeds the minimum height : we manage its height via freeSpaceDuration
 
-				freeSpaceDuration += (segment.order2->GetArrival() + segment.offset2.GetLengthAsDate())
-						- (segment.order1->GetDeparture() + segment.offset1.GetLengthAsDate());
+				freeSpaceDuration += segmentDuration - minDuration;
 			}
 		}
 
 		//Second pass : we calculate the heights
 		uint currY = 0;
-		yindexPositions.push_back(0);
+		yindexPositions[0] = 0;
 		for (uint i = 1; i < rowCount; i++) {
 			const GraphSegment& segment = this->baseGraphLine.segments[i-1];
-			if (segment.order2->HasArrival() && segment.order1->HasDeparture() &&
-					(segment.order2->GetArrival() + segment.offset2.GetLengthAsDate()) - (segment.order1->GetDeparture() + segment.offset1.GetLengthAsDate()) >= minDuration) {
+			if (segment.HasDuration() && segment.GetDuration() > minDuration && freeSpaceDuration > 0) {
 				//We use the freespace in proportion with the duration
-				currY += minRowHeight + (segment.order2->GetArrival() + segment.offset2.GetLengthAsDate()
-						- (segment.order1->GetDeparture() + segment.offset1.GetLengthAsDate())) * freeSpace / freeSpaceDuration;
+				currY += minRowHeight + (segment.GetDuration() - minDuration) * freeSpace / freeSpaceDuration;
 			} else {
 				//The height of this segment will be minRowHeight, as it would otherwise be too small
 				currY += minRowHeight;
 			}
-			yindexPositions.push_back(currY);
+			yindexPositions[i] = currY;
+		}
+
+		/* Compute the heights for reverse mode 
+			Beware of overflowing j */
+		// rowCount = reverseIndex +1
+		for (int i = reverseIndex, j = reverseIndex +1; j < (int) yindexCount && i > 0; i--, j++) {
+			const GraphSegment& segment_outbound = this->baseGraphLine.segments[i-1];
+			const GraphSegment& segment_return = this->baseGraphLine.segments[j-1];
+			/* We only draw segments that match exactly on the inbound and outbound
+			   For now ignore the rest */
+
+			if (segment_outbound.order1->GetDestination() == segment_return.order2->GetDestination()
+				&& segment_outbound.order2->GetDestination() == segment_return.order1->GetDestination()) {
+				yindexPositions[j] = yindexPositions[i-1];
+			} else {
+				yindexPositions[j] = -100; 
+				/* We put a magic constant to draw the line outside the screen. 
+				TODO : improve this */
+			}
 		}
 	}
 
@@ -311,13 +339,6 @@ protected:
 	}
 
 	/**
-	 * Map a yindex to the y position on the graph
-	 */
-	int MapYIndexToPosition(uint yindex) const {
-		return yindexPositions[yindex];
-	}
-
-	/**
 	 * Draw a graph line (linked list of GraphPoint)
 	 * @param r the rectangle of the graph (without the labels)
 	 * @param line the line to draw
@@ -327,7 +348,9 @@ protected:
 	void DrawGraphLine(const Rect &r, const std::vector<GraphSegment>& segments, byte colour, Duration globalOffset = Duration(0, DU_DAYS)) const {
 		int graphWidth = r.right - r.left;
 		for (std::vector<GraphSegment>::const_iterator it = segments.begin(); it != segments.end(); ++it) {
-			if (it->order1->HasDeparture() && it->order2->HasArrival()) {
+			if (it->order1->HasDeparture() && it->order2->HasArrival()
+				&& yindexPositions[it->index1] >= 0 && yindexPositions[it->index2] >= 0) {
+
 				int x = r.left + MapDateToXPosition(AddToDate(AddToDate(it->order1->GetDeparture(), it->offset1), globalOffset), graphWidth);
 				int y = r.top + yindexPositions[it->index1];
 
@@ -404,10 +427,10 @@ protected:
 	}
 
 	StringID PrepareTimetableNameString(int orderListIndex) const {
-		if (orderListGraphs[orderListIndex].orderList->GetName() == NULL) {
+		if (orderListGraphs[orderListIndex].line.orderList->GetName() == nullptr) {
 			return STR_TIMETABLE_GRAPH_UNNAMED_TIMETABLE;
 		} else {
-			SetDParamStr(0, orderListGraphs[orderListIndex].orderList->GetName());
+			SetDParamStr(0, orderListGraphs[orderListIndex].line.orderList->GetName());
 			return STR_TIMETABLE_GRAPH_TIMETABLE_NAME;
 		}
 	}
@@ -421,7 +444,7 @@ protected:
 			dmin.width = graphPaddingLeft + (endDate - startDate) * MIN_PXL_PER_DAY;
 
 			*size = maxdim(*size, dmin);
-		} else if (widget >= WID_TGW_ORDERS_SELECTION_BEGIN && widget < WID_TGW_ORDERS_SELECTION_BEGIN + orderListGraphs.size()) {
+		} else if (widget >= WID_TGW_ORDERS_SELECTION_BEGIN && widget < WID_TGW_ORDERS_SELECTION_BEGIN + (int) orderListGraphs.size()) {
 			int orderListIndex = widget - WID_TGW_ORDERS_SELECTION_BEGIN;
 			Dimension dim = GetStringBoundingBox(this->PrepareTimetableNameString(orderListIndex));
 
@@ -510,7 +533,8 @@ protected:
 
 			DrawXLegendAndGrid(graphRect);
 
-			DrawGraphLine(graphRect, baseGraphLine.segments, _colour_gradient[COLOUR_WHITE][7]);
+			//DrawGraphLine(graphRect, baseGraphLine.segments, _colour_gradient[COLOUR_WHITE][7]);
+			DrawMultipleGraphLine(graphRect, baseGraphLine, _colour_gradient[COLOUR_WHITE][7]);
 			for (std::vector<OrderListGraph>::const_iterator graphLine = orderListGraphs.begin();
 					graphLine != orderListGraphs.end(); ++graphLine) {
 				if (graphLine->enabled) {
@@ -541,10 +565,22 @@ protected:
 	virtual void OnClick(Point pt, int widget, int click_count)
 	{
 		switch (widget) {
-			case WID_TGW_GRAPH:
-				//TODO
-				break;
+			case WID_TGW_GRAPH: {
+				Rect graph_rect = GetWidget<NWidgetBase>(widget)->GetCurrentRect();
+				graph_rect.top += graphPaddingTop;
 
+				if (IsInsideBS(pt.x, graph_rect.left, YlabelWidth)) {
+					for (uint i = 0; i < rowCount; i++) {
+						if (IsInsideBS(pt.y, graph_rect.top + yindexPositions[i] - GetCharacterHeight(FS_SMALL) / 2, GetCharacterHeight(FS_SMALL))) {
+							reverseIndex = i;
+							this->OnInvalidateData();
+							this->SetDirty();
+							return;
+						}
+					}
+				}
+				break;
+			}
 			case WID_TGW_DISABLE_ALL:
 				for (uint i = 0; i < orderListGraphs.size(); ++i) {
 					orderListGraphs[i].enabled = false;
