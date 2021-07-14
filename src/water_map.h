@@ -356,10 +356,10 @@ static inline bool HasTileWaterGround(TileIndex t)
  * @param t the tile
  * @param b the docking tile state
  */
-static inline void SetDockingTile(TileIndex t, bool b)
+static inline void SetDockingTile(ExtendedTileIndex t, bool b)
 {
 	assert(IsTileType(t, MP_WATER) || IsTileType(t, MP_RAILWAY) || IsTileType(t, MP_STATION) || IsTileType(t, MP_TUNNELBRIDGE));
-	SB(_m[t].m1, 7, 1, b ? 1 : 0);
+	SB(GetElevatedTile(t).m1, 7, 1, b ? 1 : 0);
 }
 
 /**

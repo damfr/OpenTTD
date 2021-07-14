@@ -589,7 +589,10 @@ void DoClearSquare(TileIndex tile)
  */
 TrackStatus GetTileTrackStatus(ExtendedTileIndex tile, TransportType mode, uint sub_mode, DiagDirection side)
 {
-	return _tile_type_procs[GetTileType(tile)]->get_tile_track_status_proc(tile.index, mode, sub_mode, side);
+	if (tile.IsValid())
+		return _tile_type_procs[GetTileType(tile)]->get_tile_track_status_proc(tile.index, mode, sub_mode, side);
+	else
+		return 0; //FIXME  TODO elevated find a better solution
 }
 
 /**

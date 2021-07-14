@@ -385,7 +385,7 @@ void AfterLoadVehicles(bool part_of_load)
 						/* Old bridge / tunne */
 						DiagDirection dir = GetTunnelBridgeDirection(v->tile.index);
 						v->tile.height = (Height) v->z_pos/ TILE_HEIGHT;
-						Train::From(v)->track = DiagDirToDiagTrackBits(dir);
+						Train::From(v)->track = DiagDirToDiagTrackBits(dir) | TRACK_BIT_WORMHOLE;
 					} else {
 						/* On the ground */
 						v->tile = ExtendedTileIndex(v->tile.index);

@@ -2624,7 +2624,7 @@ bool AfterLoadGame()
 					if (t->vehstatus & VS_CRASHED) break;
 
 					/* Only X/Y tracks can be sloped. */
-					if (t->track != TRACK_BIT_X && t->track != TRACK_BIT_Y) break;
+					if (t->track != TRACK_BIT_X && t->track != TRACK_BIT_Y) break;//TODO elevated check this (should also consider inclined ramps ???)
 
 					t->gv_flags |= FixVehicleInclination(t, t->direction);
 					break;

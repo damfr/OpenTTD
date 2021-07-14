@@ -243,7 +243,7 @@ protected: // These functions should not be called outside acceleration code.
 	inline byte GetAirDragArea() const
 	{
 		/* Air drag is higher in tunnels due to the limited cross-section. */
-		return (this->track == TRACK_BIT_WORMHOLE && this->vehstatus & VS_HIDDEN) ? 28 : 14;
+		return ((this->track & TRACK_BIT_WORMHOLE) && this->vehstatus & VS_HIDDEN) ? 28 : 14;
 	}
 
 	/**
@@ -319,7 +319,7 @@ protected: // These functions should not be called outside acceleration code.
 	inline bool TileMayHaveSlopedTrack() const
 	{
 		/* Any track that isn't TRACK_BIT_X or TRACK_BIT_Y cannot be sloped. */
-		return this->track == TRACK_BIT_X || this->track == TRACK_BIT_Y;
+		return this->track == TRACK_BIT_X || this->track == TRACK_BIT_Y; //TODO elevated check this for elevated ramp
 	}
 
 	/**

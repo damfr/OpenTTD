@@ -85,6 +85,7 @@ struct ExtendedTileIndex {
 
 
     ExtendedTileIndex(TileIndex ground_index = INVALID_TILE);
+	ExtendedTileIndex(TileIndex ground_index, Height height_param);
 	ExtendedTileIndex(TileIndex ground_index, Height height_param, ElevatedFlags flags_p) 
 		: index(ground_index), height(height_param), flags(flags_p) {}
 
@@ -99,8 +100,9 @@ struct ExtendedTileIndex {
 	bool operator==(ExtendedTileIndex other_tile) const; ///< Checks equality considering equal two ground tiles with different height
 	inline bool operator!=(ExtendedTileIndex other_tile) const { return !(*this == other_tile); }
 
-	inline bool IsValid() const { return this->index != INVALID_TILE; }
+	bool IsValid() const;
 
+	bool MoveByDiagDir(DiagDirection dir);
 	
 
 	/**
@@ -118,7 +120,7 @@ struct ExtendedTileIndex {
 	 */
 	static ExtendedTileIndex Unpack(uint64 packed) 
 	{
-		return ExtendedTileIndex(GB(packed, 0, 32), GB(packed, 32, 8), GB(packed, 40, 2));
+		return ExtendedTileIndex(GB(packed, 0, 32), GB(packed, 32, 8), (ElevatedFlags) GB(packed, 40, 2));
 	}
 };
 

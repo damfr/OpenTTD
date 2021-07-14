@@ -15,10 +15,13 @@
 #include "core/bitmath_func.hpp"
 #include "settings_type.h"
 
+#include "debug.h"
+
 
 Tile& GetElevatedTile(ExtendedTileIndex tile);
 TileExtended& GetElevatedTileExt(ExtendedTileIndex tile);
 bool HasElevatedTrack(TileIndex tile);
+bool HasElevatedTrackAtHeight(TileIndex tile, Height height);
 void InsertElevatedTile(ExtendedTileIndex tile);
 
 
@@ -102,8 +105,12 @@ static inline uint TilePixelHeightOutsideMap(int x, int y)
  */
 static inline TileType GetTileType(ExtendedTileIndex tile)
 {
-	assert(tile.index < MapSize());
-	return (TileType)GB(GetElevatedTile(tile).type, 4, 4);
+	if (tile.IsValid())
+		return (TileType)GB(GetElevatedTile(tile).type, 4, 4);
+	else {
+		DEBUG(misc, 0, "GetTileType with invalid tile");
+		return MP_VOID; //TODO elevated hack
+	}
 }
 
 /**
@@ -335,10 +342,19 @@ static inline Height GetHeightFromPixelZ(TileIndex ground_tile, int z)
  */
 static inline bool IsIndexGroundTile(ExtendedTileIndex tile)
 {
+	/*
 	if (IsInsideMM(tile.height, GetTileZ(tile.index), GetTileMaxZ(tile.index)+1))
 		return true;
 	else
 		return false;
+	*/
+	if (tile.flags == EL_GROUND) {
+		assert(IsInsideMM(tile.height, GetTileZ(tile.index), GetTileMaxZ(tile.index)+1));
+		return true;
+	} else {
+		assert(!IsInsideMM(tile.height, GetTileZ(tile.index), GetTileMaxZ(tile.index)+1));
+		return false;
+	}
 }
 
 

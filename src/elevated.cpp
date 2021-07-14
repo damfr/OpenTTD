@@ -20,6 +20,7 @@
 #include "viewport_func.h"
 #include "pathfinder/yapf/yapf_cache.h"
 #include "bridge_map.h"
+#include "tunnelbridge_map.h"
 
 
 //TODO elevated : move this to a more sensible location
@@ -33,13 +34,88 @@ ExtendedTileIndex::ExtendedTileIndex(TileIndex ground_index)
 	if (ground_index < MapSize()) this->height = TileHeight(ground_index);
 }
 
+ExtendedTileIndex::ExtendedTileIndex(TileIndex ground_index, Height height_param)
+	:  index(ground_index), height(height_param), flags(EL_GROUND)
+{
+	if (ground_index < MapSize()) {
+		if (this->height > GetTileMaxZ(this->index)) {
+			this->flags = EL_ELEVATED;
+		} else if (this->height < GetTileZ(this->index)) {
+			this->flags = EL_TUNNEL;
+		}
+	}
+}
+
+/**
+ * Checks wether a given height is a ground tile or not
+ */
+static inline bool IsGroundHeight(TileIndex tile, Height height)
+{
+	return IsInsideMM(height, GetTileZ(tile), GetTileMaxZ(tile)+1);
+}
+
 bool ExtendedTileIndex::operator==(ExtendedTileIndex other_tile) const
 {
 	if (this->index != other_tile.index) return false;
+	if (this->index == INVALID_TILE) {
+		return true;
+	}
 	if (IsIndexGroundTile(*this)) {
-		return IsInsideMM(other_tile.height, GetTileZ(this->index), GetTileMaxZ(this->index)+1);
+		return IsGroundHeight(this->index, other_tile.height);
 	} else {
 		return this->height == other_tile.height;
+	}
+}
+
+bool ExtendedTileIndex::IsValid() const
+{
+	if (!(this->index < MapSize())) return false;
+	if (this->flags == EL_GROUND) return true;
+	else {
+		return HasElevatedTrackAtHeight(this->index, this->height);
+	}
+}
+
+
+/**
+ * Move an ExtendedTileIndex by one tile in the given DiagDirection
+ * @param dir the direction to move into
+ * @return true if the tile we moved to exists, false otherwise (case of a non-existing elevated tile)
+ */
+bool ExtendedTileIndex::MoveByDiagDir(DiagDirection dir)
+{
+	if (IsTileType(*this, MP_TUNNELBRIDGE)) {
+		if (IsTunnel(*this) ) {
+
+		}
+	} 
+		/* We are on a bridge inclined ramp. Change height */
+
+	this->index += TileOffsByDiagDir(dir);
+	if (this->flags == EL_GROUND) {
+		return true;
+	} else {
+		if (IsGroundHeight(this->index, this->height)) {
+			/* We have reached ground. Check for a flat bridge ramp or tunnel head */
+			if (IsTileType(this->index, MP_TUNNELBRIDGE) && GetTunnelBridgeDirection(this->index) == ReverseDiagDir(dir)
+					&& (IsTunnel(this->index) || HasBridgeFlatRamp(this->index))) {
+				/* We have a correctly aligned flat bridge ramp or tunnel head.
+				   We are now on the ground */
+				this->flags = EL_GROUND;
+				return true;
+			} else {
+				/* We reached ground without a ramp : not a valid move */
+				return false;
+			}
+		} else {
+			/* We are still not on the ground after moving */
+			if (HasElevatedTrackAtHeight(this->index, this->height)) {
+				/* We can carry on straight to the next tile, no ramp */
+				return true;
+			} else {
+				/* 
+			}
+		}
 	}
 }
 
@@ -66,6 +142,7 @@ ElevatedIndex::iterator GetElevatedTrackAtHeight(TileIndex tile, Height height)
 	NOT_REACHED();
 }
 
+
 bool HasElevatedTrack(TileIndex tile)
 {
 	auto pair = _elevated_index.equal_range(tile);
@@ -77,6 +154,18 @@ bool HasElevatedTrack(TileIndex tile)
             return true;
     }
     return false;*/
+}
+
+bool HasElevatedTrackAtHeight(TileIndex tile, Height height)
+{
+	auto pair = _elevated_index.equal_range(tile);
+
+    std::pair<ElevatedIndex::iterator, ElevatedIndex::iterator> range = GetElevatedTrackIterator(tile);
+    for (ElevatedIndex::iterator it = range.first; it != range.second; ++it) {
+        if (it->tile.height == height)
+            return true;
+    }
+    return false;
 }
 
 /**
@@ -132,10 +221,17 @@ ExtendedTileIndex ExtendedTileAddByDiagDirFollowGround(ExtendedTileIndex tile, D
 	//if (IsIndexGroundTile(tile)) {
 		//ExtendedTileIndex new_tile(tile.index + TileOffsByDiagDir(dir));
 		//new_tile.height = TileHeight(tile.index);
-		return tile + TileOffsByDiagDir(dir);
 	//} else {
 	//	return ExtendedTileIndex(tile.index + TileOffsByDiagDir(dir), tile.height);
 	//}
+	if (tile.flags == EL_GROUND) {
+		return ExtendedTileIndex(tile.index + TileOffsByDiagDir(dir));
+	} else {
+		ExtendedTileIndex new_tile = ExtendedTileIndex(tile.index + TileOffsByDiagDir(dir), tile.height, tile.flags);
+		if ((IsInsideMM(new_tile.height, GetTileZ(new_tile.index), GetTileMaxZ(new_tile.index)+1)))
+			new_tile.flags = EL_GROUND;
+		return new_tile;
+	}
 }
 
 /**

@@ -272,7 +272,7 @@ static Vehicle *FindTrainOnTrackEnum(Vehicle *v, void *data)
 
 	Train *t = Train::From(v);
 	//TODO elevated see about TRACK_BIT_WORMHOLE
-	if (t->track == TRACK_BIT_WORMHOLE || HasBit((TrackBits)t->track, TrackdirToTrack(info->res.trackdir))) {
+	if (/*t->track == TRACK_BIT_WORMHOLE ||*/ HasBit((TrackBits)t->track, TrackdirToTrack(info->res.trackdir))) {
 		t = t->First();
 
 		/* ALWAYS return the lowest ID (anti-desync!) */

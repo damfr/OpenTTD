@@ -538,8 +538,9 @@ CommandCost CmdBuildBridge(TileIndex end_tile, DoCommandFlag flags, uint32 p1, u
 			case TRANSPORT_RAIL:
 				/* Add to company infrastructure count if required. */
 				if (is_new_owner && c != nullptr) c->infrastructure.rail[railtype] += bridge_len * TUNNELBRIDGE_TRACKBIT_FACTOR;
-				MakeRailBridgeRamp(tile_start, owner, bridge_type, dir,                 railtype);
-				MakeRailBridgeRamp(tile_end,   owner, bridge_type, ReverseDiagDir(dir), railtype);
+				assert(false); //TODO elevated bridges								   !!!!! Fix this (change true to a real check)
+				MakeRailBridgeRamp(tile_start, owner, bridge_type, dir,                true, railtype);
+				MakeRailBridgeRamp(tile_end,   owner, bridge_type, ReverseDiagDir(dir), true,  railtype);
 				SetTunnelBridgeReservation(tile_start, pbs_reservation);
 				SetTunnelBridgeReservation(tile_end,   pbs_reservation);
 				break;
@@ -2040,7 +2041,7 @@ static VehicleEnterTileStatus VehicleEnter_TunnelBridge(Vehicle *v, ExtendedTile
 		if (v->type == VEH_TRAIN) {
 			Train *t = Train::From(v);
 
-			if (t->track != TRACK_BIT_WORMHOLE && dir == vdir) {
+			if (!(t->track & TRACK_BIT_WORMHOLE) && dir == vdir) {
 				/* Entering a tunnel */
 				if (t->IsFrontEngine() && frame == TUNNEL_SOUND_FRAME) {
 					if (!PlayVehicleSound(t, VSE_TUNNEL) && RailVehInfo(t->engine_type)->engclass == 0) {
@@ -2059,6 +2060,7 @@ static VehicleEnterTileStatus VehicleEnter_TunnelBridge(Vehicle *v, ExtendedTile
 			if (dir == ReverseDiagDir(vdir) && frame == TILE_SIZE - _tunnel_visibility_frame[dir] && z == 0) {
 				/* We're at the tunnel exit ?? */
 				t->tile = tile.index; //TODO elevated is this necessary ?
+				assert((t->track & TRACK_BIT_MASK) == DiagDirToDiagTrackBits(vdir));
 				t->track = DiagDirToDiagTrackBits(vdir); //TODO elevated probably we should just remove TRACK_BIT_WORMHOLE flag
 				assert(t->track);
 				t->vehstatus &= ~VS_HIDDEN;
@@ -2137,6 +2139,7 @@ static VehicleEnterTileStatus VehicleEnter_TunnelBridge(Vehicle *v, ExtendedTile
 					if ((t->track & TRACK_BIT_WORMHOLE) != 0) {
 						/* Train track has TRACK_BIT_WORMHOLE flag set -> remove the flag */
 						//TODO elevated ramps
+						assert((t->track & TRACK_BIT_WORMHOLE) == DiagDirToDiagTrackBits(vdir));
 						t->track = DiagDirToDiagTrackBits(vdir); //TODO elevated is this necessary ?
 						return VETSB_ENTERED_WORMHOLE;
 					}

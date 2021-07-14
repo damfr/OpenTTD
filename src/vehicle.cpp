@@ -603,8 +603,8 @@ static Vehicle *EnsureNoTrainOnTrackProc(Vehicle *v, void *data)
 
 	Train *t = Train::From(v);
 
-	//Check if the vehicle is on the same level 
-	if (!IsAtSameHeightLevel(track_bits_tile_index.tile, v->z_pos)) return nullptr;
+	//Check if the vehicle is on the same level (should now not be necessary)
+	//if (!IsAtSameHeightLevel(track_bits_tile_index.tile, v->z_pos)) return nullptr;
 
 	if ((t->track != rail_bits) && !TracksOverlap(t->track | rail_bits)) return nullptr;
 

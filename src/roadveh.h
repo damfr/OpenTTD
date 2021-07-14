@@ -114,7 +114,7 @@ struct RoadVehPathCache {
 	inline size_t size() const
 	{
 		assert(this->td.size() == this->tile_ground.size() && this->tile_ground.size() == this->tile_height.size()
-			&& this->tile_height.size() == this->tile_flags.size);
+			&& this->tile_height.size() == this->tile_flags.size());
 		return this->td.size();
 	}
 

@@ -128,18 +128,18 @@ static inline void SetBridgeMiddle(TileIndex t, Axis a)
  * @param tt         the transport type of the bridge
  * @note this function should not be called directly.
  */
-static inline void MakeBridgeRamp(TileIndex t, Owner o, BridgeType bridgetype, DiagDirection d, TransportType tt)
+static inline void MakeBridgeRamp(ExtendedTileIndex t, Owner o, BridgeType bridgetype, DiagDirection d, TransportType tt)
 {
 	SetTileType(t, MP_TUNNELBRIDGE);
 	SetTileOwner(t, o);
 	SetDockingTile(t, false);
-	_m[t].m2 = 0;
-	_m[t].m3 = 0;
-	_m[t].m4 = INVALID_ROADTYPE;
-	_m[t].m5 = 1 << 7 | tt << 2 | d;
-	SB(_me[t].m6, 2, 4, bridgetype);
-	_me[t].m7 = 0;
-	_me[t].m8 = INVALID_ROADTYPE << 6;
+	GetElevatedTile(t).m2 = 0;
+	GetElevatedTile(t).m3 = 0;
+	GetElevatedTile(t).m4 = INVALID_ROADTYPE;
+	GetElevatedTile(t).m5 = 1 << 7 | tt << 2 | d;
+	SB(GetElevatedTileExt(t).m6, 2, 4, bridgetype);
+	GetElevatedTileExt(t).m7 = 0;
+	GetElevatedTileExt(t).m8 = INVALID_ROADTYPE << 6;
 }
 
 /**
@@ -155,7 +155,7 @@ static inline void MakeBridgeRamp(TileIndex t, Owner o, BridgeType bridgetype, D
  */
 static inline void MakeRoadBridgeRamp(TileIndex t, Owner o, Owner owner_road, Owner owner_tram, BridgeType bridgetype, DiagDirection d, RoadType road_rt, RoadType tram_rt)
 {
-	MakeBridgeRamp(t, o, bridgetype, d, TRANSPORT_ROAD);
+	MakeBridgeRamp(t, o, bridgetype, d, TRANSPORT_ROAD); //TODO elevated roads
 	SetRoadOwner(t, RTT_ROAD, owner_road);
 	if (owner_tram != OWNER_TOWN) SetRoadOwner(t, RTT_TRAM, owner_tram);
 	SetRoadTypes(t, road_rt, tram_rt);
@@ -167,12 +167,18 @@ static inline void MakeRoadBridgeRamp(TileIndex t, Owner o, Owner owner_road, Ow
  * @param o          the new owner of the bridge ramp
  * @param bridgetype the type of bridge this bridge ramp belongs to
  * @param d          the direction this ramp must be facing
+ * @param inclined_ramp wether to build an inclined or flat bridge ramp
  * @param rt         the rail type of the bridge
  */
-static inline void MakeRailBridgeRamp(TileIndex t, Owner o, BridgeType bridgetype, DiagDirection d, RailType rt)
+static inline void MakeRailBridgeRamp(TileIndex t, Owner o, BridgeType bridgetype, DiagDirection d, bool inclined_ramp, RailType rt)
 {
 	MakeBridgeRamp(t, o, bridgetype, d, TRANSPORT_RAIL);
 	SetRailType(t, rt);
+
+	ExtendedTileIndex ramp_above(t, inclined_ramp ? GetTileMaxZ(t) + 1 : GetTileMaxZ(t), EL_ELEVATED);
+	InsertElevatedTile(ramp_above);
+	MakeBridgeRamp(ramp_above, o, bridgetype, ReverseDiagDir(d), TRANSPORT_RAIL);
+	SetRailType(ramp_above, rt);
 }
 
 /**

@@ -392,6 +392,7 @@ static SigFlags ExploreSegment(Owner owner)
 				if (!(flags & SF_TRAIN) && HasVehicleOnPos(tile, nullptr, &TrainOnTileEnum)) flags |= SF_TRAIN;
 
 				tile = GetElevatedRampNextTile(tile, exitdir);
+				if (!tile.IsValid()) continue; /* Don't try to check an elevated tile that does not exist */
 				}
 				break;
 

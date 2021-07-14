@@ -93,25 +93,63 @@ static inline TileIndex GetOtherTunnelBridgeEnd(TileIndex t)
  */
 static inline ExtendedTileIndex GetElevatedRampNextTile(ExtendedTileIndex ramp, DiagDirection dir)
 {
-	assert(IsTileType(ramp, MP_TUNNELBRIDGE));
+	assert(IsTileType(ramp, MP_TUNNELBRIDGE) && IsValidDiagDirection(dir));
 	DiagDirection ramp_dir = GetTunnelBridgeDirection(ramp);
-
-	uint ramp_offset = 0;
-	if (IsBridgeTile(ramp) && !HasBridgeFlatRamp(ramp)) ramp_offset = 1;
+	assert(DiagDirToAxis(ramp_dir) == DiagDirToAxis(dir));
 
 	ExtendedTileIndex next_tile(ramp.index + TileOffsByDiagDir(dir), ramp.height, EL_GROUND);
 
-	if (ramp_dir == dir) {
-		/* We are going on the ramp, possibly going up */
-		next_tile.height += ramp_offset;
-		next_tile.flags = EL_ELEVATED; //TODO elevated tunnels
-	} else if (ramp_dir == ReverseDiagDir(dir)) {
-		/* We are leaving a ramp, possibly going down */
-		next_tile.height -= ramp_offset;
-		if (IsIndexGroundTile(next_tile)) next_tile.flags = EL_GROUND;
+	if (IsTunnel(ramp)) {
+		if (ramp_dir == dir) {
+			/* Going into a tunnel */
+			assert(ramp.flags == EL_GROUND);
+			next_tile.height = GetTileZ(ramp.index);
+			next_tile.flags = EL_TUNNEL;
+		} else {
+			/* Leaving a tunnel */
+			assert(ramp.flags == EL_TUNNEL);
+			next_tile.height = GetTileZ(ramp.index);
+			next_tile.flags = EL_GROUND;
+		}
+	} else if (HasBridgeFlatRamp(ramp)){
+		/* Bridge wth flat ramp */
+		if (ramp_dir == dir) {
+			/* Going from ground to brdige */
+			assert(ramp.flags == EL_GROUND);
+			next_tile.height = GetTileMaxZ(ramp.index);
+			next_tile.flags = EL_ELEVATED;
+		} else {
+			/* Leaving a bridge via a flat ramp */
+			assert(ramp.flags == EL_ELEVATED);
+			next_tile.height = GetTileMaxZ(ramp.index);
+			next_tile.flags = EL_GROUND;
+		}
 	} else {
-		NOT_REACHED();
+		/* Inclined ramp */
+		if (ramp_dir == dir) {
+			/* Going up */
+			if (ramp.flags == EL_GROUND) {
+				next_tile.height = GetTileMaxZ(ramp.index) + 1;
+			} else {
+				next_tile.height = ramp.height + 1;
+			}
+			next_tile.flags = EL_ELEVATED;
+		} else {
+			/* Going down */
+			assert(ramp.flags == EL_ELEVATED);
+			next_tile.height = ramp.height - 1;
+			if (ramp.height - 1 <= GetTileMaxZ(ramp.index)) {
+				/* We reached ground */
+				next_tile.height = GetTileZ(next_tile.index);
+				next_tile.flags = EL_GROUND;
+			} else {
+				/* Still elevated */
+				next_tile.height = ramp.height - 1;
+				next_tile.flags = EL_ELEVATED;
+			}
+		}
 	}
+
 	return next_tile;
 }
 

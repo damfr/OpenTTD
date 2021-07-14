@@ -184,7 +184,7 @@ static inline Trackdir RemoveFirstTrackdir(TrackdirBits *trackdirs)
  */
 static inline Track FindFirstTrack(TrackBits tracks)
 {
-	return (tracks != TRACK_BIT_NONE && tracks != INVALID_TRACK_BIT) ? (Track)FIND_FIRST_BIT(tracks) : INVALID_TRACK;
+	return (tracks != TRACK_BIT_NONE && tracks != INVALID_TRACK_BIT) ? (Track)FIND_FIRST_BIT(tracks & TRACK_BIT_MASK) : INVALID_TRACK;
 }
 
 /**
@@ -652,6 +652,7 @@ static inline bool IsDiagonalTrackdir(Trackdir trackdir)
  */
 static inline bool TracksOverlap(TrackBits bits)
 {
+	bits &= TRACK_BIT_MASK;
 	/* With no, or only one track, there is no overlap */
 	if (bits == TRACK_BIT_NONE || KillFirstBit(bits) == TRACK_BIT_NONE) return false;
 	/* We know that there are at least two tracks present. When there are more
@@ -726,7 +727,7 @@ static inline DiagDirection VehicleExitDir(Direction direction, TrackBits track)
 	DiagDirection diagdir = DirToDiagDir(direction);
 
 	/* Determine the diagonal direction in which we will exit this tile */
-	if (!HasBit(direction, 0) && track != state_dir_table[diagdir]) {
+	if (!HasBit(direction, 0) && (track & TRACK_BIT_MASK) != state_dir_table[diagdir]) {
 		diagdir = ChangeDiagDir(diagdir, DIAGDIRDIFF_90LEFT);
 	}
 
